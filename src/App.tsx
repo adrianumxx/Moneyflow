@@ -47,7 +47,9 @@ import {
   Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Group, UserProfile, Asset, Liability, FinancialGoal, AIInsight, Transaction, BankAccount } from './types';
+import { Group, UserProfile, Asset, Liability, FinancialGoal, AIInsight, Transaction, BankAccount, Expense } from './types';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // Components
 import Dashboard from './components/Dashboard';
@@ -60,26 +62,35 @@ import AddLiabilityModal from './components/AddLiabilityModal';
 import ConnectBankModal from './components/ConnectBankModal';
 import AddTransactionModal from './components/AddTransactionModal';
 import SmartConnectModal from './components/SmartConnectModal';
+import TransactionsView from './components/TransactionsView';
+import AddGoalModal from './components/AddGoalModal';
+import CFOReportModal from './components/CFOReportModal';
+import SubscriptionSettings from './components/SubscriptionSettings';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [groupExpenses, setGroupExpenses] = useState<Record<string, Expense[]>>({});
   const [assets, setAssets] = useState<Asset[]>([]);
   const [liabilities, setLiabilities] = useState<Liability[]>([]);
   const [goals, setGoals] = useState<FinancialGoal[]>([]);
   const [insights, setInsights] = useState<AIInsight[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
-  const [activeTab, setActiveTab] = useState<'wealth' | 'groups' | 'forecast'>('wealth');
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [activeTab, setActiveTab] = useState<'wealth' | 'groups' | 'forecast' | 'ledger' | 'settings'>('wealth');
   const [lastError, setLastError] = useState<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAddAssetModalOpen, setIsAddAssetModalOpen] = useState(false);
   const [isAddLiabilityModalOpen, setIsAddLiabilityModalOpen] = useState(false);
+  const [isCFOReportOpen, setIsCFOReportOpen] = useState(false);
+  const [isAddGoalModalOpen, setIsAddGoalModalOpen] = useState(false);
   const [isConnectBankOpen, setIsConnectBankOpen] = useState(false);
   const [isSmartConnectOpen, setIsSmartConnectOpen] = useState(false);
   const [isAddTransactionModalOpen, setIsAddTransactionModalOpen] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [dataDeletedPopup, setDataDeletedPopup] = useState(false);
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -115,6 +126,14 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser && !currentUser.uid.startsWith('demo-')) {
+        // Fetch User Profile
+        const profileRef = doc(db, 'users', currentUser.uid);
+        onSnapshot(profileRef, (snap) => {
+          if (snap.exists()) {
+            setUserProfile({ uid: snap.id, ...snap.data() } as UserProfile);
+          }
+        });
+
         // Only fetch from Firestore if it's a real user (not demo)
         // Fetch Assets
         const assetsQuery = query(collection(db, 'users', currentUser.uid, 'assets'));
@@ -176,7 +195,7 @@ export default function App() {
               name: 'Main Savings',
               type: 'savings',
               value: 12500,
-              institution: 'Nexus Bank',
+              institution: 'Moneyflow Bank',
               createdAt: serverTimestamp(),
               updatedAt: serverTimestamp()
             };
@@ -278,6 +297,88 @@ export default function App() {
     }
   }, [groups, selectedGroupId]);
 
+  const handleConnectBank = (institutionName: string) => {
+    // In a real app, this would receive data from a Plaid/Finicity webhook
+    // We simulate a successful new connection
+    const newAccount: BankAccount = {
+      id: `acc-${Date.now()}`,
+      institutionName: institutionName,
+      accountName: 'Direct Connection',
+      balance: Math.floor(Math.random() * 5000) + 1500,
+      currency: 'EUR',
+      lastSynced: Timestamp.now()
+    };
+    
+    setBankAccounts(prev => [...prev, newAccount]);
+    
+    // Add a small notification or just rely on the UI update
+    console.log(`Successfully connected to ${institutionName}`);
+  };
+
+  const handleDemoUpdate = (type: 'assets' | 'liabilities' | 'goals' | 'transactions' | 'groups' | 'groupExpense', item: any, extraId?: string) => {
+    if (!user || !user.uid.startsWith('demo-')) return;
+    
+    const formattedItem = {
+      ...item,
+      id: item.id || `demo-${Date.now()}`,
+      updatedAt: Timestamp.now(),
+      createdAt: item.createdAt || Timestamp.now(),
+      date: item.date instanceof Timestamp ? item.date : Timestamp.fromDate(item.date instanceof Date ? item.date : new Date(item.date || Date.now()))
+    };
+
+    switch (type) {
+      case 'assets': setAssets(prev => {
+        const exists = prev.find(a => a.id === formattedItem.id);
+        return exists ? prev.map(a => a.id === formattedItem.id ? (formattedItem as Asset) : a) : [formattedItem as Asset, ...prev];
+      }); break;
+      case 'liabilities': setLiabilities(prev => {
+        const exists = prev.find(l => l.id === formattedItem.id);
+        return exists ? prev.map(l => l.id === formattedItem.id ? (formattedItem as Liability) : l) : [formattedItem as Liability, ...prev];
+      }); break;
+      case 'goals': setGoals(prev => {
+        const exists = prev.find(g => g.id === formattedItem.id);
+        return exists ? prev.map(g => g.id === formattedItem.id ? (formattedItem as FinancialGoal) : g) : [formattedItem as FinancialGoal, ...prev];
+      }); break;
+      case 'transactions': setTransactions(prev => {
+        const exists = prev.find(t => t.id === formattedItem.id);
+        return exists ? prev.map(t => t.id === formattedItem.id ? (formattedItem as Transaction) : t) : [formattedItem as Transaction, ...prev];
+      }); break;
+      case 'groups': setGroups(prev => {
+        const exists = prev.find(g => g.id === formattedItem.id);
+        return exists ? prev.map(g => g.id === formattedItem.id ? (formattedItem as Group) : g) : [formattedItem as Group, ...prev];
+      }); break;
+      case 'groupExpense': 
+        if (extraId) {
+          setGroupExpenses(prev => {
+            const current = prev[extraId] || [];
+            const exists = current.find(e => e.id === formattedItem.id);
+            if (exists) {
+              return {
+                ...prev,
+                [extraId]: current.map(e => e.id === formattedItem.id ? (formattedItem as Expense) : e)
+              };
+            }
+            return {
+              ...prev,
+              [extraId]: [formattedItem as Expense, ...current]
+            };
+          });
+        }
+        break;
+    }
+  };
+
+  const handleDemoDelete = (type: 'assets' | 'liabilities' | 'goals' | 'transactions' | 'groups', id: string) => {
+    if (!user || !user.uid.startsWith('demo-')) return;
+    switch (type) {
+      case 'assets': setAssets(prev => prev.filter(item => item.id !== id)); break;
+      case 'liabilities': setLiabilities(prev => prev.filter(item => item.id !== id)); break;
+      case 'goals': setGoals(prev => prev.filter(item => item.id !== id)); break;
+      case 'transactions': setTransactions(prev => prev.filter(item => item.id !== id)); break;
+      case 'groups': setGroups(prev => prev.filter(item => item.id !== id)); break;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
@@ -292,31 +393,48 @@ export default function App() {
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-white dark:bg-zinc-950 p-4 text-center relative overflow-hidden transition-colors duration-300">
-        {/* Background Gradients */}
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-[#020617] p-4 text-center relative overflow-hidden transition-colors duration-300">
+        {/* Advanced Mesh Gradient Background */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute -top-1/4 -left-1/4 w-[80%] h-[80%] bg-indigo-600/10 dark:bg-indigo-600/20 rounded-full blur-[120px]" />
-          <div className="absolute -bottom-1/4 -right-1/4 w-[80%] h-[80%] bg-fuchsia-600/10 dark:bg-fuchsia-600/20 rounded-full blur-[120px]" />
+          <div className="absolute -top-1/4 -left-1/4 w-[80%] h-[80%] bg-indigo-500/20 dark:bg-indigo-600/10 rounded-full blur-[140px] animate-pulse" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-fuchsia-500/10 dark:bg-purple-600/10 rounded-full blur-[120px]" />
+          <div className="absolute -bottom-1/4 -right-1/4 w-[80%] h-[80%] bg-emerald-500/10 dark:bg-emerald-600/10 rounded-full blur-[140px]" />
         </div>
 
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full bg-zinc-50/50 dark:bg-white/5 backdrop-blur-2xl p-8 sm:p-12 rounded-[48px] shadow-2xl border border-zinc-200 dark:border-white/10 relative z-10"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="max-w-md w-full glass-card p-10 sm:p-14 rounded-[3.5rem] shadow-premium relative z-10"
         >
-          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-br from-indigo-500 to-fuchsia-500 rounded-[32px] flex items-center justify-center mx-auto mb-8 sm:mb-10 shadow-2xl shadow-indigo-500/20">
-            <Wallet className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
+          <div className="w-24 h-24 bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 rounded-[2.5rem] flex items-center justify-center mx-auto mb-10 shadow-glow rotate-3">
+            <motion.div
+              animate={{ rotate: [-10, 10, -10] }}
+              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            >
+              <Activity className="w-12 h-12 text-white" />
+            </motion.div>
           </div>
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4 text-zinc-900 dark:text-white font-display">Moneyflow</h1>
-          <p className="text-zinc-500 dark:text-zinc-400 mb-8 sm:mb-12 leading-relaxed text-base sm:text-lg">Premium Global Wealth OS. Master your wealth, investments, and goals in one place.</p>
+          
+          <h1 className="text-5xl sm:text-6xl font-black tracking-tighter mb-4 text-slate-900 dark:text-white font-display">
+            Money<span className="text-indigo-600 dark:text-indigo-400">flow</span>
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 mb-12 leading-relaxed text-lg font-medium">
+            The next-generation Wealth OS for global citizens. Secure, AI-powered, and beautiful.
+          </p>
+
           <div className="space-y-4">
             <button
               onClick={signIn}
-              className="w-full py-4 sm:py-5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 rounded-2xl font-bold hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all active:scale-[0.98] flex items-center justify-center gap-4 shadow-xl shadow-zinc-900/10 dark:shadow-white/10 text-base sm:text-lg outline-none focus:ring-4 focus:ring-indigo-500/40"
+              className="w-full py-5 addictive-gradient text-white rounded-3xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4 shadow-xl shadow-indigo-600/20 text-lg outline-none focus:ring-4 focus:ring-indigo-500/40"
             >
               <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-6 h-6 bg-white rounded-full p-0.5" />
-              Continue with Google
+              Sign in with Google
             </button>
+            <div className="flex items-center gap-3 py-2">
+              <div className="flex-1 h-[1px] bg-slate-200 dark:bg-slate-800" />
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">Institutional Trust</span>
+              <div className="flex-1 h-[1px] bg-slate-200 dark:bg-slate-800" />
+            </div>
             <button
               onClick={() => {
                 const demoUser = {
@@ -337,9 +455,9 @@ export default function App() {
                   { id: '1', name: 'Student Loan', type: 'loan', totalAmount: 15000, remainingAmount: 8400, monthlyPayment: 250, interestRate: 3.5, createdAt: Timestamp.now(), updatedAt: Timestamp.now() }
                 ]);
                 setTransactions([
-                  { id: '1', amount: 3500, category: 'income', date: Timestamp.now(), description: 'Monthly Salary', type: 'income', isRecurring: true },
-                  { id: '2', amount: -1200, category: 'housing', date: Timestamp.now(), description: 'Apartment Rent', type: 'expense', isRecurring: true },
-                  { id: '3', amount: -150, category: 'food', date: Timestamp.now(), description: 'Grocery Store', type: 'expense', isRecurring: false }
+                  { id: '1', amount: 3500, category: 'income', date: Timestamp.now(), description: 'Monthly Salary', type: 'income', isRecurring: true, createdAt: Timestamp.now() },
+                  { id: '2', amount: -1200, category: 'housing', date: Timestamp.now(), description: 'Apartment Rent', type: 'expense', isRecurring: true, createdAt: Timestamp.now() },
+                  { id: '3', amount: -150, category: 'food', date: Timestamp.now(), description: 'Grocery Store', type: 'expense', isRecurring: false, createdAt: Timestamp.now() }
                 ]);
                 setBankAccounts([
                   { id: '1', institutionName: 'Moneyflow Bank', accountName: 'Main Checking', balance: 12500, currency: 'EUR', lastSynced: Timestamp.now() }
@@ -358,7 +476,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen bg-zinc-50 dark:bg-zinc-950 font-sans selection:bg-indigo-100 selection:text-indigo-900 relative overflow-hidden transition-colors duration-300">
+    <div className="flex h-screen mesh-gradient font-sans selection:bg-indigo-100 selection:text-indigo-900 relative overflow-hidden transition-colors duration-300">
       {/* Debug Overlay */}
       {process.env.NODE_ENV !== 'production' && (
         <div className="fixed bottom-4 right-4 z-[100] bg-black/80 text-white p-4 rounded-2xl text-[10px] font-mono max-w-xs pointer-events-none">
@@ -384,7 +502,7 @@ export default function App() {
 
       {/* Sidebar */}
       <aside className={`
-        fixed lg:static inset-y-0 left-0 w-72 bg-white dark:bg-zinc-950 border-r border-zinc-200 dark:border-white/5 flex flex-col z-50 lg:z-10 transition-all duration-300 ease-in-out overflow-y-auto custom-scrollbar
+        fixed lg:static inset-y-0 left-0 w-72 bg-white/70 dark:bg-zinc-950/40 backdrop-blur-3xl border-r border-white/20 dark:border-white/5 flex flex-col z-50 lg:z-10 transition-all duration-300 ease-in-out overflow-y-auto custom-scrollbar
         ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
         {/* Vibrant background glow */}
@@ -442,6 +560,28 @@ export default function App() {
             >
               <Activity className="w-5 h-5" />
               <span className="font-bold">Forecast AI</span>
+            </button>
+            <button 
+              onClick={() => {
+                setActiveTab('ledger');
+                setSelectedGroupId(null);
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === 'ledger' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
+            >
+              <Receipt className="w-5 h-5" />
+              <span className="font-bold">Global Ledger</span>
+            </button>
+            <button 
+              onClick={() => {
+                setActiveTab('settings');
+                setSelectedGroupId(null);
+                setIsSidebarOpen(false);
+              }}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === 'settings' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
+            >
+              <Settings className="w-5 h-5" />
+              <span className="font-bold">Settings</span>
             </button>
           </nav>
 
@@ -564,7 +704,7 @@ export default function App() {
             <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-fuchsia-500 rounded-lg flex items-center justify-center">
               <Wallet className="w-5 h-5 text-white" />
             </div>
-            <span className="font-bold text-white font-display">Nexus Finance</span>
+            <span className="font-bold text-white font-display">Moneyflow</span>
           </div>
           <button 
             onClick={() => setIsSidebarOpen(true)}
@@ -588,6 +728,8 @@ export default function App() {
                 user={user} 
                 onBack={() => setSelectedGroupId(null)} 
                 theme={theme}
+                demoExpenses={groupExpenses[selectedGroupId] || []}
+                onDemoExpenseAdd={(exp) => handleDemoUpdate('groupExpense', exp, selectedGroupId)}
               />
             </motion.div>
           ) : activeTab === 'forecast' ? (
@@ -624,13 +766,58 @@ export default function App() {
                 bankAccounts={bankAccounts}
                 onInsightsGenerated={async (newInsights) => {
                   setInsights(newInsights);
-                  // Save to firestore for persistence
-                  for (const insight of newInsights) {
-                     await addDoc(collection(db, 'users', user!.uid, 'insights'), insight);
+                  if (!user.uid.startsWith('demo-')) {
+                    // Save to firestore for persistence
+                    for (const insight of newInsights) {
+                       await addDoc(collection(db, 'users', user!.uid, 'insights'), insight);
+                    }
                   }
                 }}
-                onConnectBank={() => setIsConnectBankOpen(true)}
+                onConnectBank={() => setIsSmartConnectOpen(true)}
+                onAddGoal={() => setIsAddGoalModalOpen(true)}
+                onGenerateReport={() => {
+                  setIsCFOReportOpen(true);
+                }}
                 theme={theme}
+              />
+            </motion.div>
+          ) : activeTab === 'ledger' ? (
+            <motion.div
+              key="ledger"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="p-10 max-w-7xl mx-auto"
+            >
+              <TransactionsView 
+                transactions={transactions}
+                userId={user.uid}
+                onAddTransaction={() => setIsAddTransactionModalOpen(true)}
+                onDeleteTransaction={(id) => handleDemoDelete('transactions', id)}
+                onEditTransaction={(tx) => {
+                  setEditingTransaction(tx);
+                  setIsAddTransactionModalOpen(true);
+                }}
+              />
+            </motion.div>
+          ) : activeTab === 'settings' ? (
+            <motion.div
+              key="settings"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="p-10 max-w-7xl mx-auto"
+            >
+              <div className="mb-10">
+                <h1 className="text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white mb-2">Account Settings</h1>
+                <p className="text-slate-500">Manage your profile, preferences, and premium subscription.</p>
+              </div>
+              <SubscriptionSettings 
+                userProfile={userProfile}
+                userId={user.uid}
+                userEmail={user.email}
               />
             </motion.div>
           ) : (
@@ -645,9 +832,36 @@ export default function App() {
               <Dashboard 
                 user={user} 
                 groups={groups} 
+                transactions={transactions}
+                demoGroupExpenses={groupExpenses}
                 onSelectGroup={(id) => {
                   setSelectedGroupId(id);
                   setIsSidebarOpen(false);
+                }}
+                onNavigateToLedger={() => setActiveTab('ledger')}
+                onUpdateTransaction={(tx) => {
+                  if (tx.groupId) {
+                    handleDemoUpdate('groupExpense', tx, tx.groupId);
+                  } else {
+                    handleDemoUpdate('transactions', tx);
+                  }
+                }}
+                onDeleteTransaction={(id) => {
+                  // Check if it's a group expense or a global transaction
+                  const isGlobal = transactions.some(t => t.id === id);
+                  if (isGlobal) {
+                    handleDemoDelete('transactions', id);
+                  } else {
+                    // It must be a group expense
+                    Object.keys(groupExpenses).forEach(gid => {
+                      if (groupExpenses[gid].some(e => e.id === id)) {
+                        setGroupExpenses(prev => ({
+                          ...prev,
+                          [gid]: prev[gid].filter(e => e.id !== id)
+                        }));
+                      }
+                    });
+                  }
                 }}
                 theme={theme}
               />
@@ -677,9 +891,10 @@ export default function App() {
                 <Settings className="w-10 h-10" />
               </div>
               <h3 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white mb-4 font-display">Demo Data Reset</h3>
-              <p className="text-zinc-500 dark:text-zinc-400 mb-10 leading-relaxed text-sm">
-                Your data has been deleted because 24 hours have passed since you first signed in. 
-                This is a demo application. If you want your data to persist, please click the <span className="font-bold text-zinc-900 dark:text-white">Remix</span> button to create your own version of the app!
+              <p className="text-slate-500 dark:text-slate-400 mb-10 leading-relaxed text-sm">
+                Your data has been wiped because 24 hours have passed since your session began. 
+                <br /><br />
+                To keep your wealth data permanent, please <span className="font-bold text-indigo-600 dark:text-indigo-400">Remix</span> this Moneyflow instance.
               </p>
               <button
                 onClick={() => setDataDeletedPopup(false)}
@@ -696,24 +911,119 @@ export default function App() {
         isOpen={isCreateModalOpen} 
         onClose={() => setIsCreateModalOpen(false)} 
         user={user}
+        onDemoAdd={(group) => handleDemoUpdate('groups', group)}
+      />
+
+      <CFOReportModal 
+        isOpen={isCFOReportOpen}
+        onClose={() => setIsCFOReportOpen(false)}
+        onSend={async (email) => {
+          // Complex report generation
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          
+          const doc = new jsPDF();
+          
+          // Header
+          doc.setFontSize(22);
+          doc.setTextColor(30, 41, 59);
+          doc.text('STRATEGIC FINANCIAL AUDIT 2024', 14, 22);
+          
+          doc.setFontSize(10);
+          doc.setTextColor(100, 116, 139);
+          doc.text(`PREPARED FOR: ${email.toUpperCase()}`, 14, 32);
+          doc.text(`DATE: ${new Date().toLocaleDateString()}`, 14, 37);
+          
+          // Executive Summary
+          doc.setFontSize(14);
+          doc.setTextColor(30, 41, 59);
+          doc.text('1. EXECUTIVE SUMMARY', 14, 50);
+          
+          doc.setFontSize(10);
+          doc.setTextColor(71, 85, 105);
+          const totalAssets = assets.reduce((sum, a) => sum + a.value, 0);
+          const totalLiabilities = liabilities.reduce((sum, l) => sum + l.remainingAmount, 0);
+          const netWorth = totalAssets - totalLiabilities;
+          
+          const summary = `Based on a comprehensive analysis of all recorded asset sectors and liability structures, your global net worth is established at €${netWorth.toLocaleString()}. The portfolio maintains a current liquidity ratio that allows for tactical maneuvers in high-volatility sectors.`;
+          doc.text(doc.splitTextToSize(summary, 180), 14, 60);
+          
+          // Asset Breakdown
+          doc.setFontSize(14);
+          doc.setTextColor(30, 41, 59);
+          doc.text('2. ASSET INFRASTRUCTURE', 14, 85);
+          
+          const assetRows = assets.map(a => [a.name, a.type.toUpperCase(), `€${a.value.toLocaleString()}`, `${((a.value/totalAssets)*100).toFixed(1)}%`]);
+          autoTable(doc, {
+            startY: 90,
+            head: [['Asset Name', 'Sector', 'Valuation', 'Weight']],
+            body: assetRows,
+            theme: 'striped',
+            headStyles: { fillColor: [79, 70, 229] }
+          });
+          
+          // Liabilities
+          const liabilitiesStartY = (doc as any).lastAutoTable.finalY + 15;
+          doc.setFontSize(14);
+          doc.setTextColor(30, 41, 59);
+          doc.text('3. LIABILITY & DEBT STRUCTURE', 14, liabilitiesStartY);
+          
+          const liabilityRows = liabilities.map(l => [l.name, l.type.toUpperCase(), `€${l.remainingAmount.toLocaleString()}`, `€${l.monthlyPayment.toLocaleString()}/mo`]);
+          autoTable(doc, {
+            startY: liabilitiesStartY + 5,
+            head: [['Creditor', 'Structure', 'Remaining', 'Service Cost']],
+            body: liabilityRows,
+            theme: 'striped',
+            headStyles: { fillColor: [244, 63, 94] }
+          });
+          
+          // CFO Strategic Advice
+          const adviceStartY = (doc as any).lastAutoTable.finalY + 15;
+          doc.setFontSize(14);
+          doc.setTextColor(30, 41, 59);
+          doc.text('4. STRATEGIC RECOMMENDATIONS', 14, adviceStartY);
+          
+          doc.setFontSize(10);
+          doc.setTextColor(71, 85, 105);
+          const advice = [
+            '• CAPITAL REALLOCATION: Your current cash reserves exceed the optimal safety threshold. Consider a 15% shift into productive assets.',
+            '• DEBT NEUTRALIZATION: Accelerate payments on high-interest liabilities to optimize overall internal rate of return (IRR).',
+            '• RISK DIVERSIFICATION: Concentration in speculative sectors is noted. Recommend a balanced approach with fixed-income instruments.'
+          ].join('\n\n');
+          doc.text(doc.splitTextToSize(advice, 180), 14, adviceStartY + 10);
+          
+          const blob = doc.output('blob');
+          const url = URL.createObjectURL(blob);
+          
+          console.log(`Professional CFO report generated and ready for ${email}`);
+          return url;
+        }}
+      />
+
+      <AddGoalModal 
+        isOpen={isAddGoalModalOpen} 
+        onClose={() => setIsAddGoalModalOpen(false)} 
+        userId={user.uid}
+        onDemoAdd={(goal) => handleDemoUpdate('goals', goal)}
       />
 
       <SmartConnectModal 
         isOpen={isSmartConnectOpen}
         onClose={() => setIsSmartConnectOpen(false)}
-        onConnected={(name) => console.log('Connected to', name)}
+        onConnected={handleConnectBank}
       />
 
       <AddAssetModal 
-        isOpen={isAddAssetModalOpen}
-        onClose={() => setIsAddAssetModalOpen(false)}
+        isOpen={isAddAssetModalOpen} 
+        onClose={() => setIsAddAssetModalOpen(false)} 
         userId={user.uid}
+        onDemoAdd={(asset) => handleDemoUpdate('assets', asset)}
       />
 
       <AddLiabilityModal 
-        isOpen={isAddLiabilityModalOpen}
-        onClose={() => setIsAddLiabilityModalOpen(false)}
+        isOpen={isAddLiabilityModalOpen} 
+        onClose={() => setIsAddLiabilityModalOpen(false)} 
         userId={user.uid}
+        onDemoAdd={(liability) => handleDemoUpdate('liabilities', liability)}
       />
 
       <ConnectBankModal 
@@ -723,9 +1033,14 @@ export default function App() {
       />
 
       <AddTransactionModal 
-        isOpen={isAddTransactionModalOpen}
-        onClose={() => setIsAddTransactionModalOpen(false)}
+        isOpen={isAddTransactionModalOpen} 
+        onClose={() => {
+          setIsAddTransactionModalOpen(false);
+          setEditingTransaction(null);
+        }} 
         userId={user.uid}
+        onDemoAdd={(tx) => handleDemoUpdate('transactions', tx)}
+        initialTransaction={editingTransaction}
       />
 
       {/* Welcome Popup */}

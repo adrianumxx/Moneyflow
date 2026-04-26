@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { X, Plus, Receipt, Landmark, Calendar, Loader2 } from 'lucide-react';
+import { X, Plus, Receipt, Landmark, Calendar, Loader2, Pencil } from 'lucide-react';
 import { db } from '../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { TransactionCategory } from '../types';
+import { collection, addDoc, serverTimestamp, Timestamp, doc, setDoc } from 'firebase/firestore';
+import { Transaction, TransactionCategory } from '../types';
 import { categorizeTransaction } from '../services/geminiService';
 
 interface AddTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
+  onDemoAdd?: (transaction: any) => void;
+  initialTransaction?: Transaction | null;
 }
 
 const CATEGORIES: { value: TransactionCategory; label: string }[] = [
@@ -23,13 +25,30 @@ const CATEGORIES: { value: TransactionCategory; label: string }[] = [
   { value: 'other', label: 'Other' },
 ];
 
-export default function AddTransactionModal({ isOpen, onClose, userId }: AddTransactionModalProps) {
+export default function AddTransactionModal({ isOpen, onClose, userId, onDemoAdd, initialTransaction }: AddTransactionModalProps) {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<TransactionCategory>('other');
   const [type, setType] = useState<'expense' | 'income'>('expense');
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSaving, setIsSaving] = useState(false);
   const [isCategorizing, setIsCategorizing] = useState(false);
+
+  React.useEffect(() => {
+    if (initialTransaction) {
+      setDescription(initialTransaction.description);
+      setAmount(Math.abs(initialTransaction.amount).toString());
+      setCategory(initialTransaction.category);
+      setType(initialTransaction.type);
+      setDate(initialTransaction.date.toDate().toISOString().split('T')[0]);
+    } else {
+      setDescription('');
+      setAmount('');
+      setCategory('other');
+      setType('expense');
+      setDate(new Date().toISOString().split('T')[0]);
+    }
+  }, [initialTransaction, isOpen]);
 
   const handleAutoCategorize = async () => {
     if (!description || !amount) return;
@@ -50,20 +69,45 @@ export default function AddTransactionModal({ isOpen, onClose, userId }: AddTran
 
     setIsSaving(true);
     try {
-      await addDoc(collection(db, 'users', userId, 'transactions'), {
+      if (userId.startsWith('demo-')) {
+        // Simulate creation for demo user
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        if (onDemoAdd) {
+          onDemoAdd({
+            id: initialTransaction?.id,
+            description,
+            amount: parseFloat(amount) * (type === 'expense' ? -1 : 1),
+            category,
+            type,
+            date: new Date(date),
+            isRecurring: false,
+            createdAt: initialTransaction?.createdAt || new Date(),
+          });
+        }
+
+        onClose();
+        setIsSaving(false);
+        return;
+      }
+
+      const transactionData = {
         description,
         amount: parseFloat(amount) * (type === 'expense' ? -1 : 1),
         category,
         type,
-        date: serverTimestamp(),
+        date: Timestamp.fromDate(new Date(date)),
         isRecurring: false,
-        createdAt: serverTimestamp(),
-      });
+        createdAt: initialTransaction?.createdAt || serverTimestamp(),
+      };
+
+      if (initialTransaction?.id) {
+        const docRef = doc(db, 'users', userId, 'transactions', initialTransaction.id);
+        await setDoc(docRef, transactionData, { merge: true });
+      } else {
+        await addDoc(collection(db, 'users', userId, 'transactions'), transactionData);
+      }
       onClose();
-      setDescription('');
-      setAmount('');
-      setCategory('other');
-      setType('expense');
     } catch (error) {
       console.error("Error adding transaction:", error);
     } finally {
@@ -90,7 +134,9 @@ export default function AddTransactionModal({ isOpen, onClose, userId }: AddTran
       >
         <div className="p-10">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-2xl font-bold font-display tracking-tight">Manual Entry</h3>
+            <h3 className="text-2xl font-bold font-display tracking-tight">
+              {initialTransaction ? 'Edit Entry' : 'Manual Entry'}
+            </h3>
             <button onClick={onClose} className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors">
               <X className="w-6 h-6 text-zinc-500" />
             </button>
@@ -134,8 +180,8 @@ export default function AddTransactionModal({ isOpen, onClose, userId }: AddTran
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="md:col-span-1">
                 <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Amount (€)</label>
                 <input
                   type="number"
@@ -147,7 +193,7 @@ export default function AddTransactionModal({ isOpen, onClose, userId }: AddTran
                   required
                 />
               </div>
-              <div>
+              <div className="md:col-span-1">
                 <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Category</label>
                 <select
                   value={category}
@@ -159,6 +205,16 @@ export default function AddTransactionModal({ isOpen, onClose, userId }: AddTran
                   ))}
                 </select>
               </div>
+              <div className="md:col-span-1">
+                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Date</label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  className="w-full px-5 py-4 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-medium"
+                  required
+                />
+              </div>
             </div>
 
             <button
@@ -166,8 +222,8 @@ export default function AddTransactionModal({ isOpen, onClose, userId }: AddTran
               disabled={isSaving}
               className="w-full py-5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-950 rounded-[24px] font-bold hover:opacity-90 transition-all flex items-center justify-center gap-3 shadow-xl active:scale-98 disabled:opacity-50"
             >
-              {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : <Plus className="w-5 h-5" />}
-              {isSaving ? 'Processing...' : `Add ${type === 'expense' ? 'Expense' : 'Income'}`}
+              {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : initialTransaction ? <Pencil className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+              {isSaving ? 'Processing...' : initialTransaction ? 'Save Changes' : `Add ${type === 'expense' ? 'Expense' : 'Income'}`}
             </button>
           </form>
         </div>

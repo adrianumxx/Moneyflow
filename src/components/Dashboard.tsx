@@ -12,9 +12,12 @@ import {
   Pencil,
   Trash2,
   Loader2,
-  X
+  X,
+  Activity,
+  ChevronRight,
+  PieChart as PieChartIcon
 } from 'lucide-react';
-import { Group, Expense, BudgetType, CATEGORIES } from '../types';
+import { Group, Expense, BudgetType, CATEGORIES, Transaction } from '../types';
 import { db } from '../firebase';
 import { collection, query, onSnapshot, orderBy, limit, doc, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore';
 import { User } from 'firebase/auth';
@@ -24,7 +27,12 @@ import { handleFirestoreError, OperationType } from '../utils/errorHandling';
 interface DashboardProps {
   user: User;
   groups: Group[];
+  transactions: Transaction[];
+  demoGroupExpenses?: Record<string, Expense[]>;
   onSelectGroup: (id: string) => void;
+  onNavigateToLedger: () => void;
+  onUpdateTransaction?: (tx: any) => void;
+  onDeleteTransaction?: (id: string) => void;
   theme: 'light' | 'dark';
 }
 
@@ -35,11 +43,28 @@ interface Alert {
   groupId: string;
 }
 
-interface DashboardExpense extends Expense {
-  groupId: string;
+interface DashboardExpense {
+  id: string;
+  description: string;
+  amount: number;
+  category: string;
+  date: Timestamp;
+  paidBy: string;
+  groupId?: string;
+  type?: 'expense' | 'income';
 }
 
-export default function Dashboard({ user, groups, onSelectGroup, theme }: DashboardProps) {
+export default function Dashboard({ 
+  user, 
+  groups, 
+  transactions, 
+  demoGroupExpenses, 
+  onSelectGroup, 
+  onNavigateToLedger, 
+  onUpdateTransaction,
+  onDeleteTransaction,
+  theme 
+}: DashboardProps) {
   const [recentExpenses, setRecentExpenses] = useState<DashboardExpense[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [isGroupsListOpen, setIsGroupsListOpen] = useState(false);
@@ -98,6 +123,20 @@ export default function Dashboard({ user, groups, onSelectGroup, theme }: Dashbo
 
     setIsSaving(true);
     try {
+      if (user.uid.startsWith('demo-')) {
+        await new Promise(resolve => setTimeout(resolve, 600));
+        if (onUpdateTransaction) {
+          onUpdateTransaction({
+            ...editingExpense,
+            amount: parseFloat(editAmount),
+            description: editDescription,
+            category: editCategory,
+            date: new Date(editDate),
+          });
+        }
+        setEditingExpense(null);
+        return;
+      }
       const expenseRef = doc(db, 'groups', editingExpense.groupId, 'expenses', editingExpense.id);
       await updateDoc(expenseRef, {
         amount: parseFloat(editAmount),
@@ -118,6 +157,12 @@ export default function Dashboard({ user, groups, onSelectGroup, theme }: Dashbo
 
     setIsDeleting(true);
     try {
+      if (user.uid.startsWith('demo-')) {
+        await new Promise(resolve => setTimeout(resolve, 600));
+        if (onDeleteTransaction) onDeleteTransaction(expenseToDelete.id);
+        setExpenseToDelete(null);
+        return;
+      }
       const expenseRef = doc(db, 'groups', expenseToDelete.groupId, 'expenses', expenseToDelete.id);
       await deleteDoc(expenseRef);
       setExpenseToDelete(null);
@@ -151,6 +196,63 @@ export default function Dashboard({ user, groups, onSelectGroup, theme }: Dashbo
   };
 
   useEffect(() => {
+    const combineExpenses = () => {
+      let combined: DashboardExpense[] = [];
+      
+      // Global transactions
+      transactions.forEach(tx => {
+        combined.push({
+          id: tx.id,
+          description: tx.description,
+          amount: tx.amount,
+          category: tx.category,
+          date: tx.date,
+          paidBy: user.uid,
+          type: tx.type
+        });
+      });
+
+      // Group expenses
+      if (user.uid.startsWith('demo-') && demoGroupExpenses) {
+        Object.entries(demoGroupExpenses).forEach(([groupId, expenses]) => {
+          expenses.forEach(exp => {
+            combined.push({ ...exp, groupId, type: 'expense' });
+          });
+        });
+      }
+
+      combined.sort((a, b) => b.date.toMillis() - a.date.toMillis());
+      setRecentExpenses(combined.slice(0, 10));
+
+      // Alerts
+      const newAlerts: Alert[] = [];
+      groups.forEach(g => {
+        if (!g.maxBudget) return;
+        const gExpenses = (user.uid.startsWith('demo-') ? (demoGroupExpenses?.[g.id] || []) : []); // Note: real mode handled separately below
+        
+        if (user.uid.startsWith('demo-')) {
+          const totalSpent = gExpenses.filter(e => 
+            isDateInCurrentPeriod(e.date.toDate(), g.budgetType || 'total')
+          ).reduce((sum, e) => sum + e.amount, 0);
+          
+          if (totalSpent > g.maxBudget) {
+            newAlerts.push({
+              id: `demo-over-${g.id}`,
+              message: `Group "${g.name}" is over its ${g.budgetType} budget`,
+              type: 'warning',
+              groupId: g.id
+            });
+          }
+        }
+      });
+      if (user.uid.startsWith('demo-')) setAlerts(newAlerts);
+    };
+
+    if (user.uid.startsWith('demo-')) {
+      combineExpenses();
+      return;
+    }
+
     if (groups.length === 0) {
       setRecentExpenses([]);
       setAlerts([]);
@@ -224,23 +326,26 @@ export default function Dashboard({ user, groups, onSelectGroup, theme }: Dashbo
 
   return (
     <div className="max-w-6xl mx-auto">
-      <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <header className="mb-14 flex flex-col md:flex-row md:items-end justify-between gap-8">
         <div>
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-zinc-900 dark:text-white mb-3 font-display">
-            Welcome back, <span className="text-indigo-600 dark:text-indigo-400">{user.displayName?.split(' ')[0]}</span>
+          <div className="flex items-center gap-2 mb-4">
+             <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">Financial Intelligence Hub</span>
+          </div>
+          <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-slate-800 dark:text-white mb-4 font-display leading-none">
+            Welcome, <span className="text-indigo-600 dark:text-indigo-400">{user.displayName?.split(' ')[0]}</span>
           </h1>
-          <p className="text-zinc-500 dark:text-zinc-400 font-medium text-lg">Here's what's happening with your shared budgets today.</p>
+          <p className="text-slate-500 font-medium text-lg tracking-tight">Managing {groups.length} active wealth circles across your global portfolio.</p>
         </div>
         <button 
           onClick={() => (window as any).openCreateGroupModal?.()}
-          className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl text-sm font-bold hover:bg-indigo-700 hover:shadow-xl hover:shadow-indigo-500/40 transition-all shadow-lg shadow-indigo-500/20 active:scale-95"
+          className="flex items-center gap-3 px-8 py-5 addictive-gradient text-white rounded-[2rem] font-black text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-indigo-600/20"
         >
-          <Plus className="w-4 h-4" />
-          Create New Group
+          <Plus className="w-5 h-5 bg-white/20 rounded-lg p-1" />
+          Establish New Circle
         </button>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-14">
         <button 
           onClick={() => {
             if (groups.length === 0) return;
@@ -250,15 +355,15 @@ export default function Dashboard({ user, groups, onSelectGroup, theme }: Dashbo
               setIsGroupsListOpen(true);
             }
           }}
-          className={`text-left bg-indigo-600 p-8 rounded-[32px] shadow-lg shadow-indigo-500/40 relative overflow-hidden group transition-all ${groups.length > 0 ? 'hover:scale-[1.02] active:scale-95 cursor-pointer' : 'cursor-default'}`}
+          className={`text-left bg-slate-950 p-10 rounded-[3.5rem] shadow-glow relative overflow-hidden group transition-all ${groups.length > 0 ? 'hover:scale-[1.02] active:scale-95 cursor-pointer' : 'cursor-default'}`}
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+          <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/20 rounded-full -mr-20 -mt-20 blur-3xl transition-transform group-hover:scale-125" />
           <div className="relative z-10">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6">
-              <Users className="w-6 h-6 text-white" />
+            <div className="w-14 h-14 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center mb-10 border border-white/10">
+              <Users className="w-7 h-7 text-white" />
             </div>
-            <p className="text-xs font-bold text-indigo-100 uppercase tracking-[0.2em] mb-1">Active Groups</p>
-            <p className="text-4xl font-bold text-white font-display tracking-tight">{groups.length}</p>
+            <p className="text-[10px] font-black text-indigo-300 uppercase tracking-[0.3em] mb-2 leading-none">Strategic Circles</p>
+            <p className="text-5xl font-black text-white font-display tracking-tighter">{groups.length}</p>
           </div>
         </button>
 
@@ -267,15 +372,15 @@ export default function Dashboard({ user, groups, onSelectGroup, theme }: Dashbo
             if (recentExpenses.length === 0) return;
             onSelectGroup(recentExpenses[0].groupId);
           }}
-          className={`text-left bg-emerald-600 p-8 rounded-[32px] shadow-lg shadow-emerald-500/40 relative overflow-hidden group transition-all ${recentExpenses.length > 0 ? 'hover:scale-[1.02] active:scale-95 cursor-pointer' : 'cursor-default'}`}
+          className={`text-left addictive-gradient p-10 rounded-[3.5rem] shadow-premium relative overflow-hidden group transition-all ${recentExpenses.length > 0 ? 'hover:scale-[1.02] active:scale-95 cursor-pointer' : 'cursor-default'}`}
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+          <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl transition-transform group-hover:scale-125" />
           <div className="relative z-10">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6">
-              <Receipt className="w-6 h-6 text-white" />
+            <div className="w-14 h-14 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center mb-10 border border-white/10">
+              <Receipt className="w-7 h-7 text-white" />
             </div>
-            <p className="text-xs font-bold text-emerald-100 uppercase tracking-[0.2em] mb-1">Recent Expenses</p>
-            <p className="text-4xl font-bold text-white font-display tracking-tight">{recentExpenses.length}</p>
+            <p className="text-[10px] font-black text-emerald-100 uppercase tracking-[0.3em] mb-2 leading-none">Recent Flows</p>
+            <p className="text-5xl font-black text-white font-display tracking-tighter">{recentExpenses.length}</p>
           </div>
         </button>
 
@@ -284,15 +389,15 @@ export default function Dashboard({ user, groups, onSelectGroup, theme }: Dashbo
             if (alerts.length === 0) return;
             onSelectGroup(alerts[0].groupId);
           }}
-          className={`text-left bg-fuchsia-600 p-8 rounded-[32px] shadow-lg shadow-fuchsia-500/40 relative overflow-hidden group transition-all ${alerts.length > 0 ? 'hover:scale-[1.02] active:scale-95 cursor-pointer' : 'cursor-default'}`}
+          className={`text-left bg-rose-600 p-10 rounded-[3.5rem] shadow-xl shadow-rose-500/20 relative overflow-hidden group transition-all ${alerts.length > 0 ? 'hover:scale-[1.02] active:scale-95 cursor-pointer' : 'cursor-default'}`}
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+          <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl transition-transform group-hover:scale-125" />
           <div className="relative z-10">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6">
-              <TrendingUp className="w-6 h-6 text-white" />
+            <div className="w-14 h-14 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center mb-10 border border-white/10">
+              <TrendingUp className="w-7 h-7 text-white" />
             </div>
-            <p className="text-xs font-bold text-fuchsia-100 uppercase tracking-[0.2em] mb-1">Active Alerts</p>
-            <p className="text-4xl font-bold text-white font-display tracking-tight">{alerts.length}</p>
+            <p className="text-[10px] font-black text-rose-100 uppercase tracking-[0.3em] mb-2 leading-none">Critical Alerts</p>
+            <p className="text-5xl font-black text-white font-display tracking-tighter">{alerts.length}</p>
           </div>
         </button>
       </div>
@@ -304,23 +409,19 @@ export default function Dashboard({ user, groups, onSelectGroup, theme }: Dashbo
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm"
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
               onClick={() => setIsGroupsListOpen(false)}
             />
             <motion.div 
               ref={groupsListModalRef}
               tabIndex={-1}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="select-group-title"
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[32px] shadow-2xl overflow-hidden outline-none"
+              className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-white/20 rounded-[3.5rem] shadow-premium overflow-hidden outline-none p-10"
             >
-              <div className="p-8">
-                <h3 id="select-group-title" className="text-xl font-bold text-zinc-900 dark:text-white mb-6 font-display">Select a Group</h3>
-                <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+              <h3 className="text-3xl font-black text-slate-800 dark:text-white mb-8 font-display tracking-tighter">Navigate Circle</h3>
+              <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar no-scrollbar">
                 {groups.map(group => (
                   <button
                     key={group.id}
@@ -328,84 +429,86 @@ export default function Dashboard({ user, groups, onSelectGroup, theme }: Dashbo
                       onSelectGroup(group.id);
                       setIsGroupsListOpen(false);
                     }}
-                    className="w-full flex items-center justify-between p-4 rounded-2xl bg-zinc-50 dark:bg-white/5 hover:bg-zinc-100 dark:hover:bg-white/10 border border-zinc-100 dark:border-white/5 transition-all text-left group"
+                    className="w-full flex items-center justify-between p-6 rounded-[2rem] bg-slate-50 dark:bg-white/5 hover:bg-indigo-600 hover:text-white dark:hover:bg-indigo-600 border border-slate-100 dark:border-white/5 transition-all group"
                   >
-                    <div className="flex items-center gap-3">
-                      <div className={`w-2 h-2 rounded-full ${group.type === 'personal' ? 'bg-blue-400' : group.type === 'household' ? 'bg-emerald-400' : 'bg-orange-400'}`} />
-                      <span className="font-bold text-zinc-900 dark:text-white">{group.name}</span>
+                    <div className="flex items-center gap-4">
+                      <div className={`w-3 h-3 rounded-full shadow-sm ${group.type === 'personal' ? 'bg-indigo-400' : group.type === 'household' ? 'bg-emerald-400' : 'bg-rose-400'}`} />
+                      <span className="font-black text-lg tracking-tight">{group.name}</span>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-zinc-400 dark:text-zinc-500 group-hover:translate-x-1 transition-transform" />
+                    <ChevronRight className="w-5 h-5 opacity-40 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                   </button>
                 ))}
               </div>
-            </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        <div className="lg:col-span-2 space-y-12">
+        <div className="lg:col-span-2 space-y-10">
           <section>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white font-display">Recent Activity</h2>
+              <h2 className="text-2xl font-black tracking-tight text-slate-800 dark:text-white font-display">Transaction Stream</h2>
+              <button 
+                onClick={onNavigateToLedger}
+                className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-500 transition-colors"
+              >
+                Digital Audit
+              </button>
             </div>
-            <div className="bg-white dark:bg-zinc-900 rounded-[32px] border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-black/20 overflow-hidden">
+            <div className="glass-card rounded-[3rem] border border-slate-100 dark:border-white/5 shadow-premium overflow-hidden">
               {recentExpenses.length === 0 ? (
                 <div className="p-16 text-center">
-                  <div className="w-16 h-16 bg-zinc-50 dark:bg-zinc-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Receipt className="w-8 h-8 text-zinc-300 dark:text-zinc-600" />
+                  <div className="w-16 h-16 bg-slate-50 dark:bg-white/5 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 border border-slate-100 dark:border-white/10 shadow-inner">
+                    <Receipt className="w-8 h-8 text-slate-300 dark:text-slate-600" />
                   </div>
-                  <p className="text-zinc-500 dark:text-zinc-400 font-medium">No recent expenses found.</p>
+                  <p className="text-slate-400 font-bold tracking-tight text-sm">Precision ledger empty. Awaiting first transaction flow.</p>
                 </div>
               ) : (
-                <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                <div className="divide-y divide-slate-100 dark:divide-white/5">
                   {recentExpenses.map(expense => (
-                    <div key={expense.id} className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between transition-all group hover:bg-zinc-50 dark:hover:bg-zinc-800/50 gap-4">
+                    <div key={expense.id} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between transition-all group hover:bg-slate-50 dark:hover:bg-white/5 gap-4">
                       <div className="flex items-center gap-4 min-w-0">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 bg-zinc-50 dark:bg-zinc-800 rounded-2xl flex items-center justify-center text-zinc-400 dark:text-zinc-500 transition-all border border-zinc-100 dark:border-transparent shrink-0">
-                          <Receipt className="w-6 h-6 sm:w-7 sm:h-7" />
+                        <div className="w-12 h-12 bg-slate-100 dark:bg-white/5 rounded-2xl flex items-center justify-center text-slate-400 dark:text-slate-500 transition-all border border-slate-200 dark:border-white/10 shrink-0 group-hover:scale-110 shadow-sm">
+                          <Receipt className="w-6 h-6" />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-bold text-zinc-900 dark:text-white text-base sm:text-lg truncate">{expense.description}</p>
-                          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1">
-                            <span className="text-[9px] sm:text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-wider px-2 py-0.5 sm:px-2.5 sm:py-1 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg border border-indigo-100 dark:border-indigo-500/20">{expense.category}</span>
-                            <span className="text-[9px] sm:text-[10px] text-zinc-500 font-mono font-bold">
-                              {expense.date.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                            </span>
-                            <span className="text-[9px] sm:text-[10px] text-zinc-400 font-medium italic truncate max-w-[100px] sm:max-w-none">
-                              in {groups.find(g => g.id === expense.groupId)?.name}
-                            </span>
+                          <p className="font-black text-slate-800 dark:text-white text-lg truncate tracking-tighter mb-0.5">{expense.description}</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                             <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg border ${
+                               expense.type === 'income' 
+                                 ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20' 
+                                 : 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-100 dark:border-indigo-500/20'
+                             }`}>
+                               {expense.type === 'income' ? 'Income' : expense.category}
+                             </span>
+                             <span className="text-[8px] text-zinc-400 font-bold uppercase tracking-widest">
+                                {expense.date.toDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric'})}
+                             </span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center justify-between sm:justify-end gap-4 sm:gap-6 border-t border-zinc-100 dark:border-zinc-800 sm:border-0 pt-3 sm:pt-0 shrink-0">
-                        <div className="text-left sm:text-right min-w-0">
+                      <div className="flex items-center justify-between sm:justify-end gap-6 border-t border-slate-100 dark:border-white/10 sm:border-0 pt-4 sm:pt-0 shrink-0">
+                        <div className="text-left sm:text-right min-w-[100px]">
                           <p 
-                            className={`text-lg sm:text-xl font-bold font-mono truncate ${expense.paidBy === user.uid ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-900 dark:text-white'}`}
-                            title={`$${formatCurrency(expense.amount)}`}
+                            className={`text-xl font-black font-display truncate ${expense.type === 'income' ? 'text-emerald-500' : 'text-slate-800 dark:text-white'}`}
                           >
-                            ${formatCurrency(expense.amount)}
-                          </p>
-                          <p className="text-[9px] sm:text-[10px] text-zinc-500 uppercase tracking-widest font-bold mt-0.5">
-                            {expense.paidBy === user.uid ? 'You paid' : 'Someone paid'}
+                            {expense.type === 'income' ? '+' : '-'}€{formatCurrency(Math.abs(expense.amount))}
                           </p>
                         </div>
-                        {expense.paidBy === user.uid && (
-                          <div className="flex items-center gap-1">
+                        {(user.uid.startsWith('demo-') || expense.paidBy === user.uid) && (
+                          <div className="flex items-center gap-2">
                             <button 
                               onClick={() => setEditingExpense(expense)}
-                              className="p-2 text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl lg:opacity-0 group-hover:opacity-100 focus:opacity-100 focus:bg-indigo-50 dark:focus:bg-indigo-500/10 transition-all active:scale-90 outline-none focus:ring-2 focus:ring-indigo-500"
-                              title="Edit Expense"
+                              className="p-2.5 bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all active:scale-95"
                             >
-                              <Pencil className="w-4 h-4" />
+                              <Pencil className="w-3.5 h-3.5" />
                             </button>
                             <button 
                               onClick={() => setExpenseToDelete(expense)}
-                              className="p-2 text-zinc-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl lg:opacity-0 group-hover:opacity-100 focus:opacity-100 focus:bg-red-50 dark:focus:bg-red-500/10 transition-all active:scale-90 outline-none focus:ring-2 focus:ring-red-500"
-                              title="Delete Expense"
+                              className="p-2.5 bg-slate-100 dark:bg-white/5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all active:scale-95"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         )}
@@ -420,16 +523,20 @@ export default function Dashboard({ user, groups, onSelectGroup, theme }: Dashbo
 
         <div className="space-y-12">
           <section>
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white font-display">Budget Alerts</h2>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-black tracking-tight text-slate-800 dark:text-white font-display">Optimization Feed</h2>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-6">
               {alerts.length === 0 ? (
-                <div className="p-10 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[32px] text-center shadow-xl shadow-zinc-200/50 dark:shadow-black/20">
-                  <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <TrendingDown className="w-6 h-6 text-emerald-500" />
+                <div className="p-12 glass-card rounded-[3rem] text-center shadow-premium relative overflow-hidden group">
+                   <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform duration-700">
+                    <TrendingUp className="w-20 h-20" />
                   </div>
-                  <p className="text-zinc-500 text-sm font-medium">All budgets on track</p>
+                  <div className="w-16 h-16 bg-emerald-400/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 shadow-inner border border-emerald-400/10">
+                    <TrendingDown className="w-8 h-8 text-emerald-500" />
+                  </div>
+                  <p className="text-slate-800 dark:text-white font-black tracking-tight mb-1">Optimal Efficiency</p>
+                  <p className="text-slate-400 text-[11px] font-medium px-4">All budgets are currently performing within projected bounds.</p>
                 </div>
               ) : (
                 alerts.map(alert => (
@@ -437,27 +544,46 @@ export default function Dashboard({ user, groups, onSelectGroup, theme }: Dashbo
                     key={alert.id}
                     initial={{ opacity: 0, x: 20 }}
                     animate={{ opacity: 1, x: 0 }}
-                    className={`p-6 rounded-[32px] border shadow-md transition-all duration-300 ${
+                    className={`p-10 rounded-[3rem] shadow-lg relative overflow-hidden group border ${
                       alert.type === 'warning' 
-                        ? 'bg-red-50 dark:bg-red-950/80 border-red-200 dark:border-red-900/50 text-red-900 dark:text-red-100 backdrop-blur-sm' 
-                        : 'bg-indigo-600 border-indigo-500 text-white shadow-lg shadow-indigo-500/20'
+                        ? 'bg-rose-50/50 dark:bg-rose-950/20 border-rose-100 dark:border-rose-900/30' 
+                        : 'addictive-gradient border-transparent shadow-glow'
                     }`}
                   >
-                    <div className="flex gap-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                        alert.type === 'warning' ? 'bg-red-500/10 dark:bg-red-500/20' : 'bg-white/20'
+                    <div className="flex gap-6">
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-sm border ${
+                        alert.type === 'warning' ? 'bg-rose-100 dark:bg-rose-500/20 border-rose-200' : 'bg-white/20 border-white/10'
                       }`}>
-                        <TrendingUp className={`w-5 h-5 ${alert.type === 'warning' ? 'text-red-600 dark:text-red-400' : 'text-white'}`} />
+                        <TrendingUp className={`w-7 h-7 ${alert.type === 'warning' ? 'text-rose-600' : 'text-white'}`} />
                       </div>
-                      <p className="text-sm font-bold leading-relaxed">{alert.message}</p>
+                      <div className="space-y-2">
+                         <p className={`text-[10px] font-black uppercase tracking-widest ${alert.type === 'warning' ? 'text-rose-400' : 'text-indigo-200'}`}>Critical Notification</p>
+                         <p className={`text-sm font-bold leading-relaxed ${alert.type === 'warning' ? 'text-rose-900 dark:text-rose-100' : 'text-white'}`}>{alert.message}</p>
+                      </div>
                     </div>
                   </motion.div>
                 ))
               )}
+              
+              <div className="p-10 bg-slate-900 border border-white/10 rounded-[3rem] text-white overflow-hidden relative group cursor-pointer hover:scale-[1.02] transition-all">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 blur-3xl" />
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-3 bg-white/10 rounded-xl">
+                    <Activity className="w-5 h-5 text-indigo-400" />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-300">Moneyflow AI</span>
+                </div>
+                <h4 className="text-xl font-black font-display tracking-tight mb-2">Automated Savings Protocol</h4>
+                <p className="text-slate-400 text-xs leading-relaxed mb-6">Optimization ready for your household circle. Potential €420 monthly yield improvement detected.</p>
+                <div className="flex items-center gap-2 text-indigo-400 text-[10px] font-black uppercase tracking-widest group-hover:gap-4 transition-all">
+                  Review Intelligence <ChevronRight className="w-4 h-4" />
+                </div>
+              </div>
             </div>
           </section>
         </div>
       </div>
+
 
       {/* Modals */}
       <AnimatePresence>

@@ -1,4 +1,4 @@
-# Security Specification - Nexus Financial Advisor
+# Security Specification - Moneyflow Financial Advisor
 
 ## Data Invariants
 1. A transaction must belong to a user and have a valid amount and type.
@@ -6,7 +6,7 @@
 3. Groups require membership for any read/write operation.
 4. AI Insights are generated per user and are private.
 
-## The Dirty Dozen Payloads (Targeting Nexus)
+## The Dirty Dozen Payloads (Targeting Moneyflow)
 1. **Identity Spoofing**: Attempt to create an asset for another user's ID.
 2. **Resource Poisoning**: Use a 2MB string as a transaction description.
 3. **Privilege Escalation**: Adding oneself to a group without being invited.

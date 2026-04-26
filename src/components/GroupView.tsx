@@ -17,7 +17,8 @@ import {
   Sparkles,
   Loader2,
   Pencil,
-  X
+  X,
+  ChevronRight
 } from 'lucide-react';
 import Markdown from 'react-markdown';
 import { GoogleGenAI } from "@google/genai";
@@ -61,9 +62,11 @@ interface GroupViewProps {
   user: User;
   onBack: () => void;
   theme: 'light' | 'dark';
+  demoExpenses?: Expense[];
+  onDemoExpenseAdd?: (expense: any) => void;
 }
 
-export default function GroupView({ groupId, user, onBack, theme }: GroupViewProps) {
+export default function GroupView({ groupId, user, onBack, theme, demoExpenses, onDemoExpenseAdd }: GroupViewProps) {
   const [group, setGroup] = useState<Group | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [members, setMembers] = useState<GroupMember[]>([]);
@@ -143,6 +146,10 @@ export default function GroupView({ groupId, user, onBack, theme }: GroupViewPro
   const [inviteSuccess, setInviteSuccess] = useState(false);
 
   useEffect(() => {
+    if (user.uid.startsWith('demo-')) {
+      if (demoExpenses) setExpenses(demoExpenses);
+      return;
+    }
     const groupRef = doc(db, 'groups', groupId);
     const unsubscribeGroup = onSnapshot(groupRef, (doc) => {
       if (doc.exists()) {
@@ -218,6 +225,27 @@ export default function GroupView({ groupId, user, onBack, theme }: GroupViewPro
     if (!amount || !description) return;
 
     try {
+      if (user.uid.startsWith('demo-')) {
+        await new Promise(resolve => setTimeout(resolve, 600));
+        
+        if (onDemoExpenseAdd) {
+          onDemoExpenseAdd({
+            id: editingExpense?.id,
+            description: description.trim(),
+            amount: parseFloat(amount),
+            category,
+            paidBy: editingExpense ? editingExpense.paidBy : user.uid,
+            date: new Date(date),
+            isRecurring: false
+          });
+        }
+
+        setIsAddExpenseOpen(false);
+        setEditingExpense(null);
+        setAmount('');
+        setDescription('');
+        return;
+      }
       const expenseData = {
         amount: parseFloat(amount),
         description: description.trim(),
@@ -250,6 +278,12 @@ export default function GroupView({ groupId, user, onBack, theme }: GroupViewPro
 
   const handleDeleteExpense = async (id: string) => {
     try {
+      if (user.uid.startsWith('demo-')) {
+        await new Promise(resolve => setTimeout(resolve, 600));
+        setExpenses(prev => prev.filter(e => e.id !== id));
+        setExpenseToDelete(null);
+        return;
+      }
       await deleteDoc(doc(db, 'groups', groupId, 'expenses', id));
       setExpenseToDelete(null);
     } catch (error) {
@@ -259,6 +293,11 @@ export default function GroupView({ groupId, user, onBack, theme }: GroupViewPro
 
   const handleDeleteGroup = async () => {
     try {
+      if (user.uid.startsWith('demo-')) {
+        await new Promise(resolve => setTimeout(resolve, 600));
+        onBack();
+        return;
+      }
       await deleteDoc(doc(db, 'groups', groupId));
       onBack();
     } catch (error) {
@@ -271,6 +310,18 @@ export default function GroupView({ groupId, user, onBack, theme }: GroupViewPro
     if (!editName.trim()) return;
     
     try {
+      if (user.uid.startsWith('demo-')) {
+        await new Promise(resolve => setTimeout(resolve, 600));
+        setGroup(prev => prev ? {
+          ...prev,
+          name: editName.trim(),
+          description: editDescription.trim(),
+          maxBudget: editMaxBudget ? parseFloat(editMaxBudget) : undefined,
+          budgetType: editMaxBudget ? editBudgetType : 'total'
+        } : null);
+        setIsSettingsOpen(false);
+        return;
+      }
       const updateData: any = {
         name: editName.trim(),
         description: editDescription.trim(),
@@ -478,93 +529,92 @@ export default function GroupView({ groupId, user, onBack, theme }: GroupViewPro
         <span className="text-sm font-bold">Back to Dashboard</span>
       </button>
 
-      <div className="flex flex-col md:flex-row md:items-start justify-between gap-8 mb-12">
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-10 mb-14">
         <div className="flex-1">
-          <div className="flex items-center gap-3 mb-3">
-            <span className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider ${
-              group.type === 'household' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/20' :
-              group.type === 'trip' ? 'bg-orange-50 dark:bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-100 dark:border-orange-500/20' :
-              'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-500/20'
+          <div className="flex items-center gap-4 mb-6">
+            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-sm ${
+              group.type === 'household' ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-500/10' :
+              group.type === 'trip' ? 'bg-orange-50 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 border border-orange-100 dark:border-orange-500/10' :
+              'bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/10'
             }`}>
-              {group.type}
+              {group.type} Circle
             </span>
-            <div className="flex items-center gap-1.5 text-zinc-400 dark:text-zinc-500">
-              <Calendar className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold uppercase tracking-widest">{getPeriodLabel()}</span>
+            <div className="flex items-center gap-2 text-slate-400">
+              <Calendar className="w-4 h-4" />
+              <span className="text-[10px] font-black uppercase tracking-widest">{getPeriodLabel()}</span>
             </div>
           </div>
-          <h1 className="text-4xl font-bold tracking-tight text-zinc-900 dark:text-white mb-3 font-display">{group.name}</h1>
-          <p className="text-zinc-600 dark:text-zinc-300 max-w-2xl leading-relaxed font-medium">{group.description || 'No description provided.'}</p>
+          <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-slate-800 dark:text-white mb-6 font-display leading-none">{group.name}</h1>
+          <p className="text-slate-500 dark:text-slate-400 max-w-2xl leading-relaxed font-medium text-lg tracking-tight">{group.description || 'No description provided.'}</p>
         </div>
 
-        <div className="flex flex-wrap items-stretch gap-2 sm:gap-3 w-full md:w-auto">
+        <div className="flex flex-wrap items-stretch gap-3 w-full md:w-auto">
           {user.uid === group.createdBy && (
             <button 
               onClick={() => setIsSettingsOpen(true)}
-              className="w-12 sm:w-auto p-3 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-white transition-all shadow-sm flex items-center justify-center shrink-0"
+              className="w-14 h-14 border border-slate-100 dark:border-white/10 bg-white dark:bg-white/5 rounded-2xl text-slate-400 hover:text-slate-800 dark:hover:text-white transition-all shadow-sm flex items-center justify-center shrink-0"
               title="Group Settings"
             >
-              <MoreVertical className="w-5 h-5" />
+              <MoreVertical className="w-6 h-6" />
             </button>
           )}
           <button 
             onClick={() => setIsAddMemberOpen(true)}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-5 py-3 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl text-sm font-bold text-zinc-700 dark:text-zinc-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-200 dark:hover:border-indigo-800 hover:shadow-lg hover:shadow-indigo-500/10 transition-all active:scale-95"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-3 px-6 py-4 border border-slate-100 dark:border-white/10 bg-white dark:bg-white/5 rounded-2xl text-sm font-black text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/10"
           >
-            <UserPlus className="w-4 h-4" />
+            <UserPlus className="w-5 h-5" />
             Invite
           </button>
           <button 
             onClick={handleAnalyzeSpending}
             disabled={isAnalyzing}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 sm:px-5 py-3 bg-gradient-to-br from-indigo-600 to-violet-600 text-white rounded-2xl text-sm font-bold hover:from-indigo-700 hover:to-violet-700 hover:shadow-xl hover:shadow-indigo-500/40 transition-all disabled:opacity-50 shadow-lg shadow-indigo-500/20 active:scale-95"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-3 px-8 py-4 addictive-gradient text-white rounded-2xl text-sm font-black shadow-xl shadow-indigo-600/20 active:scale-95 transition-all disabled:opacity-50"
           >
-            {isAnalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            AI Insights
+            {isAnalyzing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+            AI Intelligence
           </button>
           <button 
             onClick={() => {
               setEditingExpense(null);
               setIsAddExpenseOpen(true);
             }}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-2xl text-sm font-bold text-zinc-900 dark:text-white hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:border-indigo-200 dark:hover:border-indigo-800 hover:shadow-lg hover:shadow-indigo-500/10 transition-all active:scale-95"
+            className="w-full sm:w-auto flex items-center justify-center gap-3 px-10 py-5 bg-slate-900 text-white rounded-3xl text-sm font-black hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xl"
           >
-            <Plus className="w-4 h-4" />
-            Add Expense
+            <Plus className="w-5 h-5" />
+            Post Entry
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-4 lg:gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-14">
         <button 
           onClick={() => setSelectedStatDetails({ title: 'Total Group Spend', amount: totalSpent })}
-          className="text-left w-full bg-white dark:bg-zinc-900 p-6 md:p-5 lg:p-8 rounded-[32px] border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-zinc-950/20 relative overflow-hidden group hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+          className="text-left w-full glass-card p-10 rounded-[3.5rem] border border-slate-100 dark:border-white/5 shadow-premium relative overflow-hidden group hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-zinc-100 dark:bg-white/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-slate-100 dark:bg-white/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
           <div className="relative">
-            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-4 font-display">Total Group Spend</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6 font-display">Aggregate Circle Burn</p>
             <p 
-              className="text-4xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-zinc-900 dark:text-white font-display tracking-tight truncate"
-              title={`$${formatCurrency(totalSpent)}`}
+              className="text-5xl font-black text-slate-800 dark:text-white font-display tracking-tighter truncate leading-none"
             >
-              ${formatCurrency(totalSpent)}
+              €{formatCurrency(totalSpent)}
             </p>
             {group.maxBudget && (
-              <div className="mt-6">
-                <div className="flex justify-between text-[10px] font-bold uppercase mb-2 font-display">
-                  <span className="text-zinc-500">Budget ({group.budgetType})</span>
-                  <span className={currentBudgetSpent > group.maxBudget ? 'text-red-600 dark:text-red-400' : 'text-indigo-600 dark:text-indigo-400'}>
+              <div className="mt-8">
+                <div className="flex justify-between text-[10px] font-black uppercase mb-3 font-display">
+                  <span className="text-slate-400">Efficiency Index ({group.budgetType})</span>
+                  <span className={currentBudgetSpent > group.maxBudget ? 'text-rose-500' : 'text-indigo-600 dark:text-indigo-400'}>
                     {((currentBudgetSpent / group.maxBudget) * 100).toFixed(0)}%
                   </span>
                 </div>
-                <div className="h-2 bg-zinc-100 dark:bg-white/10 rounded-full overflow-hidden">
+                <div className="h-3 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
                   <div 
-                    className={`h-full transition-all duration-700 ease-out ${currentBudgetSpent > group.maxBudget ? 'bg-red-500' : 'bg-indigo-500'}`}
+                    className={`h-full transition-all duration-1000 ease-out shadow-inner ${currentBudgetSpent > group.maxBudget ? 'bg-rose-500' : 'bg-indigo-500'}`}
                     style={{ width: `${Math.min(100, (currentBudgetSpent / group.maxBudget) * 100)}%` }}
                   />
                 </div>
-                <p className="text-[10px] text-zinc-500 mt-2 font-medium">
-                  ${formatCurrency(currentBudgetSpent)} of ${formatCurrency(group.maxBudget)}
+                <p className="text-[10px] text-slate-400 mt-3 font-black uppercase tracking-widest leading-none">
+                  €{formatCurrency(currentBudgetSpent)} / €{formatCurrency(group.maxBudget)}
                 </p>
               </div>
             )}
@@ -572,98 +622,107 @@ export default function GroupView({ groupId, user, onBack, theme }: GroupViewPro
         </button>
         <button 
           onClick={() => setSelectedStatDetails({ title: 'Your Share', amount: perPerson, subtitle: `${totalSpent > 0 ? ((userSpent / totalSpent) * 100).toFixed(0) : 0}% of total paid by you` })}
-          className="text-left w-full bg-white dark:bg-zinc-900 p-6 md:p-5 lg:p-8 rounded-[32px] border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-black/20 relative overflow-hidden group hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+          className="text-left w-full glass-card p-10 rounded-[3.5rem] border border-slate-100 dark:border-white/5 shadow-premium relative overflow-hidden group hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-zinc-100 dark:bg-white/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-slate-100 dark:bg-white/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
           <div className="relative">
-            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-4 font-display">Your Share</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6 font-display">Contribution Delta</p>
             <p 
-              className="text-4xl md:text-2xl lg:text-3xl xl:text-4xl font-bold text-zinc-900 dark:text-white font-display tracking-tight truncate"
-              title={`$${formatCurrency(perPerson)}`}
+              className="text-5xl font-black text-slate-800 dark:text-white font-display tracking-tighter truncate leading-none"
             >
-              ${formatCurrency(perPerson)}
+              €{formatCurrency(perPerson)}
             </p>
-            <p className="text-xs font-medium text-zinc-500 mt-4">
-              {totalSpent > 0 ? ((userSpent / totalSpent) * 100).toFixed(0) : 0}% of total paid by you
-            </p>
+            <div className="mt-8 flex items-center gap-3">
+               <div className="w-12 h-1.5 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
+                 <div className="h-full bg-indigo-500" style={{ width: `${totalSpent > 0 ? (userSpent / totalSpent) * 100 : 0}%` }} />
+               </div>
+               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                {totalSpent > 0 ? ((userSpent / totalSpent) * 100).toFixed(0) : 0}% Engagement
+              </p>
+            </div>
           </div>
         </button>
         <button 
           onClick={() => setSelectedStatDetails({ title: balance >= 0 ? 'You are owed' : 'You owe', amount: Math.abs(balance) })}
-          className="text-left w-full bg-white dark:bg-zinc-900 p-6 md:p-5 lg:p-8 rounded-[32px] border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-black/20 relative overflow-hidden group hover:scale-[1.02] active:scale-95 transition-all duration-300 cursor-pointer"
+          className={`text-left w-full p-10 rounded-[3.5rem] border shadow-premium relative overflow-hidden group hover:scale-[1.02] active:scale-95 transition-all duration-500 cursor-pointer ${
+            balance >= 0 ? 'bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' : 'bg-rose-50 border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20'
+          }`}
         >
-          <div className={`absolute top-0 right-0 w-32 h-32 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110 ${balance >= 0 ? 'bg-emerald-500/10' : 'bg-red-500/10'}`} />
+          <div className={`absolute top-0 right-0 w-40 h-40 rounded-full -mr-20 -mt-20 blur-3xl transition-transform group-hover:scale-110 ${balance >= 0 ? 'bg-emerald-400/20' : 'bg-rose-400/20'}`} />
           <div className="relative">
-            <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-4 text-zinc-500 font-display">
-              {balance >= 0 ? 'You are owed' : 'You owe'}
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-6 font-display text-slate-400">
+              {balance >= 0 ? 'Surplus Balance' : 'Circle Liability'}
             </p>
             <p 
-              className={`text-4xl md:text-2xl lg:text-3xl xl:text-4xl font-bold font-display tracking-tight truncate ${balance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}
-              title={`$${formatCurrency(Math.abs(balance))}`}
+              className={`text-5xl font-black font-display tracking-tighter truncate leading-none ${balance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'}`}
             >
-              ${formatCurrency(Math.abs(balance))}
+              €{formatCurrency(Math.abs(balance))}
             </p>
+            <div className="mt-8">
+               <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${balance >= 0 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
+                {balance >= 0 ? 'Credit Active' : 'Settlement Required'}
+               </span>
+            </div>
           </div>
         </button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 mb-14">
         {group.budgetType !== 'total' && (
-          <div className="bg-white dark:bg-zinc-900 p-4 sm:p-8 rounded-[40px] border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-black/20">
-            <h3 className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.15em] mb-8 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              Spending Trend ({group.budgetType})
+          <div className="glass-card p-10 rounded-[3.5rem] border border-slate-100 dark:border-white/5 shadow-premium">
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-10 flex items-center gap-3">
+              <TrendingUp className="w-5 h-5 text-indigo-500" />
+              Velocity Audit ({group.budgetType})
             </h3>
-            <div className="h-[280px] w-full">
+            <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-                <LineChart data={lineData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f4f4f5" opacity={0.1} />
+                <LineChart data={lineData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} strokeOpacity={0.05} />
                   <XAxis 
                     dataKey="name" 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{ fontSize: 10, fill: '#a1a1aa', fontWeight: 500 }}
+                    tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 800 }}
                     interval="preserveStart"
-                    minTickGap={10}
+                    minTickGap={15}
                   />
                   <YAxis 
                     axisLine={false} 
                     tickLine={false} 
-                    tick={{ fontSize: 10, fill: '#a1a1aa', fontWeight: 500 }}
-                    tickFormatter={(value) => `$${value}`}
+                    tick={{ fontSize: 10, fill: '#94a3b8', fontWeight: 800 }}
                   />
                   <Tooltip 
                     contentStyle={{ 
-                      borderRadius: '16px', 
+                      borderRadius: '24px', 
                       border: 'none', 
-                      boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', 
-                      padding: '12px', 
-                      backgroundColor: theme === 'dark' ? '#18181b' : '#ffffff', 
-                      color: theme === 'dark' ? '#ffffff' : '#18181b' 
+                      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.15)', 
+                      padding: '20px', 
+                      backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff', 
                     }}
-                    itemStyle={{ fontSize: '12px', fontWeight: 600, color: theme === 'dark' ? '#ffffff' : '#18181b' }}
-                    labelStyle={{ fontSize: '10px', color: '#71717a', marginBottom: '4px', textTransform: 'uppercase', fontWeight: 700 }}
-                    formatter={(value: number) => [`$${formatCurrency(value)}`, 'Spent']}
+                    cursor={{ stroke: '#6366f1', strokeWidth: 2 }}
+                    itemStyle={{ fontSize: '14px', fontWeight: 900, color: theme === 'dark' ? '#ffffff' : '#0f172a' }}
+                    labelStyle={{ fontSize: '10px', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 900, letterSpacing: '0.1em' }}
+                    formatter={(value: number) => [`€${formatCurrency(value)}`, 'Flow']}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="amount" 
-                    stroke="#4f46e5" 
-                    strokeWidth={4} 
+                    stroke="#6366f1" 
+                    strokeWidth={5} 
                     dot={{ r: 0 }}
-                    activeDot={{ r: 6, fill: '#4f46e5', strokeWidth: 3, stroke: '#fff' }}
+                    activeDot={{ r: 8, fill: '#6366f1', strokeWidth: 4, stroke: '#fff' }}
                   />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
         )}
-        <div className={`bg-white dark:bg-zinc-900 p-4 sm:p-8 rounded-[40px] border border-zinc-200 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-black/20 ${group.budgetType === 'total' ? 'lg:col-span-2' : ''}`}>
-          <h3 className="text-xs font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-[0.15em] mb-8 flex items-center gap-2">
-            <PieChartIcon className="w-4 h-4" />
-            Category Distribution
+        <div className={`glass-card p-10 rounded-[3.5rem] border border-slate-100 dark:border-white/5 shadow-premium ${group.budgetType === 'total' ? 'lg:col-span-2' : ''}`}>
+          <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-10 flex items-center gap-3">
+            <PieChartIcon className="w-5 h-5 text-indigo-500" />
+            Category Allocation
           </h3>
-          <div className="h-[280px] w-full">
+          <div className="h-[300px] w-full">
             {pieData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%" minWidth={0}>
                 <PieChart>
@@ -671,9 +730,9 @@ export default function GroupView({ groupId, user, onBack, theme }: GroupViewPro
                     data={pieData}
                     cx="50%"
                     cy="50%"
-                    innerRadius={60}
-                    outerRadius={85}
-                    paddingAngle={8}
+                    innerRadius={70}
+                    outerRadius={100}
+                    paddingAngle={10}
                     dataKey="value"
                   >
                     {pieData.map((entry, index) => (
@@ -681,29 +740,28 @@ export default function GroupView({ groupId, user, onBack, theme }: GroupViewPro
                     ))}
                   </Pie>
                   <Tooltip 
-                    formatter={(value: number) => [`$${formatCurrency(value)}`, 'Total']}
+                    formatter={(value: number) => [`€${formatCurrency(value)}`, 'Allocation']}
                     contentStyle={{ 
-                      borderRadius: '16px', 
+                      borderRadius: '24px', 
                       border: 'none', 
-                      boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)', 
-                      padding: '12px', 
-                      backgroundColor: theme === 'dark' ? '#18181b' : '#ffffff', 
-                      color: theme === 'dark' ? '#ffffff' : '#18181b' 
+                      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.15)', 
+                      padding: '20px', 
+                      backgroundColor: theme === 'dark' ? '#0f172a' : '#ffffff', 
                     }}
-                    itemStyle={{ color: theme === 'dark' ? '#ffffff' : '#18181b' }}
                   />
-                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 500, paddingTop: '20px' }} />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '10px', fontWeight: 700, paddingTop: '30px', textTransform: 'uppercase', letterSpacing: '0.05em' }} />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="h-full flex flex-col items-center justify-center text-zinc-500 dark:text-zinc-400 text-sm">
-                <PieChartIcon className="w-10 h-10 mb-2 opacity-20" />
-                <p className="font-medium italic">No expenses in this period</p>
+              <div className="h-full flex flex-col items-center justify-center text-slate-400 text-sm">
+                <PieChartIcon className="w-16 h-16 mb-4 opacity-10" />
+                <p className="font-black uppercase tracking-widest text-[10px]">No distribution data detected</p>
               </div>
             )}
           </div>
         </div>
       </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
         <div className="lg:col-span-2">

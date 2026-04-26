@@ -9,6 +9,7 @@ interface AddAssetModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
+  onDemoAdd?: (asset: any) => void;
 }
 
 const ASSET_TYPES: { type: AssetType; label: string; icon: any }[] = [
@@ -20,7 +21,7 @@ const ASSET_TYPES: { type: AssetType; label: string; icon: any }[] = [
   { type: 'other', label: 'Other Asset', icon: Plus },
 ];
 
-export default function AddAssetModal({ isOpen, onClose, userId }: AddAssetModalProps) {
+export default function AddAssetModal({ isOpen, onClose, userId, onDemoAdd }: AddAssetModalProps) {
   const [name, setName] = useState('');
   const [type, setType] = useState<AssetType>('savings');
   const [value, setValue] = useState('');
@@ -34,6 +35,29 @@ export default function AddAssetModal({ isOpen, onClose, userId }: AddAssetModal
 
     setIsSaving(true);
     try {
+      if (userId.startsWith('demo-')) {
+        // Simulate creation for demo user
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        if (onDemoAdd) {
+          onDemoAdd({
+            name,
+            type,
+            value: parseFloat(value),
+            institution: institution || 'Manual',
+            notes,
+          });
+        }
+
+        onClose();
+        setName('');
+        setType('savings');
+        setValue('');
+        setInstitution('');
+        setNotes('');
+        setIsSaving(false);
+        return;
+      }
       await addDoc(collection(db, 'users', userId, 'assets'), {
         name,
         type,

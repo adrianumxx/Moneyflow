@@ -11,9 +11,10 @@ interface CreateGroupModalProps {
   isOpen: boolean;
   onClose: () => void;
   user: User;
+  onDemoAdd?: (group: any) => void;
 }
 
-export default function CreateGroupModal({ isOpen, onClose, user }: CreateGroupModalProps) {
+export default function CreateGroupModal({ isOpen, onClose, user, onDemoAdd }: CreateGroupModalProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<GroupType>('household');
@@ -37,6 +38,28 @@ export default function CreateGroupModal({ isOpen, onClose, user }: CreateGroupM
 
     setIsSubmitting(true);
     try {
+      if (user.uid.startsWith('demo-')) {
+        // Simulate creation for demo user
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        if (onDemoAdd) {
+          onDemoAdd({
+            name: name.trim(),
+            description: description.trim(),
+            type,
+            createdBy: user.uid,
+            memberIds: [user.uid],
+            maxBudget: maxBudget ? parseFloat(maxBudget) : undefined,
+            budgetType: maxBudget ? budgetType : undefined,
+          });
+        }
+
+        onClose();
+        setName('');
+        setDescription('');
+        return;
+      }
+
       // 1. Create the group
       const groupData: any = {
         name: name.trim(),
@@ -71,6 +94,7 @@ export default function CreateGroupModal({ isOpen, onClose, user }: CreateGroupM
       setMaxBudget('');
       setBudgetType('monthly');
     } catch (error) {
+      console.error("Group creation error:", error);
       handleFirestoreError(error, OperationType.CREATE, 'groups');
     } finally {
       setIsSubmitting(false);

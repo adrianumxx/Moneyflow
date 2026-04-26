@@ -18,6 +18,10 @@ export interface UserProfile {
   createdAt: Timestamp;
   currency?: string; // e.g., 'EUR', 'USD'
   monthlyIncomeTarget?: number;
+  stripeCustomerId?: string;
+  subscriptionStatus?: string;
+  plan?: 'free' | 'premium';
+  updatedAt?: Timestamp;
 }
 
 export interface Transaction {
@@ -29,6 +33,7 @@ export interface Transaction {
   bankAccountId?: string;
   isRecurring: boolean;
   type: 'expense' | 'income';
+  createdAt: Timestamp;
 }
 
 export interface BankAccount {

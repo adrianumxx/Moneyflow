@@ -9,6 +9,7 @@ interface AddLiabilityModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
+  onDemoAdd?: (liability: any) => void;
 }
 
 const LIABILITY_TYPES: { type: LiabilityType; label: string; icon: any }[] = [
@@ -18,7 +19,7 @@ const LIABILITY_TYPES: { type: LiabilityType; label: string; icon: any }[] = [
   { type: 'other', icon: MinusCircle, label: 'Other Debt' },
 ];
 
-export default function AddLiabilityModal({ isOpen, onClose, userId }: AddLiabilityModalProps) {
+export default function AddLiabilityModal({ isOpen, onClose, userId, onDemoAdd }: AddLiabilityModalProps) {
   const [name, setName] = useState('');
   const [type, setType] = useState<LiabilityType>('mortgage');
   const [totalAmount, setTotalAmount] = useState('');
@@ -32,6 +33,29 @@ export default function AddLiabilityModal({ isOpen, onClose, userId }: AddLiabil
 
     setIsSaving(true);
     try {
+      if (userId.startsWith('demo-')) {
+        // Simulate creation for demo user
+        await new Promise(resolve => setTimeout(resolve, 800));
+        
+        if (onDemoAdd) {
+          onDemoAdd({
+            name,
+            type,
+            totalAmount: parseFloat(totalAmount || remainingAmount),
+            remainingAmount: parseFloat(remainingAmount),
+            monthlyPayment: parseFloat(monthlyPayment || '0'),
+          });
+        }
+
+        onClose();
+        setName('');
+        setType('mortgage');
+        setTotalAmount('');
+        setRemainingAmount('');
+        setMonthlyPayment('');
+        setIsSaving(false);
+        return;
+      }
       await addDoc(collection(db, 'users', userId, 'liabilities'), {
         name,
         type,

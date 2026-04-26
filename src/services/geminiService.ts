@@ -2,7 +2,9 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Asset, Liability, FinancialGoal, AIInsight, Income, TransactionCategory } from "../types";
 import { Timestamp } from "firebase/firestore";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+  const ai = new GoogleGenAI({ 
+    apiKey: process.env.GEMINI_API_KEY || (import.meta as any).env.VITE_GEMINI_API_KEY || "" 
+  });
 
 export async function generateFinancialInsights(
   assets: Asset[],
@@ -19,7 +21,9 @@ export async function generateFinancialInsights(
     - Liabilities: ${JSON.stringify(liabilities.map(l => ({ name: l.name, type: l.type, remaining: l.remainingAmount })))}
     - Goals: ${JSON.stringify(goals.map(g => ({ name: g.name, target: g.targetAmount, current: g.currentAmount })))}
     
-    Focus on diversification, debt reduction, and goal acceleration.
+    Focus on diversification, debt reduction, and real-time wealth optimization. 
+    Provide advice that sounds like a premium Swiss banker: precise, high-level, and highly valuable.
+    Each title should be catchy and professional.
   `;
 
   try {
