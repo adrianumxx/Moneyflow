@@ -1,9 +1,10 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Asset, Liability, FinancialGoal, AIInsight, Income, TransactionCategory } from "../types";
+import { getEnv } from "../utils/env";
 import { Timestamp } from "firebase/firestore";
 
   const ai = new GoogleGenAI({ 
-    apiKey: process.env.GEMINI_API_KEY || (import.meta as any).env.VITE_GEMINI_API_KEY || "" 
+    apiKey: getEnv('GEMINI_API_KEY') 
   });
 
 export async function generateFinancialInsights(

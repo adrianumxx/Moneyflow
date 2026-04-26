@@ -48,6 +48,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Group, UserProfile, Asset, Liability, FinancialGoal, AIInsight, Transaction, BankAccount, Expense } from './types';
+import { getEnv, isDev } from './utils/env';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -478,7 +479,7 @@ export default function App() {
   return (
     <div className="flex h-screen mesh-gradient font-sans selection:bg-indigo-100 selection:text-indigo-900 relative overflow-hidden transition-colors duration-300">
       {/* Debug Overlay */}
-      {process.env.NODE_ENV !== 'production' && (
+      {isDev() && (
         <div className="fixed bottom-4 right-4 z-[100] bg-black/80 text-white p-4 rounded-2xl text-[10px] font-mono max-w-xs pointer-events-none">
           <p className="font-bold mb-1 text-indigo-400">DEBUG INFO</p>
           <p>Groups: {groups.length}</p>

@@ -54,6 +54,7 @@ import {
 } from 'firebase/firestore';
 import { User } from 'firebase/auth';
 import { Group, Expense, GroupMember, CATEGORIES, BudgetType } from '../types';
+import { getEnv } from '../utils/env';
 import { formatCurrency } from '../utils/format';
 import { handleFirestoreError, OperationType } from '../utils/errorHandling';
 
@@ -468,7 +469,7 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
     analysisAbortController.current = abortController;
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const ai = new GoogleGenAI({ apiKey: getEnv('GEMINI_API_KEY') });
       
       const expenseSummary = expenses.map(e => ({
         amount: e.amount,
