@@ -44,7 +44,9 @@ import {
   Moon,
   MinusCircle,
   Activity,
-  Zap
+  Zap,
+  MessageSquare,
+  Bug
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Group, UserProfile, Asset, Liability, FinancialGoal, AIInsight, Transaction, BankAccount, Expense } from './types';
@@ -68,6 +70,7 @@ import TransactionsView from './components/TransactionsView';
 import AddGoalModal from './components/AddGoalModal';
 import CFOReportModal from './components/CFOReportModal';
 import SubscriptionSettings from './components/SubscriptionSettings';
+import FeedbackModal from './components/FeedbackModal';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -92,6 +95,7 @@ export default function App() {
   const [isConnectBankOpen, setIsConnectBankOpen] = useState(false);
   const [isSmartConnectOpen, setIsSmartConnectOpen] = useState(false);
   const [isAddTransactionModalOpen, setIsAddTransactionModalOpen] = useState(false);
+  const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [dataDeletedPopup, setDataDeletedPopup] = useState(false);
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
@@ -585,6 +589,13 @@ export default function App() {
               <Settings className="w-5 h-5" />
               <span className="font-bold">Settings</span>
             </button>
+            <button 
+              onClick={() => setIsFeedbackOpen(true)}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 dark:text-zinc-400 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all font-bold"
+            >
+              <MessageSquare className="w-5 h-5" />
+              Feedback
+            </button>
           </nav>
 
           <div className="pt-4 border-t border-zinc-100 dark:border-white/5 pb-6">
@@ -813,9 +824,18 @@ export default function App() {
               transition={{ duration: 0.3 }}
               className="p-10 max-w-7xl mx-auto"
             >
-              <div className="mb-10">
-                <h1 className="text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white mb-2">Account Settings</h1>
-                <p className="text-slate-500">Manage your profile, preferences, and premium subscription.</p>
+              <div className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                <div>
+                  <h1 className="text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white mb-2">Account Settings</h1>
+                  <p className="text-slate-500">Manage your profile, preferences, and premium subscription.</p>
+                </div>
+                <button
+                  onClick={() => setIsFeedbackOpen(true)}
+                  className="flex items-center gap-3 px-6 py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-zinc-200 dark:shadow-black/20"
+                >
+                  <MessageSquare className="w-5 h-5 text-indigo-500" />
+                  Suggest a Feature
+                </button>
               </div>
               <SubscriptionSettings 
                 userProfile={userProfile}
@@ -928,9 +948,13 @@ export default function App() {
         isOpen={isCFOReportOpen}
         onClose={() => setIsCFOReportOpen(false)}
         onSend={async (email) => {
-          // Complex report generation
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          // Complex report generation simulation
+          await new Promise(resolve => setTimeout(resolve, 2000));
           
+          const totalAssets = assets.reduce((sum, a) => sum + a.value, 0);
+          const totalLiabilities = liabilities.reduce((sum, l) => sum + l.remainingAmount, 0);
+          const netWorth = totalAssets - totalLiabilities;
+
           const doc = new jsPDF();
           
           // Header
@@ -950,12 +974,9 @@ export default function App() {
           
           doc.setFontSize(10);
           doc.setTextColor(71, 85, 105);
-          const totalAssets = assets.reduce((sum, a) => sum + a.value, 0);
-          const totalLiabilities = liabilities.reduce((sum, l) => sum + l.remainingAmount, 0);
-          const netWorth = totalAssets - totalLiabilities;
           
-          const summary = `Based on a comprehensive analysis of all recorded asset sectors and liability structures, your global net worth is established at €${netWorth.toLocaleString()}. The portfolio maintains a current liquidity ratio that allows for tactical maneuvers in high-volatility sectors.`;
-          doc.text(doc.splitTextToSize(summary, 180), 14, 60);
+          const summaryText = `Based on a comprehensive analysis of all recorded asset sectors and liability structures, your global net worth is established at €${netWorth.toLocaleString()}. The portfolio maintains a current liquidity ratio that allows for tactical maneuvers in high-volatility sectors.`;
+          doc.text(doc.splitTextToSize(summaryText, 180), 14, 60);
           
           // Asset Breakdown
           doc.setFontSize(14);
@@ -1002,9 +1023,27 @@ export default function App() {
           doc.text(doc.splitTextToSize(advice, 180), 14, adviceStartY + 10);
           
           const blob = doc.output('blob');
-          const url = URL.createObjectURL(blob);
           
-          console.log(`Professional CFO report generated and ready for ${email}`);
+          // Sending email notification with PDF attachment via FormSubmit
+          const formData = new FormData();
+          formData.append('_subject', "Moneyflow CFO: Your Strategic Audit Report");
+          formData.append('email', email);
+          formData.append('net_worth', `€${netWorth.toLocaleString()}`);
+          formData.append('report_file', blob, 'moneyflow_cfo_audit.pdf');
+          formData.append('_captcha', "false");
+          formData.append('message', `Hello, your strategic CFO report is attached. Patrimonio Netto: €${netWorth.toLocaleString()}. Assets: €${totalAssets.toLocaleString()}. Liabilities: €${totalLiabilities.toLocaleString()}.`);
+
+          try {
+            await fetch("https://formsubmit.co/ajax/adrianomelilloXX@gmail.com", {
+              method: "POST",
+              body: formData
+            });
+          } catch (e) {
+            console.error("Email report notification failed", e);
+          }
+
+          const url = URL.createObjectURL(blob);
+          console.log(`Professional CFO report generated and sent to ${email}`);
           return url;
         }}
       />
@@ -1051,6 +1090,12 @@ export default function App() {
         userId={user.uid}
         onDemoAdd={(tx) => handleDemoUpdate('transactions', tx)}
         initialTransaction={editingTransaction}
+      />
+
+      <FeedbackModal 
+        isOpen={isFeedbackOpen} 
+        onClose={() => setIsFeedbackOpen(false)} 
+        userEmail={user.email || undefined} 
       />
 
       {/* Welcome Popup */}
