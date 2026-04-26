@@ -2,40 +2,17 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import dotenv from 'dotenv';
-
-// Import our standalone handlers
-import webhookHandler from './api/webhook';
-import checkoutHandler from './api/create-checkout-session';
-import portalHandler from './api/create-portal-session';
-
-dotenv.config();
+import app from './api/index.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 async function startServer() {
-  const app = express();
   const PORT = 3000;
 
-  // Use the handlers for local development
-  // We need to handle the Vercel-style raw body for the webhook locally too
-  app.post('/api/webhook', async (req, res) => {
-    // Vercel handlers look like (req, res) => void
-    // We can cast them or wrap them
-    return webhookHandler(req as any, res as any);
-  });
-
-  app.use(express.json());
-
-  app.post('/api/create-checkout-session', (req, res) => {
-    return checkoutHandler(req as any, res as any);
-  });
-
-  app.post('/api/create-portal-session', (req, res) => {
-    return portalHandler(req as any, res as any);
-  });
-
+  // app is already the express instance from api/index.ts
+  // but in api/index.ts we didn't include the Vite middleware because that's for local dev mostly
+  
   // Vite middleware for development
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
@@ -44,6 +21,7 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
+    // Production serving of static files (Internal/Cloud Run only, Vercel handles this via vercel.json)
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
     app.get('*', (req, res) => {
