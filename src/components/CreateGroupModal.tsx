@@ -12,15 +12,30 @@ interface CreateGroupModalProps {
   onClose: () => void;
   user: User;
   onDemoAdd?: (group: any) => void;
+  onSuccess?: (groupId: string) => void;
 }
 
-export default function CreateGroupModal({ isOpen, onClose, user, onDemoAdd }: CreateGroupModalProps) {
+export default function CreateGroupModal({ isOpen, onClose, user, onDemoAdd, onSuccess }: CreateGroupModalProps) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState<GroupType>('household');
   const [maxBudget, setMaxBudget] = useState('');
   const [budgetType, setBudgetType] = useState<BudgetType>('monthly');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [members, setMembers] = useState<{ email: string; name: string }[]>([]);
+  const [newMemberName, setNewMemberName] = useState('');
+  const [newMemberEmail, setNewMemberEmail] = useState('');
+
+  const addMember = () => {
+    if (!newMemberName.trim()) return;
+    setMembers([...members, { name: newMemberName.trim(), email: newMemberEmail.trim() }]);
+    setNewMemberName('');
+    setNewMemberEmail('');
+  };
+
+  const removeMember = (index: number) => {
+    setMembers(members.filter((_, i) => i !== index));
+  };
 
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -43,20 +58,28 @@ export default function CreateGroupModal({ isOpen, onClose, user, onDemoAdd }: C
         await new Promise(resolve => setTimeout(resolve, 800));
         
         if (onDemoAdd) {
+          const demoId = `demo-${Date.now()}`;
           onDemoAdd({
+            id: demoId,
             name: name.trim(),
             description: description.trim(),
             type,
             createdBy: user.uid,
-            memberIds: [user.uid],
+            memberIds: [user.uid, ...members.map((_, i) => `member-${i}`)],
             maxBudget: maxBudget ? parseFloat(maxBudget) : undefined,
             budgetType: maxBudget ? budgetType : undefined,
+            members: [
+              { uid: user.uid, displayName: user.displayName || 'You', role: 'admin' },
+              ...members.map((m, i) => ({ uid: `member-${i}`, displayName: m.name, email: m.email, role: 'member' }))
+            ]
           });
+          if (onSuccess) onSuccess(demoId);
         }
 
         onClose();
         setName('');
         setDescription('');
+        setMembers([]);
         return;
       }
 
@@ -67,7 +90,7 @@ export default function CreateGroupModal({ isOpen, onClose, user, onDemoAdd }: C
         type,
         createdBy: user.uid,
         createdAt: serverTimestamp(),
-        memberIds: [user.uid],
+        memberIds: [user.uid], // We will add others if they have accounts, or just mock for now
       };
 
       if (maxBudget && !isNaN(parseFloat(maxBudget))) {
@@ -83,16 +106,30 @@ export default function CreateGroupModal({ isOpen, onClose, user, onDemoAdd }: C
         uid: user.uid,
         role: 'admin',
         joinedAt: serverTimestamp(),
-        displayName: user.displayName,
+        displayName: user.displayName || 'You',
         email: user.email,
       });
 
+      // 3. Add other members
+      for (const m of members) {
+        const mId = `manual-${Math.random().toString(36).substr(2, 9)}`;
+        await setDoc(doc(db, 'groups', groupRef.id, 'members', mId), {
+          uid: mId,
+          role: 'member',
+          joinedAt: serverTimestamp(),
+          displayName: m.name,
+          email: m.email || null,
+        });
+      }
+
+      if (onSuccess) onSuccess(groupRef.id);
       onClose();
       setName('');
       setDescription('');
       setType('household');
       setMaxBudget('');
       setBudgetType('monthly');
+      setMembers([]);
     } catch (error) {
       console.error("Group creation error:", error);
       handleFirestoreError(error, OperationType.CREATE, 'groups');
@@ -148,6 +185,40 @@ export default function CreateGroupModal({ isOpen, onClose, user, onDemoAdd }: C
                     required
                     autoFocus
                   />
+                </div>
+
+                <div className="pt-4">
+                  <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-3 font-display">Add Members</label>
+                  <div className="flex gap-2 mb-4">
+                    <input
+                      type="text"
+                      value={newMemberName}
+                      onChange={(e) => setNewMemberName(e.target.value)}
+                      placeholder="Name"
+                      className="flex-1 px-4 py-3 bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:outline-none focus:border-indigo-500 text-sm"
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addMember())}
+                    />
+                    <button
+                      type="button"
+                      onClick={addMember}
+                      className="px-4 py-2 bg-zinc-900 dark:bg-zinc-800 text-white rounded-xl font-bold text-xs"
+                    >
+                      Add
+                    </button>
+                  </div>
+                  
+                  {members.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {members.map((m, i) => (
+                        <div key={i} className="flex items-center gap-2 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 rounded-lg text-xs font-bold border border-indigo-100 dark:border-indigo-500/20">
+                          <span>{m.name}</span>
+                          <button onClick={() => removeMember(i)} className="p-0.5 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 rounded-md">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div>

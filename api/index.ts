@@ -9,7 +9,7 @@ dotenv.config();
 if (!admin.apps.length) {
   try {
     admin.initializeApp({
-      projectId: process.env.VITE_FIREBASE_PROJECT_ID || 'remixed-project-id'
+      projectId: process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || 'remixed-project-id'
     });
   } catch (e) {
     console.error('Firebase Admin initialization failed:', e);
@@ -17,7 +17,8 @@ if (!admin.apps.length) {
 }
 
 const db = admin.firestore();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+const stripeKey = process.env.STRIPE_SECRET_KEY || process.env.VITE_STRIPE_SECRET_KEY || '';
+const stripe = new Stripe(stripeKey, {
   apiVersion: '2025-02-11-preview' as any,
 });
 
@@ -91,7 +92,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
       customer_email: userEmail,
       line_items: [
         {
-          price: process.env.VITE_STRIPE_PRICE_ID_MONTHLY,
+          price: process.env.VITE_STRIPE_PRICE_ID_MONTHLY || process.env.STRIPE_PRICE_ID_MONTHLY || '',
           quantity: 1,
         },
       ],

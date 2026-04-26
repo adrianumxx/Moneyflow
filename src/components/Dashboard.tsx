@@ -137,16 +137,29 @@ export default function Dashboard({
         setEditingExpense(null);
         return;
       }
-      const expenseRef = doc(db, 'groups', editingExpense.groupId, 'expenses', editingExpense.id);
-      await updateDoc(expenseRef, {
-        amount: parseFloat(editAmount),
-        description: editDescription,
-        category: editCategory,
-        date: Timestamp.fromDate(new Date(editDate)),
-      });
+
+      if (editingExpense.groupId) {
+        // Group Expense
+        const expenseRef = doc(db, 'groups', editingExpense.groupId, 'expenses', editingExpense.id);
+        await updateDoc(expenseRef, {
+          amount: parseFloat(editAmount),
+          description: editDescription,
+          category: editCategory,
+          date: Timestamp.fromDate(new Date(editDate)),
+        });
+      } else {
+        // Personal Transaction
+        const txRef = doc(db, 'users', user.uid, 'transactions', editingExpense.id);
+        await updateDoc(txRef, {
+          amount: parseFloat(editAmount),
+          description: editDescription,
+          category: editCategory,
+          date: Timestamp.fromDate(new Date(editDate)),
+        });
+      }
       setEditingExpense(null);
     } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `groups/${editingExpense.groupId}/expenses/${editingExpense.id}`);
+      handleFirestoreError(error, OperationType.UPDATE, editingExpense.groupId ? `groups/${editingExpense.groupId}/expenses/${editingExpense.id}` : `users/${user.uid}/transactions/${editingExpense.id}`);
     } finally {
       setIsSaving(false);
     }
@@ -163,11 +176,19 @@ export default function Dashboard({
         setExpenseToDelete(null);
         return;
       }
-      const expenseRef = doc(db, 'groups', expenseToDelete.groupId, 'expenses', expenseToDelete.id);
-      await deleteDoc(expenseRef);
+
+      if (expenseToDelete.groupId) {
+        // Group Expense
+        const expenseRef = doc(db, 'groups', expenseToDelete.groupId, 'expenses', expenseToDelete.id);
+        await deleteDoc(expenseRef);
+      } else {
+        // Personal Transaction
+        const txRef = doc(db, 'users', user.uid, 'transactions', expenseToDelete.id);
+        await deleteDoc(txRef);
+      }
       setExpenseToDelete(null);
     } catch (error) {
-      handleFirestoreError(error, OperationType.DELETE, `groups/${expenseToDelete.groupId}/expenses/${expenseToDelete.id}`);
+      handleFirestoreError(error, OperationType.DELETE, expenseToDelete.groupId ? `groups/${expenseToDelete.groupId}/expenses/${expenseToDelete.id}` : `users/${user.uid}/transactions/${expenseToDelete.id}`);
     } finally {
       setIsDeleting(false);
     }
@@ -196,7 +217,7 @@ export default function Dashboard({
   };
 
   useEffect(() => {
-    const combineExpenses = () => {
+    if (user.uid.startsWith('demo-')) {
       let combined: DashboardExpense[] = [];
       
       // Global transactions
@@ -213,7 +234,7 @@ export default function Dashboard({
       });
 
       // Group expenses
-      if (user.uid.startsWith('demo-') && demoGroupExpenses) {
+      if (demoGroupExpenses) {
         Object.entries(demoGroupExpenses).forEach(([groupId, expenses]) => {
           expenses.forEach(exp => {
             combined.push({ ...exp, groupId, type: 'expense' });
@@ -228,32 +249,26 @@ export default function Dashboard({
       const newAlerts: Alert[] = [];
       groups.forEach(g => {
         if (!g.maxBudget) return;
-        const gExpenses = (user.uid.startsWith('demo-') ? (demoGroupExpenses?.[g.id] || []) : []); // Note: real mode handled separately below
+        const gExpenses = demoGroupExpenses?.[g.id] || [];
         
-        if (user.uid.startsWith('demo-')) {
-          const totalSpent = gExpenses.filter(e => 
-            isDateInCurrentPeriod(e.date.toDate(), g.budgetType || 'total')
-          ).reduce((sum, e) => sum + e.amount, 0);
-          
-          if (totalSpent > g.maxBudget) {
-            newAlerts.push({
-              id: `demo-over-${g.id}`,
-              message: `Group "${g.name}" is over its ${g.budgetType} budget`,
-              type: 'warning',
-              groupId: g.id
-            });
-          }
+        const totalSpent = gExpenses.filter(e => 
+          isDateInCurrentPeriod(e.date.toDate(), g.budgetType || 'total')
+        ).reduce((sum, e) => sum + e.amount, 0);
+        
+        if (totalSpent > g.maxBudget) {
+          newAlerts.push({
+            id: `demo-over-${g.id}`,
+            message: `Circle "${g.name}" is over its ${g.budgetType} budget`,
+            type: 'warning',
+            groupId: g.id
+          });
         }
       });
-      if (user.uid.startsWith('demo-')) setAlerts(newAlerts);
-    };
-
-    if (user.uid.startsWith('demo-')) {
-      combineExpenses();
+      setAlerts(newAlerts);
       return;
     }
 
-    if (groups.length === 0) {
+    if (groups.length === 0 && transactions.length === 0) {
       setRecentExpenses([]);
       setAlerts([]);
       return;
@@ -261,10 +276,60 @@ export default function Dashboard({
 
     const expensesMap = new Map<string, DashboardExpense[]>();
     
+    // Initial combination with transactions
+    const updateCombined = () => {
+      let combined: DashboardExpense[] = [];
+      
+      // Global transactions from props
+      transactions.forEach(tx => {
+        combined.push({
+          id: tx.id,
+          description: tx.description,
+          amount: tx.amount,
+          category: tx.category,
+          date: tx.date,
+          paidBy: user.uid,
+          type: tx.type
+        });
+      });
+
+      // Group expenses from map
+      Array.from(expensesMap.values()).flat().forEach(exp => {
+        combined.push({ ...exp, type: exp.type || 'expense' });
+      });
+
+      combined.sort((a, b) => b.date.toMillis() - a.date.toMillis());
+      setRecentExpenses(combined.slice(0, 12));
+
+      // Generate alerts
+      const newAlerts: Alert[] = [];
+      groups.forEach(g => {
+        if (!g.maxBudget) return;
+        const gExpenses = expensesMap.get(g.id) || [];
+        const totalSpent = gExpenses
+          .filter(e => isDateInCurrentPeriod(e.date.toDate(), g.budgetType || 'total'))
+          .reduce((sum, e) => sum + e.amount, 0);
+        
+        if (totalSpent > g.maxBudget) {
+          newAlerts.push({
+            id: `over-budget-${g.id}`,
+            message: `Circle "${g.name}" limit exceeded (€${totalSpent.toFixed(0)}/€${g.maxBudget})`,
+            type: 'warning',
+            groupId: g.id
+          });
+        }
+      });
+      setAlerts(newAlerts);
+    };
+
+    // Update initially with just transactions
+    updateCombined();
+
     const unsubscribes = groups.map(group => {
       const expensesQuery = query(
         collection(db, 'groups', group.id, 'expenses'),
-        orderBy('date', 'desc')
+        orderBy('date', 'desc'),
+        limit(20)
       );
 
       return onSnapshot(expensesQuery, (snapshot) => {
@@ -275,54 +340,16 @@ export default function Dashboard({
         } as DashboardExpense));
         
         expensesMap.set(group.id, fetchedExpenses);
-        
-        // Combine all expenses from all groups
-        const allExpenses = Array.from(expensesMap.values()).flat();
-        
-        // Sort by date descending
-        allExpenses.sort((a, b) => b.date.toMillis() - a.date.toMillis());
-        
-        // Take top 10
-        setRecentExpenses(allExpenses.slice(0, 10));
-        
-        // Generate alerts based on budgets
-        const newAlerts: Alert[] = [];
-        
-        groups.forEach(g => {
-          if (!g.maxBudget) return;
-          
-          const gExpenses = expensesMap.get(g.id) || [];
-          const currentPeriodExpenses = gExpenses.filter(e => 
-            isDateInCurrentPeriod(e.date.toDate(), g.budgetType || 'total')
-          );
-          
-          const totalSpent = currentPeriodExpenses.reduce((sum, e) => sum + e.amount, 0);
-          
-          if (totalSpent > g.maxBudget) {
-            newAlerts.push({
-              id: `over-budget-${g.id}`,
-              message: `Group "${g.name}" is over its ${g.budgetType || 'total'} budget ($${totalSpent.toFixed(2)} / $${g.maxBudget.toFixed(2)})`,
-              type: 'warning' as const,
-              groupId: g.id
-            });
-          }
-        });
-        
-        setAlerts(newAlerts);
-        
+        updateCombined();
       }, (error) => {
-        if (error.message.includes('Missing or insufficient permissions')) {
-          // This is expected if the group was just deleted and the listener hasn't been detached yet
-          return;
+        if (!error.message.includes('Missing or insufficient permissions')) {
+          console.error(`Snapshot error for group ${group.id}:`, error);
         }
-        console.error("Error fetching expenses for group", group.id, error);
       });
     });
 
-    return () => {
-      unsubscribes.forEach(unsub => unsub());
-    };
-  }, [groups, user.uid]);
+    return () => unsubscribes.forEach(unsub => unsub());
+  }, [groups, transactions, user.uid]);
 
   return (
     <div className="max-w-6xl mx-auto">
@@ -565,7 +592,13 @@ export default function Dashboard({
                 ))
               )}
               
-              <div className="p-10 bg-slate-900 border border-white/10 rounded-[3rem] text-white overflow-hidden relative group cursor-pointer hover:scale-[1.02] transition-all">
+              <div 
+                onClick={() => {
+                  const householdGroup = groups.find(g => g.name.toLowerCase().includes('household')) || groups[0];
+                  if (householdGroup) onSelectGroup(householdGroup.id);
+                }}
+                className="p-10 bg-slate-900 border border-white/10 rounded-[3rem] text-white overflow-hidden relative group cursor-pointer hover:scale-[1.02] transition-all"
+              >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 blur-3xl" />
                 <div className="flex items-center gap-4 mb-6">
                   <div className="p-3 bg-white/10 rounded-xl">

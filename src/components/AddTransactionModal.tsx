@@ -5,6 +5,7 @@ import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp, Timestamp, doc, setDoc } from 'firebase/firestore';
 import { Transaction, TransactionCategory } from '../types';
 import { categorizeTransaction } from '../services/geminiService';
+import { handleFirestoreError, OperationType } from '../utils/errorHandling';
 
 interface AddTransactionModalProps {
   isOpen: boolean;
@@ -110,6 +111,7 @@ export default function AddTransactionModal({ isOpen, onClose, userId, onDemoAdd
       onClose();
     } catch (error) {
       console.error("Error adding transaction:", error);
+      handleFirestoreError(error, initialTransaction?.id ? OperationType.UPDATE : OperationType.CREATE, `users/${userId}/transactions`);
     } finally {
       setIsSaving(false);
     }

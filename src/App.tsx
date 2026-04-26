@@ -48,6 +48,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Group, UserProfile, Asset, Liability, FinancialGoal, AIInsight, Transaction, BankAccount, Expense } from './types';
+import { handleFirestoreError, OperationType } from './utils/errorHandling';
 import { getEnv, isDev } from './utils/env';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -133,44 +134,44 @@ export default function App() {
           if (snap.exists()) {
             setUserProfile({ uid: snap.id, ...snap.data() } as UserProfile);
           }
-        });
+        }, (err) => handleFirestoreError(err, OperationType.GET, `users/${currentUser.uid}`));
 
         // Only fetch from Firestore if it's a real user (not demo)
         // Fetch Assets
         const assetsQuery = query(collection(db, 'users', currentUser.uid, 'assets'));
         onSnapshot(assetsQuery, (snap) => {
           setAssets(snap.docs.map(d => ({ id: d.id, ...d.data() } as Asset)));
-        });
+        }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/assets`));
 
         // Fetch Liabilities
         const liabilitiesQuery = query(collection(db, 'users', currentUser.uid, 'liabilities'));
         onSnapshot(liabilitiesQuery, (snap) => {
           setLiabilities(snap.docs.map(d => ({ id: d.id, ...d.data() } as Liability)));
-        });
+        }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/liabilities`));
 
         // Fetch Goals
         const goalsQuery = query(collection(db, 'users', currentUser.uid, 'goals'));
         onSnapshot(goalsQuery, (snap) => {
           setGoals(snap.docs.map(d => ({ id: d.id, ...d.data() } as FinancialGoal)));
-        });
+        }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/goals`));
 
         // Fetch Insights
         const insightsQuery = query(collection(db, 'users', currentUser.uid, 'insights'), orderBy('createdAt', 'desc'), limit(5));
         onSnapshot(insightsQuery, (snap) => {
           setInsights(snap.docs.map(d => ({ id: d.id, ...d.data() } as AIInsight)));
-        });
+        }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/insights`));
 
         // Fetch Transactions
         const txsQuery = query(collection(db, 'users', currentUser.uid, 'transactions'), orderBy('date', 'desc'), limit(20));
         onSnapshot(txsQuery, (snap) => {
           setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() } as Transaction)));
-        });
+        }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/transactions`));
 
         // Fetch Bank Accounts
         const banksQuery = query(collection(db, 'users', currentUser.uid, 'bankAccounts'));
         onSnapshot(banksQuery, (snap) => {
           setBankAccounts(snap.docs.map(d => ({ id: d.id, ...d.data() } as BankAccount)));
-        });
+        }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/bankAccounts`));
 
         // Check if user has seen welcome popup
         const hasSeenWelcome = localStorage.getItem(`hasSeenWelcome_${currentUser.uid}`);
@@ -731,6 +732,7 @@ export default function App() {
                 theme={theme}
                 demoExpenses={groupExpenses[selectedGroupId] || []}
                 onDemoExpenseAdd={(exp) => handleDemoUpdate('groupExpense', exp, selectedGroupId)}
+                allGroups={groups}
               />
             </motion.div>
           ) : activeTab === 'forecast' ? (
@@ -847,21 +849,27 @@ export default function App() {
                     handleDemoUpdate('transactions', tx);
                   }
                 }}
-                onDeleteTransaction={(id) => {
-                  // Check if it's a group expense or a global transaction
-                  const isGlobal = transactions.some(t => t.id === id);
-                  if (isGlobal) {
-                    handleDemoDelete('transactions', id);
+                onDeleteTransaction={async (id) => {
+                  if (user.uid.startsWith('demo-')) {
+                    // Check if it's a group expense or a global transaction
+                    const isGlobal = transactions.some(t => t.id === id);
+                    if (isGlobal) {
+                      handleDemoDelete('transactions', id);
+                    } else {
+                      // It must be a group expense
+                      Object.keys(groupExpenses).forEach(gid => {
+                        if (groupExpenses[gid].some(e => e.id === id)) {
+                          setGroupExpenses(prev => ({
+                            ...prev,
+                            [gid]: prev[gid].filter(e => e.id !== id)
+                          }));
+                        }
+                      });
+                    }
                   } else {
-                    // It must be a group expense
-                    Object.keys(groupExpenses).forEach(gid => {
-                      if (groupExpenses[gid].some(e => e.id === id)) {
-                        setGroupExpenses(prev => ({
-                          ...prev,
-                          [gid]: prev[gid].filter(e => e.id !== id)
-                        }));
-                      }
-                    });
+                    // The actual Firestore logic is now in Dashboard.tsx handleUpdate/DeleteExpense
+                    // But we keep this here as a fallback or if we want to centralize it.
+                    // For now Dashboard handles its own deletions for real users.
                   }
                 }}
                 theme={theme}
@@ -913,6 +921,7 @@ export default function App() {
         onClose={() => setIsCreateModalOpen(false)} 
         user={user}
         onDemoAdd={(group) => handleDemoUpdate('groups', group)}
+        onSuccess={(groupId) => setSelectedGroupId(groupId)}
       />
 
       <CFOReportModal 

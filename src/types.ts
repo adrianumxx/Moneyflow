@@ -120,6 +120,11 @@ export interface GroupMember {
   email?: string;
 }
 
+export interface SplitDetail {
+  userId: string;
+  amount: number;
+}
+
 export interface Expense {
   id: string;
   amount: number;
@@ -129,6 +134,7 @@ export interface Expense {
   date: Timestamp;
   createdAt: Timestamp;
   splitType: SplitType;
+  splits?: SplitDetail[];
 }
 
 export const CATEGORIES = [

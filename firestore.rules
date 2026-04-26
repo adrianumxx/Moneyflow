@@ -147,6 +147,36 @@ service cloud.firestore {
       allow create: if isOwner(userId) && isValidUser(request.resource.data);
       allow update: if isOwner(userId) && isValidUser(request.resource.data) &&
                     request.resource.data.uid == resource.data.uid;
+
+      // Transactions subcollection
+      match /transactions/{txId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Assets subcollection
+      match /assets/{assetId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Liabilities subcollection
+      match /liabilities/{liabilityId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Goals subcollection
+      match /goals/{goalId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Insights subcollection
+      match /insights/{insightId} {
+        allow read, write: if isOwner(userId);
+      }
+
+      // Bank Accounts subcollection
+      match /bankAccounts/{bankId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
     // Groups collection

@@ -53,7 +53,7 @@ import {
   arrayUnion
 } from 'firebase/firestore';
 import { User } from 'firebase/auth';
-import { Group, Expense, GroupMember, CATEGORIES, BudgetType } from '../types';
+import { Group, Expense, GroupMember, CATEGORIES, BudgetType, SplitType, SplitDetail } from '../types';
 import { getEnv } from '../utils/env';
 import { formatCurrency } from '../utils/format';
 import { handleFirestoreError, OperationType } from '../utils/errorHandling';
@@ -65,9 +65,10 @@ interface GroupViewProps {
   theme: 'light' | 'dark';
   demoExpenses?: Expense[];
   onDemoExpenseAdd?: (expense: any) => void;
+  allGroups?: Group[];
 }
 
-export default function GroupView({ groupId, user, onBack, theme, demoExpenses, onDemoExpenseAdd }: GroupViewProps) {
+export default function GroupView({ groupId, user, onBack, theme, demoExpenses, onDemoExpenseAdd, allGroups }: GroupViewProps) {
   const [group, setGroup] = useState<Group | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [members, setMembers] = useState<GroupMember[]>([]);
@@ -75,6 +76,8 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form states
   const [amount, setAmount] = useState('');
@@ -82,6 +85,9 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
   const [category, setCategory] = useState(CATEGORIES[0]);
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [newMemberEmail, setNewMemberEmail] = useState('');
+  const [newMemberName, setNewMemberName] = useState('');
+  const [splitType, setSplitType] = useState<SplitType>('equal');
+  const [splits, setSplits] = useState<SplitDetail[]>([]);
   
   // Settings states
   const [editName, setEditName] = useState('');
@@ -149,6 +155,16 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
   useEffect(() => {
     if (user.uid.startsWith('demo-')) {
       if (demoExpenses) setExpenses(demoExpenses);
+      if (allGroups) {
+        const found = allGroups.find(g => g.id === groupId);
+        if (found) {
+          setGroup(found);
+          setEditName(found.name);
+          setEditDescription(found.description || '');
+          setEditMaxBudget(found.maxBudget?.toString() || '');
+          setEditBudgetType(found.budgetType || 'monthly');
+        }
+      }
       return;
     }
     const groupRef = doc(db, 'groups', groupId);
@@ -195,12 +211,16 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
       setDescription(editingExpense.description);
       setCategory(editingExpense.category);
       setDate(editingExpense.date.toDate().toISOString().split('T')[0]);
+      setSplitType(editingExpense.splitType || 'equal');
+      setSplits(editingExpense.splits || []);
       setIsAddExpenseOpen(true);
     } else {
       setAmount('');
       setDescription('');
       setCategory(CATEGORIES[0]);
       setDate(new Date().toISOString().split('T')[0]);
+      setSplitType('equal');
+      setSplits([]);
     }
   }, [editingExpense]);
 
@@ -223,8 +243,9 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
 
   const handleAddExpense = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || !description) return;
+    if (!amount || !description || isSaving) return;
 
+    setIsSaving(true);
     try {
       if (user.uid.startsWith('demo-')) {
         await new Promise(resolve => setTimeout(resolve, 600));
@@ -237,7 +258,9 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
             category,
             paidBy: editingExpense ? editingExpense.paidBy : user.uid,
             date: new Date(date),
-            isRecurring: false
+            isRecurring: false,
+            splitType: splitType,
+            splits: splitType === 'equal' ? [] : splits
           });
         }
 
@@ -254,7 +277,8 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
         paidBy: editingExpense ? editingExpense.paidBy : user.uid,
         date: Timestamp.fromDate(new Date(date)),
         createdAt: editingExpense ? editingExpense.createdAt : serverTimestamp(),
-        splitType: 'equal' as const
+        splitType: splitType,
+        splits: splitType === 'equal' ? [] : splits
       };
 
       if (editingExpense) {
@@ -268,16 +292,59 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
       setAmount('');
       setDescription('');
     } catch (error) {
+      console.error("Expense operation failed:", error);
       handleFirestoreError(error, editingExpense ? OperationType.UPDATE : OperationType.CREATE, `groups/${groupId}/expenses`);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    setInviteError('This feature has been disabled for this demo. Click the Remix button to create your own version of the app and enable sharing.');
+    if (!newMemberName.trim()) return;
+
+    setInviteLoading(true);
+    setInviteError(null);
+    try {
+      if (user.uid.startsWith('demo-')) {
+        await new Promise(resolve => setTimeout(resolve, 800));
+        const newId = `manual-${Math.random().toString(36).substr(2, 9)}`;
+        const m = { uid: newId, displayName: newMemberName.trim(), email: newMemberEmail, role: 'member' as const, joinedAt: Timestamp.now() };
+        setMembers(prev => [...prev, m]);
+        setInviteSuccess(true);
+        setNewMemberName('');
+        setNewMemberEmail('');
+        setTimeout(() => setInviteSuccess(false), 3000);
+        return;
+      }
+
+      const mId = `manual-${Math.random().toString(36).substr(2, 9)}`;
+      await setDoc(doc(db, 'groups', groupId, 'members', mId), {
+        uid: mId,
+        role: 'member',
+        joinedAt: serverTimestamp(),
+        displayName: newMemberName.trim(),
+        email: newMemberEmail || null,
+      });
+
+      setInviteSuccess(true);
+      setNewMemberName('');
+      setNewMemberEmail('');
+      setTimeout(() => {
+        setInviteSuccess(false);
+        setIsAddMemberOpen(false);
+      }, 2000);
+    } catch (error) {
+      console.error("Error adding member:", error);
+      setInviteError("Failed to add member. Please try again.");
+    } finally {
+      setInviteLoading(false);
+    }
   };
 
   const handleDeleteExpense = async (id: string) => {
+    if (isDeleting) return;
+    setIsDeleting(true);
     try {
       if (user.uid.startsWith('demo-')) {
         await new Promise(resolve => setTimeout(resolve, 600));
@@ -288,7 +355,10 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
       await deleteDoc(doc(db, 'groups', groupId, 'expenses', id));
       setExpenseToDelete(null);
     } catch (error) {
+      console.error("Delete expense failed:", error);
       handleFirestoreError(error, OperationType.DELETE, `groups/${groupId}/expenses/${id}`);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -958,11 +1028,74 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
                     />
                   </div>
                 </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Split Method</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['equal', 'percentage', 'exact'].map((method) => (
+                      <button
+                        key={method}
+                        type="button"
+                        onClick={() => setSplitType(method as SplitType)}
+                        className={`py-2 px-3 rounded-xl border-2 text-[10px] font-black uppercase tracking-wider transition-all ${
+                          splitType === method
+                            ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-500 text-indigo-700 dark:text-indigo-400'
+                            : 'bg-zinc-50 dark:bg-zinc-800 border-zinc-200 dark:border-zinc-700 text-zinc-400'
+                        }`}
+                      >
+                        {method}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {splitType !== 'equal' && (
+                  <div className="space-y-3 pt-2">
+                    <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em]">Split Details</label>
+                    {members.map((member) => {
+                      const split = splits.find(s => s.userId === member.uid) || { userId: member.uid, amount: 0 };
+                      return (
+                        <div key={member.uid} className="flex items-center justify-between gap-4">
+                          <span className="text-xs font-bold text-zinc-600 dark:text-zinc-400 truncate">{member.displayName}</span>
+                          <div className="relative w-24">
+                            <input
+                              type="number"
+                              value={split.amount || ''}
+                              onChange={(e) => {
+                                const val = parseFloat(e.target.value) || 0;
+                                setSplits(prev => {
+                                  const existing = prev.find(s => s.userId === member.uid);
+                                  if (existing) {
+                                    return prev.map(s => s.userId === member.uid ? { ...s, amount: val } : s);
+                                  }
+                                  return [...prev, { userId: member.uid, amount: val }];
+                                });
+                              }}
+                              className="w-full pl-6 pr-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl text-xs font-bold focus:outline-none focus:border-indigo-500"
+                              placeholder="0"
+                            />
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] font-bold text-zinc-400">
+                              {splitType === 'percentage' ? '%' : '€'}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
                 <button
                   type="submit"
-                  className="w-full py-4 bg-zinc-900 dark:bg-indigo-600 text-white rounded-2xl font-bold hover:bg-zinc-800 dark:hover:bg-indigo-700 transition-all mt-4 shadow-lg shadow-zinc-200 dark:shadow-indigo-500/20 active:scale-95"
+                  disabled={isSaving}
+                  className="w-full py-4 bg-zinc-900 dark:bg-indigo-600 text-white rounded-2xl font-bold hover:bg-zinc-800 dark:hover:bg-indigo-700 transition-all mt-4 shadow-lg shadow-zinc-200 dark:shadow-indigo-500/20 active:scale-95 flex items-center justify-center gap-2"
                 >
-                  {editingExpense ? 'Update Transaction' : 'Save Transaction'}
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      {editingExpense ? 'Updating...' : 'Saving...'}
+                    </>
+                  ) : (
+                    editingExpense ? 'Update Transaction' : 'Save Transaction'
+                  )}
                 </button>
               </form>
             </motion.div>
@@ -1001,7 +1134,7 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
                   <X className="w-5 h-5 text-zinc-500" />
                 </button>
               </div>
-              <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-8">Enter the email address of the person you want to add.</p>
+              <p className="text-zinc-500 dark:text-zinc-400 text-sm mb-8">Enter the details of the person you want to add.</p>
               
               {inviteError && (
                 <div className="mb-6 p-4 bg-red-50 dark:bg-red-500/10 border border-red-100 dark:border-red-500/20 text-red-600 dark:text-red-400 text-xs font-bold rounded-2xl">
@@ -1018,7 +1151,23 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
 
               <form onSubmit={handleAddMember} className="space-y-6">
                 <div>
-                  <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Email Address</label>
+                  <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Display Name</label>
+                  <input
+                    type="text"
+                    value={newMemberName}
+                    onChange={(e) => {
+                      setNewMemberName(e.target.value);
+                      setInviteError(null);
+                    }}
+                    className="w-full px-5 py-4 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium dark:text-white"
+                    placeholder="Friend's Name"
+                    required
+                    disabled={inviteLoading || inviteSuccess}
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Email Address (Optional)</label>
                   <input
                     type="email"
                     value={newMemberEmail}
@@ -1028,9 +1177,7 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
                     }}
                     className="w-full px-5 py-4 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-medium dark:text-white"
                     placeholder="friend@example.com"
-                    required
                     disabled={inviteLoading || inviteSuccess}
-                    autoFocus
                   />
                 </div>
                 <button
@@ -1353,9 +1500,10 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
                 </button>
                 <button
                   onClick={() => handleDeleteExpense(expenseToDelete)}
-                  className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-200 dark:shadow-red-500/20 active:scale-95"
+                  disabled={isDeleting}
+                  className="flex-1 py-4 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-200 dark:shadow-red-500/20 active:scale-95 flex items-center justify-center gap-2"
                 >
-                  Delete
+                  {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Delete'}
                 </button>
               </div>
             </motion.div>

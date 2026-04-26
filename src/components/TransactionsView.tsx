@@ -22,6 +22,7 @@ import { Transaction } from '../types';
 import { formatCurrency } from '../utils/format';
 import { db } from '../firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
+import { handleFirestoreError, OperationType } from '../utils/errorHandling';
 
 interface TransactionsViewProps {
   transactions: Transaction[];
@@ -72,7 +73,8 @@ export default function TransactionsView({
       }
       await deleteDoc(doc(db, 'users', userId, 'transactions', id));
     } catch (error) {
-      console.error(error);
+      console.error("Delete transaction failed:", error);
+      handleFirestoreError(error, OperationType.DELETE, `users/${userId}/transactions/${id}`);
     }
   };
 
