@@ -1,0 +1,184 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Group": {
+      "title": "Group",
+      "description": "A group of users tracking expenses together (e.g., household, trip)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "type": { "type": "string", "enum": ["personal", "household", "trip", "other"] },
+        "memberIds": { "type": "array", "items": { "type": "string" } },
+        "maxBudget": { "type": "number" },
+        "budgetType": { "type": "string", "enum": ["weekly", "monthly", "total"] }
+      },
+      "required": ["name", "createdBy", "type", "memberIds"]
+    },
+    "Expense": {
+      "title": "Expense",
+      "description": "An expense record within a group",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "amount": { "type": "number" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "paidBy": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "splitType": { "type": "string", "enum": ["equal", "percentage", "exact"] }
+      },
+      "required": ["amount", "description", "paidBy", "date", "category"]
+    },
+    "GroupMember": {
+      "title": "Group Member",
+      "description": "A user's membership in a group",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "member"] },
+        "joinedAt": { "type": "string", "format": "date-time" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" }
+      },
+      "required": ["uid", "role"]
+    },
+    "Asset": {
+      "title": "Asset",
+      "description": "A financial asset owned by the user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["cash", "investment", "real_estate", "crypto", "savings", "retirement", "other"] },
+        "value": { "type": "number" },
+        "institution": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "type", "value"]
+    },
+    "Liability": {
+      "title": "Liability",
+      "description": "A debt or liability owed by the user",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["mortgage", "loan", "credit_card", "other"] },
+        "totalAmount": { "type": "number" },
+        "remainingAmount": { "type": "number" },
+        "monthlyPayment": { "type": "number" }
+      },
+      "required": ["name", "totalAmount", "remainingAmount"]
+    },
+    "Goal": {
+      "title": "Financial Goal",
+      "description": "A target the user wants to reach",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "targetAmount": { "type": "number" },
+        "currentAmount": { "type": "number" },
+        "deadline": { "type": "string", "format": "date-time" },
+        "status": { "type": "string", "enum": ["active", "completed", "on_hold"] }
+      },
+      "required": ["name", "targetAmount", "deadline"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "A financial expense or income record",
+      "type": "object",
+      "properties": {
+        "amount": { "type": "number" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "type": { "type": "string", "enum": ["expense", "income"] }
+      },
+      "required": ["amount", "description", "category", "date", "type"]
+    },
+    "BankAccount": {
+      "title": "Bank Account",
+      "description": "A connected bank account",
+      "type": "object",
+      "properties": {
+        "institutionName": { "type": "string" },
+        "accountName": { "type": "string" },
+        "balance": { "type": "number" }
+      },
+      "required": ["institutionName", "balance"]
+    },
+    "Insight": {
+      "title": "AI Insight",
+      "description": "AI generated financial advice",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["optimization", "warning", "opportunity"] },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "impact": { "type": "string" },
+        "suggestedAction": { "type": "string" }
+      },
+      "required": ["type", "title", "description"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile documents"
+    },
+    "/users/{userId}/assets/{assetId}": {
+      "schema": "Asset",
+      "description": "User's financial assets"
+    },
+    "/users/{userId}/liabilities/{liabilityId}": {
+      "schema": "Liability",
+      "description": "User's debts"
+    },
+    "/users/{userId}/goals/{goalId}": {
+      "schema": "Goal",
+      "description": "User's financial goals"
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "User's individual transactions"
+    },
+    "/users/{userId}/bankAccounts/{bankId}": {
+      "schema": "BankAccount",
+      "description": "Connected bank accounts"
+    },
+    "/users/{userId}/insights/{insightId}": {
+      "schema": "Insight",
+      "description": "AI generated insights"
+    },
+    "/groups/{groupId}": {
+      "schema": "Group",
+      "description": "Group metadata"
+    },
+    "/groups/{groupId}/expenses/{expenseId}": {
+      "schema": "Expense",
+      "description": "Expenses belonging to a group"
+    },
+    "/groups/{groupId}/members/{userId}": {
+      "schema": "GroupMember",
+      "description": "Members of a group"
+    }
+  }
+}
