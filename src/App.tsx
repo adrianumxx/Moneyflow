@@ -93,6 +93,7 @@ export default function App() {
   const { t, i18n } = useTranslation();
   const navigationItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { id: 'groups', icon: Users, label: 'Groups' },
     { id: 'palantir', icon: Globe, label: 'Palantir' },
     { id: 'sync', icon: Link, label: 'Sync Hub' },
     { id: 'ledger', icon: History, label: 'Ledger' },
@@ -978,9 +979,9 @@ export default function App() {
                 allGroups={groups}
               />
             </motion.div>
-          ) : activeTab === 'wealth' ? (
+          ) : activeTab === 'dashboard' ? (
             <motion.div
-              key="wealth"
+              key="dashboard"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -1016,9 +1017,9 @@ export default function App() {
                 theme={theme}
               />
             </motion.div>
-          ) : activeTab === 'dashboard' || activeTab === 'groups' ? (
+          ) : activeTab === 'groups' ? (
             <motion.div
-              key="dashboard"
+              key="groups"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
