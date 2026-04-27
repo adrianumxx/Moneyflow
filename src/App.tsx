@@ -4,8 +4,9 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { auth, db, signIn, logOut } from './firebase';
+import { auth, db, signIn, signUpWithEmail, logInWithEmail, logOut } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
+import { FirebaseError } from 'firebase/app';
 import { 
   collection, 
   query, 
@@ -98,6 +99,15 @@ export default function App() {
   const [isAddLiabilityModalOpen, setIsAddLiabilityModalOpen] = useState(false);
   const [isCFOReportOpen, setIsCFOReportOpen] = useState(false);
   const [isAddGoalModalOpen, setIsAddGoalModalOpen] = useState(false);
+  
+  // Auth state
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [isEmailAuth, setIsEmailAuth] = useState(false);
+  const [isEmailView, setIsEmailView] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
   const [isConnectBankOpen, setIsConnectBankOpen] = useState(false);
   const [isAddTransactionModalOpen, setIsAddTransactionModalOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
@@ -124,6 +134,29 @@ export default function App() {
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
+  };
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError('');
+    setAuthLoading(true);
+    try {
+      if (isSignUp) {
+        await signUpWithEmail(authEmail, authPassword);
+      } else {
+        await logInWithEmail(authEmail, authPassword);
+      }
+    } catch (err: any) {
+      if (err.code === 'auth/email-already-in-use') {
+        setAuthError('Email is already registered. Please log in.');
+      } else if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
+        setAuthError('Invalid email or password.');
+      } else {
+        setAuthError(err.message || 'Authentication failed. Please try again or create an account.');
+      }
+    } finally {
+      setAuthLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -436,24 +469,88 @@ export default function App() {
           </p>
 
           <div className="space-y-6">
-            <div className="space-y-3">
-              <button
-                onClick={signIn}
-                className="w-full py-5 addictive-gradient text-white rounded-[2rem] font-black hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4 shadow-2xl shadow-indigo-600/30 text-xl outline-none focus:ring-4 focus:ring-indigo-500/40 group"
-              >
-                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center p-1.5 shadow-sm group-hover:rotate-12 transition-transform">
-                  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-full h-full" />
+            {!isEmailView ? (
+              <div className="space-y-3">
+                <button
+                  onClick={signIn}
+                  className="w-full py-5 addictive-gradient text-white rounded-[2rem] font-black hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4 shadow-2xl shadow-indigo-600/30 text-xl outline-none focus:ring-4 focus:ring-indigo-500/40 group"
+                >
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center p-1.5 shadow-sm group-hover:rotate-12 transition-transform">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-full h-full" />
+                  </div>
+                  Get Started for Free
+                </button>
+                
+                <button
+                  onClick={() => setIsEmailView(true)}
+                  className="w-full py-4 bg-white dark:bg-white/10 text-slate-600 dark:text-white rounded-[2rem] font-bold border-2 border-slate-100 dark:border-white/5 hover:border-indigo-500 transition-all text-sm"
+                >
+                  Continue with Email
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleEmailAuth} className="space-y-4">
+                {authError && (
+                  <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 text-sm font-bold">
+                    {authError}
+                  </div>
+                )}
+                
+                <div className="space-y-3 text-left">
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1 ml-4">Email</label>
+                    <input 
+                      type="email" 
+                      value={authEmail}
+                      onChange={(e) => setAuthEmail(e.target.value)}
+                      required
+                      className="w-full px-5 py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/20 text-slate-900 dark:text-white transition-all font-medium"
+                      placeholder="you@example.com"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1 ml-4">Password</label>
+                    <input 
+                      type="password" 
+                      value={authPassword}
+                      onChange={(e) => setAuthPassword(e.target.value)}
+                      required
+                      minLength={6}
+                      className="w-full px-5 py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/20 text-slate-900 dark:text-white transition-all font-medium"
+                      placeholder="••••••••"
+                    />
+                  </div>
                 </div>
-                Get Started for Free
-              </button>
-              
-              <button
-                onClick={signIn}
-                className="w-full py-4 bg-white dark:bg-white/10 text-slate-600 dark:text-white rounded-[2rem] font-bold border-2 border-slate-100 dark:border-white/5 hover:border-indigo-500 transition-all text-sm"
-              >
-                Already have an account? Log In
-              </button>
-            </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={authLoading}
+                    className="w-full py-4 addictive-gradient text-white rounded-[2rem] font-black hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/20 text-lg disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    {authLoading ? 'Please wait...' : (isSignUp ? 'Create Account' : 'Sign In')}
+                  </button>
+                  
+                  <div className="mt-4 flex flex-col gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsSignUp(!isSignUp)}
+                      className="text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors"
+                    >
+                      {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsEmailView(false)}
+                      className="text-sm font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                    >
+                      Back to Google Login
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
 
             <div className="flex items-center gap-3 py-2">
               <div className="flex-1 h-[1px] bg-slate-200 dark:bg-slate-800" />
