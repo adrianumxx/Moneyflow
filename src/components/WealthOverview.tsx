@@ -13,7 +13,10 @@ import {
   ArrowUpRight,
   Sparkles,
   PieChart as PieChartIcon,
-  Link2
+  Link2,
+  FileText,
+  Radio,
+  Pencil
 } from 'lucide-react';
 import { Asset, Liability, FinancialGoal, AIInsight, Transaction, BankAccount } from '../types';
 import { formatCurrency } from '../utils/format';
@@ -125,21 +128,15 @@ export default function WealthOverview({
     <div className="space-y-8 pb-10">
       {/* Dynamic Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-2">
-        <div>
+        <div className="flex flex-col gap-1">
           <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Wealth Dashboard</h2>
           <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">AI-Powered Portfolio Insights</p>
         </div>
         <div className="flex items-center gap-3">
-           <div className="px-4 py-2 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 flex items-center gap-3 shadow-sm">
+           <div className="px-5 py-2.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 flex items-center gap-3 shadow-sm">
              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Live Status: Secure</span>
            </div>
-           <button 
-             onClick={handleFinancialReport}
-             className="px-6 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl"
-           >
-             Get Report
-           </button>
         </div>
       </div>
 
@@ -187,53 +184,62 @@ export default function WealthOverview({
           </div>
         </motion.section>
 
-        {/* AI Insight Sidebar (1x2) */}
-        <section className="lg:col-span-2 lg:row-span-2 addictive-gradient rounded-[3rem] p-8 text-white shadow-glow relative overflow-hidden group">
-          <div className="absolute bottom-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-1000">
+        {/* Portfolio Analysis Section (Replaces AI Insight Sidebar) */}
+        <section className="lg:col-span-2 lg:row-span-2 addictive-gradient rounded-[3rem] p-8 text-white shadow-glow relative overflow-hidden group flex flex-col justify-center cursor-pointer hover:bg-opacity-90 transition-all"
+         onClick={() => {
+           if (!insights.length && !isGenerating) {
+             handleGenerateInsights();
+           }
+         }}>
+          <div className="absolute bottom-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-1000 pointer-events-none">
             <Sparkles className="w-48 h-48" />
           </div>
-          <div className="relative z-10 h-full flex flex-col">
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/20 rounded-xl">
-                  <Sparkles className="w-5 h-5 text-white" />
-                </div>
-                <h3 className="text-[10px] font-black uppercase tracking-[0.4em]">AI Advisor</h3>
-              </div>
-              <button 
-                onClick={handleGenerateInsights}
-                disabled={isGenerating}
-                className="p-3 bg-white/10 hover:bg-white/20 text-white rounded-2xl transition-all disabled:opacity-50"
-              >
-                {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Activity className="w-5 h-5" />}
-              </button>
+
+          {!insights.length && !isGenerating && (
+            <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4">
+              <Bot className="w-16 h-16 mb-6 text-white/80 drop-shadow-xl animate-bounce" />
+              <h2 className="text-3xl font-black uppercase tracking-tight">{t('Analisi Portafoglio')}</h2>
+              <p className="text-white/80 text-[10px] mt-4 font-black uppercase tracking-[0.3em] bg-white/10 px-4 py-2 rounded-full border border-white/20">
+                {t('Tap to Scan')}
+              </p>
             </div>
-            
-            <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar no-scrollbar">
-              {insights.length > 0 ? (
-                insights.map((insight, idx) => (
-                  <motion.div 
-                    key={insight.id} 
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.1 }}
-                    className="bg-white/10 backdrop-blur-xl rounded-[2rem] p-6 border border-white/10 hover:bg-white/15 transition-all cursor-pointer group/item hover:-translate-y-1"
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                       <div className="w-2 h-2 rounded-full bg-emerald-400" />
-                       <p className="font-black text-xs uppercase tracking-tight">{insight.title}</p>
-                    </div>
-                    <p className="text-indigo-100/70 text-[11px] leading-relaxed italic">{insight.description}</p>
-                  </motion.div>
-                ))
-              ) : (
-                <div className="h-full flex flex-col items-center justify-center text-center p-8 border-2 border-dashed border-white/10 rounded-[2.5rem]">
-                  <Bot className="w-12 h-12 text-white/20 mb-4" />
-                  <p className="text-xs text-indigo-100/60 italic font-bold">AI Assistant is ready. Click Analyze.</p>
-                </div>
-              )}
+          )}
+
+          {isGenerating && (
+            <div className="relative z-10 flex flex-col items-center justify-center h-full text-center">
+              <Loader2 className="w-12 h-12 mb-6 animate-spin text-white" />
+              <p className="text-white/90 font-black text-sm uppercase tracking-widest">{t('Analyzing Strategy...')}</p>
             </div>
-          </div>
+          )}
+
+          {insights.length > 0 && !isGenerating && (
+            <div className="relative z-10 h-full flex flex-col pt-2">
+               <div className="flex items-center justify-between mb-6 shrink-0">
+                 <h2 className="text-sm font-black uppercase tracking-[0.2em]">{t('Quick Scan')}</h2>
+                 <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.8)]" />
+               </div>
+               
+               <div className="flex-1 space-y-3 overflow-y-auto pr-2 no-scrollbar mb-4">
+                 {insights.map(insight => (
+                   <div key={insight.id} className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10">
+                     <div className="flex items-center gap-2 mb-2">
+                        <span className={`w-2 h-2 rounded-full ${insight.type === 'warning' ? 'bg-rose-400' : insight.type === 'opportunity' ? 'bg-emerald-400' : 'bg-indigo-400'}`} />
+                        <span className="text-[10px] font-black uppercase tracking-widest leading-none">{insight.title}</span>
+                     </div>
+                     <p className="text-xs text-white/90 leading-relaxed font-medium">{insight.description}</p>
+                   </div>
+                 ))}
+               </div>
+               
+               <button 
+                 onClick={(e) => { e.stopPropagation(); onGenerateReport(); }} 
+                 className="shrink-0 w-full py-4 bg-white text-indigo-900 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-slate-100 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl"
+               >
+                  <FileText className="w-5 h-5" />
+                  {t('Full Analysis')}
+               </button>
+            </div>
+          )}
         </section>
 
         {/* Tactical Ledger (1x2) */}
@@ -279,7 +285,15 @@ export default function WealthOverview({
 
         {/* Portfolio DNA (1x2) */}
         <section className="lg:row-span-2 glass-card rounded-[3rem] p-8 shadow-premium flex flex-col overflow-hidden">
-          <h3 className="text-xs font-black uppercase tracking-[0.2em] mb-8 text-slate-800 dark:text-white">Sector Weights</h3>
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-800 dark:text-white">Sector Weights</h3>
+            <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10 cursor-help" title="Data fed dynamically from Sync, Ledger & Manual sources.">
+              <div className="w-5 h-5 rounded flex items-center justify-center bg-emerald-500/20 text-emerald-600 dark:text-emerald-400" title="API Sync (Open Banking)"><Radio className="w-3 h-3" /></div>
+              <div className="w-5 h-5 rounded flex items-center justify-center text-slate-400" title="Ledger Imports"><Receipt className="w-3 h-3" /></div>
+              <div className="w-5 h-5 rounded flex items-center justify-center text-slate-400" title="Manual Entry"><Pencil className="w-3 h-3" /></div>
+            </div>
+          </div>
+          
           <div className="h-48 w-full relative mb-6">
             <ResponsiveContainer width="100%" height="100%">
               <RePieChart>
