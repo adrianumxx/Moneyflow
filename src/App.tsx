@@ -971,16 +971,20 @@ export default function App() {
           <GlobalPulse />
         </div>
 
-        {/* Neural Floating Trigger (Professional AI) */}
+        {/* Neural Floating Partner (3D Cute Bot) */}
         <motion.button 
           onClick={triggerAdvice}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="fixed bottom-8 right-8 z-50 w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-600/40 group overflow-hidden"
+          whileHover={{ scale: 1.1, rotate: 5 }}
+          whileTap={{ scale: 0.9 }}
+          className="fixed bottom-8 right-8 z-50 w-16 h-16 bg-white/10 dark:bg-slate-900/40 backdrop-blur-xl border border-indigo-500/20 rounded-[2rem] flex items-center justify-center shadow-2xl group overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500 to-fuchsia-600 group-hover:opacity-100 transition-opacity" />
-          <Bot className="w-7 h-7 text-white relative z-10" />
-          <div className="absolute top-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-indigo-600 animate-pulse" />
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-fuchsia-600/20 group-hover:opacity-100 opacity-0 transition-opacity" />
+          <img 
+            src="/assets/ai_assistant.png" 
+            alt="AI Partner" 
+            className="w-12 h-12 object-contain drop-shadow-glow" 
+          />
+          <div className="absolute top-2 right-2 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
         </motion.button>
 
         {/* Neural Advisor Assistant */}

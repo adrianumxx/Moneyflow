@@ -29,12 +29,12 @@ export default function NeuralAdvisor({ isVisible, onClose, message, actionLabel
             </button>
 
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/20">
-                <Bot className="w-6 h-6" />
+              <div className="w-12 h-12 relative flex items-center justify-center">
+                <img src="/assets/ai_assistant.png" alt="Neural Partner" className="w-full h-full object-contain drop-shadow-glow" />
               </div>
               <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-indigo-500">Intelligence Core</p>
-                <p className="text-[10px] font-bold text-slate-900 dark:text-white">Neural Response</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-indigo-500">Neural Partner</p>
+                <p className="text-[10px] font-bold text-slate-900 dark:text-white">Expert Advice</p>
               </div>
             </div>
 
