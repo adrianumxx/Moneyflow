@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
-  Building2, Wallet, Landmark, Globe, Plus, ShieldCheck, 
   ArrowRight, CheckCircle2, QrCode, Smartphone, ExternalLink,
-  Lock, Zap, Info
+  Lock, Zap, Info, Landmark, Building2, Bitcoin, TrendingUp
 } from 'lucide-react';
 
 interface ConnectorProvider {
@@ -15,13 +14,13 @@ interface ConnectorProvider {
   description: string;
 }
 
-const PROVIDERS: ConnectorProvider[] = [
-  { id: 'revolut', name: 'Revolut', type: 'bank', logo: 'https://logo.clearbit.com/revolut.com', color: 'bg-zinc-800', description: 'Instant multi-currency sync' },
-  { id: 'n26', name: 'N26', type: 'bank', logo: 'https://logo.clearbit.com/n26.com', color: 'bg-emerald-600', description: 'European digital banking' },
-  { id: 'etoro', name: 'eToro', type: 'broker', logo: 'https://logo.clearbit.com/etoro.com', color: 'bg-green-600', description: 'Stock & Copy Trading' },
-  { id: 'binance', name: 'Binance', type: 'crypto', logo: 'https://logo.clearbit.com/binance.com', color: 'bg-amber-400', description: 'Global crypto exchange' },
-  { id: 'coinbase', name: 'Coinbase', type: 'crypto', logo: 'https://logo.clearbit.com/coinbase.com', color: 'bg-blue-600', description: 'Institutional crypto vault' },
-  { id: 'degiro', name: 'DEGIRO', type: 'broker', logo: 'https://logo.clearbit.com/degiro.com', color: 'bg-rose-700', description: 'Low-cost European broker' },
+const PROVIDERS: (ConnectorProvider & { fallbackIcon: any })[] = [
+  { id: 'revolut', name: 'Revolut', type: 'bank', logo: 'https://logo.clearbit.com/revolut.com', color: 'bg-zinc-800', description: 'Instant multi-currency sync', fallbackIcon: Building2 },
+  { id: 'n26', name: 'N26', type: 'bank', logo: 'https://logo.clearbit.com/n26.com', color: 'bg-emerald-600', description: 'European digital banking', fallbackIcon: Landmark },
+  { id: 'etoro', name: 'eToro', type: 'broker', logo: 'https://logo.clearbit.com/etoro.com', color: 'bg-green-600', description: 'Stock & Copy Trading', fallbackIcon: TrendingUp },
+  { id: 'binance', name: 'Binance', type: 'crypto', logo: 'https://logo.clearbit.com/binance.com', color: 'bg-amber-400', description: 'Global crypto exchange', fallbackIcon: Bitcoin },
+  { id: 'coinbase', name: 'Coinbase', type: 'crypto', logo: 'https://logo.clearbit.com/coinbase.com', color: 'bg-blue-600', description: 'Institutional crypto vault', fallbackIcon: Bitcoin },
+  { id: 'degiro', name: 'DEGIRO', type: 'broker', logo: 'https://logo.clearbit.com/degiro.com', color: 'bg-rose-700', description: 'Low-cost European broker', fallbackIcon: Landmark },
 ];
 
 export default function IntegrationsHub() {
@@ -87,7 +86,19 @@ export default function IntegrationsHub() {
             
             <div className="flex justify-between items-start mb-6">
               <div className="w-16 h-16 rounded-[1.5rem] bg-white dark:bg-white/10 p-2 border border-slate-200 dark:border-white/20 shadow-sm overflow-hidden flex items-center justify-center">
-                <img src={provider.logo} alt={provider.name} className="w-full h-full object-contain" />
+                <img 
+                  src={provider.logo} 
+                  alt={provider.name} 
+                  className="w-full h-full object-contain"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    target.style.display = 'none';
+                    const parent = target.parentElement;
+                    if (parent) {
+                      parent.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-indigo-500/10 text-indigo-500"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-building-2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg></div>`;
+                    }
+                  }}
+                />
               </div>
               <div className="p-2 bg-slate-50 dark:bg-white/5 rounded-full text-slate-400 group-hover:text-indigo-500 transition-colors">
                 <Plus className="w-5 h-5" />
