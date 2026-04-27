@@ -977,7 +977,7 @@ export default function App() {
         >
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 to-fuchsia-600/10 group-hover:opacity-100 opacity-0 transition-opacity" />
           <img 
-            src="C:\Users\Adriano\.gemini\antigravity\brain\f1154b25-2b51-4e37-913c-70622f47cb40\neural_brain_3d_icon_1777332980615.png" 
+            src="/assets/neural_brain.png" 
             alt="AI" 
             className="w-8 h-8 object-contain drop-shadow-sm" 
           />

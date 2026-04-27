@@ -12,7 +12,7 @@ interface NeuralAdvisorProps {
 
 export default function NeuralAdvisor({ isVisible, onClose, message, actionLabel, onAction }: NeuralAdvisorProps) {
   // Use the generated 3D icon path
-  const neuralIconPath = "C:\\Users\\Adriano\\.gemini\\antigravity\\brain\\f1154b25-2b51-4e37-913c-70622f47cb40\\neural_brain_3d_icon_1777332980615.png";
+  const neuralIconPath = "/assets/neural_brain.png";
 
   return (
     <AnimatePresence>
