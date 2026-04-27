@@ -210,7 +210,23 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                       <div className="absolute inset-0 bg-white/5 border border-white/5 rounded-[2rem] transition-all group-hover:bg-zinc-900 group-hover:border-indigo-500/50 group-hover:-translate-y-1" />
                       <div className="absolute inset-0 flex flex-col items-center justify-center p-4">
                         <div className="w-12 h-12 bg-zinc-900 p-2 rounded-2xl mb-3 shadow-xl overflow-hidden flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <img src={inst.logo} alt={inst.name} className="w-full h-full object-contain" />
+                          <img 
+                            src={inst.logo} 
+                            alt={inst.name} 
+                            className="w-full h-full object-contain" 
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent) {
+                                const category = inst.category;
+                                let icon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-landmark"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7 12 2"/></svg>';
+                                if (category === 'CRYPTO') icon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bitcoin"><path d="M11.767 19.089c4.924.868 6.14-6.025 1.216-6.894m-1.216 6.894L5.86 18.047m5.908 1.042l-.347 1.97m1.563-8.864c4.924.869 6.14-6.025 1.215-6.893m-1.215 6.893l-3.94-.694m5.155-6.2c.348-1.977-1.563-8.864-1.563-8.864m-1.12 8.167L7.36 5.534m5.908 1.042l.348-1.97m-4.296.845l.348-1.97m-3.136 12.443l.348-1.97"/></svg>';
+                                if (category === 'INVESTMENT') icon = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>';
+                                parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-indigo-500">${icon}</div>`;
+                              }
+                            }}
+                          />
                         </div>
                         <span className="text-[10px] font-bold text-center text-zinc-500 group-hover:text-white transition-colors">{inst.name}</span>
                       </div>
@@ -247,8 +263,20 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                 className="space-y-8"
               >
                 <div className="flex items-center gap-6 p-6 bg-white/5 rounded-[2.5rem] border border-white/5">
-                  <div className="w-16 h-16 bg-zinc-900 rounded-3xl p-3 shadow-xl">
-                    <img src={selectedBank.logo} alt="" className="w-full h-full object-contain" />
+                  <div className="w-16 h-16 bg-zinc-900 rounded-3xl p-3 shadow-xl flex items-center justify-center">
+                    <img 
+                      src={selectedBank.logo} 
+                      alt="" 
+                      className="w-full h-full object-contain" 
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-indigo-500"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-landmark"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7 12 2"/></svg></div>`;
+                        }
+                      }}
+                    />
                   </div>
                   <div className="w-10 h-[2px] bg-zinc-800 relative">
                     <Zap className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500 fill-indigo-500" />
@@ -311,7 +339,19 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                 <div className="relative inline-block">
                   <div className="absolute inset-0 bg-indigo-500/20 blur-[40px] rounded-full animate-pulse" />
                   <div className="relative w-24 h-24 bg-zinc-900 border border-white/10 rounded-[2rem] flex items-center justify-center shadow-2xl p-4">
-                    <img src={selectedBank.logo} alt="" className="w-full h-full object-contain" />
+                    <img 
+                      src={selectedBank.logo} 
+                      alt="" 
+                      className="w-full h-full object-contain" 
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        target.style.display = 'none';
+                        const parent = target.parentElement;
+                        if (parent) {
+                          parent.innerHTML = `<div class="w-full h-full flex items-center justify-center text-indigo-500"><svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-landmark"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7 12 2"/></svg></div>`;
+                        }
+                      }}
+                    />
                   </div>
                 </div>
 
