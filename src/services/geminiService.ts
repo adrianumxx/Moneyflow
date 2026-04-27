@@ -133,7 +133,7 @@ export async function getGlobalIntelligence(localTime?: string, timezone?: strin
     apiKey: getEnv('GEMINI_API_KEY') 
   });
   
-  const cacheKey = `pulse_intel_v8_${new Date().toISOString().split('T')[0]}_${language}`;
+  const cacheKey = `pulse_intel_v9_${new Date().toISOString().split('T')[0]}_${language}`;
   try {
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
@@ -150,19 +150,22 @@ export async function getGlobalIntelligence(localTime?: string, timezone?: strin
       contents: `You are Gemini, the elite predictive AI engine powered by Google DeepMind. Your job is to give the user an "Unfair Advantage" over 99% of the planet. Analyze today's (${dateAnchor}) global data from Google Trends, Google Finance, and Google News regarding Tech, Energy, Crypto, Banks, AI, Geopolitics, and Macroeconomics.
       
 CRITICAL RULES:
-1. Deliver sharp, predictive insights about EXPLOSIVE upcoming market trends. Use recent news via Google News.
+1. Deliver sharp, predictive insights about EXPLOSIVE upcoming market trends.
 2. The language MUST be incredibly simple, accessible, and easy to understand for ANY normal person on the planet. Explain complex terms like you're talking to a 10-year-old. No confusing financial jargon.
-3. Include real, recent data. The news items MUST have real, accurate URLs to the actual articles (Google News, Financial Times, Bloomberg, etc.).
-4. Maintain a friendly, brilliant, and super-clear persona. You are the user's personal financial guide.
-5. Provide actionable, high-conviction strategic advice that is straightforward.
-6. The globalIndices MUST conceptually track these 6 categories, but give them cool names:
-  - Global Tech/Compute
-  - Crypto/Bitcoin
-  - Energy/Oil
-  - Market Volatility/Fear
-  - Currency/Liquidity
-  - S&P 500
-7. VERY IMPORTANT: You MUST write EVERYTHING (titles, summaries, advice, mood, descriptions, etc) in this language code: ${language.toUpperCase()}.
+3. You MUST provide exactly 5 real, recent news items. You MUST use your Google Search tool to find actual real-time news articles from today.
+4. Each news item MUST include the real, clickable URL to the actual article (e.g. from Bloomberg, CNBC, Financial Times, Coindesk, etc). Do not hallucinate URLs! Provide the exact link from the search.
+5. Maintain a friendly, brilliant, and super-clear persona. You are the user's personal financial guide.
+6. Provide actionable, high-conviction strategic advice that is straightforward.
+7. The globalIndices MUST conceptually track these 8 categories, giving them cool, simple names:
+  - Tech & AI Growth (Overall Tech)
+  - Digital Assets (Crypto)
+  - Global Energy (Oil/Renewables)
+  - Market Stability (VIX/Volatility)
+  - Currency Strength (EUR/USD liquidity)
+  - Stock Market Health (S&P 500)
+  - Consumer Confidence (Retail spending/economy)
+  - Real Estate Heat (Housing market)
+8. VERY IMPORTANT: You MUST write EVERYTHING (titles, summaries, advice, mood, descriptions, etc) in this language code: ${language.toUpperCase()}.
 
 Return JSON EXACTLY matching this schema:
 {

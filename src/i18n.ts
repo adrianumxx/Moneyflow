@@ -16,7 +16,24 @@ const resources = {
       "Italiano": "Italiano",
       "Español": "Español",
       "Français": "Français",
-      "Deutsch": "Deutsch"
+      "Deutsch": "Deutsch",
+      "Strategic Guide": "Strategic Guide",
+      "Confidence": "Confidence",
+      "What you should do now": "What You Should Do Now",
+      "Analyzing strategy...": "Analyzing strategy...",
+      "How the market is feeling": "How The Market Is Feeling",
+      "Analyzing global signals...": "Analyzing global signals...",
+      "Your AI Market Guide": "Your AI Market Guide",
+      "Live Updates": "Live Updates",
+      "What Might Happen Next": "What Might Happen Next",
+      "Strategy": "Strategy",
+      "Things to Watch Out For": "Things To Watch Out For",
+      "Read Full Article": "Read Full Article",
+      "Real-Time News Stream": "Real-Time News Stream",
+      "Trending Up": "Trending Up",
+      "How the big banks are acting": "How the big banks are acting",
+      "AI Summary": "AI Summary",
+      "Original": "Original"
     }
   },
   it: {
@@ -30,7 +47,24 @@ const resources = {
       "Italiano": "Italiano",
       "Español": "Español",
       "Français": "Français",
-      "Deutsch": "Deutsch"
+      "Deutsch": "Deutsch",
+      "Strategic Guide": "Guida Strategica",
+      "Confidence": "Sicurezza",
+      "What you should do now": "Cosa devi fare ora",
+      "Analyzing strategy...": "In attesa di strategia...",
+      "How the market is feeling": "Come sta andando il mondo",
+      "Analyzing global signals...": "Analisi in corso...",
+      "Your AI Market Guide": "La tua Guida di Mercato IA",
+      "Live Updates": "Aggiornamenti in Diretta",
+      "What Might Happen Next": "Cosa potrebbe succedere",
+      "Strategy": "Strategia",
+      "Things to Watch Out For": "I Rischi da Sapere",
+      "Read Full Article": "Leggi l'articolo",
+      "Real-Time News Stream": "Notizie in Diretta",
+      "Trending Up": "In Crescita",
+      "How the big banks are acting": "Cosa fanno le banche",
+      "AI Summary": "Riassunto IA",
+      "Original": "Originale"
     }
   },
   es: {

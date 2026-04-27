@@ -81,9 +81,16 @@ export default function WealthOverview({
     onGenerateReport();
   };
 
-  const totalAssets = assets.reduce((sum, a) => sum + a.value, 0);
+  const totalBankBalance = bankAccounts ? bankAccounts.reduce((sum, b) => sum + b.balance, 0) : 0;
+  
+  // Calculate lifetime transaction flow to adjust net worth dynamically
+  const totalTransactionFlow = transactions.reduce((sum, tx) => {
+    return tx.type === 'income' ? sum + Math.abs(tx.amount) : sum - Math.abs(tx.amount);
+  }, 0);
+
+  const totalAssets = assets.reduce((sum, a) => sum + a.value, 0) + totalBankBalance;
   const totalLiabilities = liabilities.reduce((sum, l) => sum + l.remainingAmount, 0);
-  const netWorth = totalAssets - totalLiabilities;
+  const netWorth = totalAssets + totalTransactionFlow - totalLiabilities;
 
   // Calculate monthly flow
   const now = new Date();

@@ -140,7 +140,7 @@ function Globe3D() {
 }
 
 export default function GlobalPulse() {
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [data, setData] = useState<MarketIntelligence | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
@@ -404,28 +404,30 @@ export default function GlobalPulse() {
       </div>
 
       {/* Top Banner: Strategic Global Indices */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {Array.isArray(data?.globalIndices) && data.globalIndices.slice(0, 6).map((index, i) => (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+        {Array.isArray(data?.globalIndices) && data.globalIndices.slice(0, 8).map((index, i) => (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
+            transition={{ delay: i * 0.05 }}
             key={i} 
-            className="p-5 bg-white dark:bg-[#0f172a] border border-slate-200/60 dark:border-white/5 rounded-3xl shadow-sm hover:shadow-xl transition-all group"
+            className="p-4 md:p-5 bg-white/60 dark:bg-zinc-900/40 backdrop-blur-md border border-slate-200/50 dark:border-white/5 rounded-2xl md:rounded-[2rem] shadow-sm hover:bg-white dark:hover:bg-zinc-800/50 transition-all group flex flex-col justify-between min-h-[110px]"
           >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">{index.name}</span>
-              <div className={`p-1.5 rounded-lg ${index.trend === 'up' ? 'bg-emerald-500/10 text-emerald-500' : index.trend === 'down' ? 'bg-rose-500/10 text-rose-500' : 'bg-slate-500/10 text-slate-500'}`}>
-                {index.trend === 'up' ? <ArrowUpRight className="w-3.5 h-3.5" /> : index.trend === 'down' ? <ArrowDownRight className="w-3.5 h-3.5" /> : <Minus className="w-3.5 h-3.5" />}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-0 mb-2">
+              <span className="text-[10px] md:text-xs font-semibold text-slate-500 dark:text-zinc-400 capitalize truncate w-full pr-2">{index.name}</span>
+              <div className={`p-1 md:p-1.5 rounded-full md:rounded-lg self-start md:self-auto ${index.trend === 'up' ? 'bg-emerald-500/10 text-emerald-500' : index.trend === 'down' ? 'bg-rose-500/10 text-rose-500' : 'bg-slate-500/10 text-slate-500'}`}>
+                {index.trend === 'up' ? <ArrowUpRight className="w-3 h-3 md:w-3.5 md:h-3.5" /> : index.trend === 'down' ? <ArrowDownRight className="w-3 h-3 md:w-3.5 md:h-3.5" /> : <Minus className="w-3 h-3 md:w-3.5 md:h-3.5" />}
               </div>
             </div>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-mono font-black text-slate-800 dark:text-white">{index.value}</span>
-              <span className={`text-xs font-bold ${Number(index.change) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {Number(index.change) >= 0 ? '+' : ''}{String(index.change).replace('%', '')}%
-              </span>
+            <div>
+              <div className="flex flex-wrap items-baseline gap-1 md:gap-2">
+                <span className="text-xl md:text-2xl font-semibold tracking-tight text-slate-900 dark:text-zinc-100">{index.value}</span>
+                <span className={`text-[10px] md:text-xs font-semibold ${Number(index.change) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                  {Number(index.change) >= 0 ? '+' : ''}{String(index.change).replace('%', '')}%
+                </span>
+              </div>
+              <p className="text-[9px] md:text-[10px] text-slate-500 dark:text-zinc-500 md:line-clamp-1 mt-1 md:mt-2 font-medium">{index.description}</p>
             </div>
-            <p className="text-[10px] text-slate-500 line-clamp-1 mt-2 font-medium italic">{index.description}</p>
           </motion.div>
         ))}
       </div>
@@ -435,19 +437,19 @@ export default function GlobalPulse() {
         <div className="flex items-center gap-6">
           <div className="relative">
             <div className="w-14 h-14 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-2xl shadow-indigo-500/40 relative z-10">
-              <Radio className="w-7 h-7 text-white animate-pulse" />
+              <Globe className="w-7 h-7 text-white" />
             </div>
             <div className="absolute -inset-2 bg-indigo-500/20 blur-xl rounded-full" />
           </div>
           <div className="space-y-1">
-            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Gemini Alpha Engine</h1>
+            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase">{t('Your AI Market Guide')}</h1>
             <div className="flex items-center gap-3">
               <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 flex items-center gap-1.5 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                Live Telemetry
+                {t('Live Updates')}
               </span>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                Last DeepMind Sync: {lastUpdated.toLocaleTimeString()}
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-2">
+                Aggiornato: {lastUpdated.toLocaleTimeString()}
               </p>
             </div>
           </div>
@@ -514,9 +516,9 @@ export default function GlobalPulse() {
         {/* Left: Intelligence Stream */}
         <div className={`lg:col-span-7 space-y-6 ${activeMobileTab !== 'stream' ? 'hidden lg:block' : 'block'}`}>
           <div className="flex items-center justify-between mb-4 px-2">
-            <h3 className="text-xs font-black text-slate-800 dark:text-cyan-400 uppercase tracking-[0.25em] flex items-center gap-3 drop-shadow-[0_0_5px_rgba(34,211,238,0.3)]">
+            <h3 className="text-xs font-black text-slate-800 dark:text-cyan-400 uppercase tracking-widest flex items-center gap-3 drop-shadow-[0_0_5px_rgba(34,211,238,0.3)]">
               <Layers className="w-4 h-4" />
-              Global Telemetry Stream
+              {t('Real-Time News Stream')}
             </h3>
             <div className="flex items-center gap-2">
               <span className="relative flex h-2 w-2">
@@ -537,59 +539,53 @@ export default function GlobalPulse() {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
                   transition={{ duration: 0.4, delay: idx * 0.05, ease: "easeOut" }}
-                  onClick={() => setSelectedNews(item)}
-                  className="group bg-white dark:bg-[#050505] border border-slate-200 dark:border-white/10 rounded-[2rem] p-6 lg:p-8 hover:border-cyan-500/50 transition-all shadow-sm hover:shadow-[0_0_30px_rgba(34,211,238,0.15)] overflow-hidden relative cursor-pointer"
+                  className="group bg-white/70 dark:bg-black/40 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-3xl p-5 hover:bg-white dark:hover:bg-white/5 transition-all shadow-sm overflow-hidden relative cursor-pointer flex flex-col md:flex-row gap-5"
                 >
-                  {/* Hover scanline effect */}
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-scanline pointer-events-none"></div>
-
-                  <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
-                    <button className="p-2 bg-slate-100 dark:bg-white/5 rounded-xl hover:text-cyan-400 border border-transparent hover:border-cyan-500/30">
-                      <Eye className="w-4 h-4" />
-                    </button>
-                  </div>
-                  
-                  <div className="flex flex-wrap items-center gap-3 mb-6 relative z-10">
-                    <span className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${
-                      item.category === 'macro' ? 'text-indigo-400 border-indigo-400/30 bg-indigo-400/10 shadow-[0_0_5px_rgba(129,140,248,0.3)]' :
-                      item.category === 'tech' ? 'text-cyan-400 border-cyan-400/30 bg-cyan-400/10 shadow-[0_0_5px_rgba(34,211,238,0.3)]' :
-                      item.category === 'crypto' ? 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10 shadow-[0_0_5px_rgba(16,185,129,0.3)]' :
-                      item.category === 'energy' ? 'text-amber-400 border-amber-400/30 bg-amber-400/10 shadow-[0_0_5px_rgba(251,191,36,0.3)]' :
-                      item.category === 'ai' ? 'text-rose-400 border-rose-400/30 bg-rose-400/10 shadow-[0_0_5px_rgba(244,63,94,0.3)]' :
-                      'text-slate-400 border-slate-400/30 bg-slate-400/10'
-                    }`}>
-                      {item.category}
-                    </span>
-                    <div className="h-4 w-[1px] bg-slate-200 dark:bg-white/10 mx-1" />
-                    <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">{item.source}</span>
-                    <div className="ml-auto flex items-center gap-4">
-                      {getSentimentIcon(item.sentiment)}
-                      <span className="text-[9px] font-mono font-bold text-slate-500 dark:text-slate-500 border border-slate-200 dark:border-white/10 px-2 py-0.5 rounded">{item.timestamp}</span>
-                    </div>
-                  </div>
-
-                  <h4 className="text-xl lg:text-2xl font-black text-slate-800 dark:text-white tracking-tighter leading-tight mb-4 group-hover:text-cyan-400 transition-colors uppercase relative z-10">
-                    {item.title}
-                  </h4>
-                  
-                  <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium relative z-10 border-l-2 border-slate-200 dark:border-white/10 pl-4">
-                    {item.summary}
-                  </p>
-
-                  <div className="mt-8 pt-6 border-t border-slate-200 dark:border-white/10 flex items-center justify-between relative z-10">
-                    <div className="flex items-center gap-4">
-                      <div className="flex -space-x-2">
-                        {[1, 2, 3].map(i => (
-                          <div key={i} className="w-6 h-6 rounded border border-white dark:border-[#050505] bg-slate-100 dark:bg-white/5 flex items-center justify-center overflow-hidden">
-                            <div className="w-full h-full bg-cyan-500/20" />
-                          </div>
-                        ))}
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-center gap-3 mb-3 relative z-10">
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wide border ${
+                        item.category === 'macro' ? 'text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/30' :
+                        item.category === 'tech' ? 'text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-500/30' :
+                        item.category === 'crypto' ? 'text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30' :
+                        item.category === 'energy' ? 'text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/30' :
+                        item.category === 'ai' ? 'text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-500/30' :
+                        'text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-500/30'
+                      }`}>
+                        {item.category}
+                      </span>
+                      <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-500">{item.source}</span>
+                      <div className="ml-auto flex items-center gap-3">
+                        {getSentimentIcon(item.sentiment)}
+                        <span className="text-[10px] font-mono text-slate-400 dark:text-zinc-500">{item.timestamp}</span>
                       </div>
-                      <span className="text-[9px] font-mono font-bold text-slate-500 uppercase tracking-widest">Institutional Consensus Tracking</span>
                     </div>
-                    <button className="flex items-center gap-2 text-[9px] font-black font-mono text-cyan-500 uppercase tracking-widest hover:gap-3 transition-all group/btn">
-                      Decrypt Intelligence <ChevronRight className="w-3 h-3 group-hover/btn:text-cyan-300" />
+
+                    <h4 className="text-lg md:text-xl font-semibold text-slate-900 dark:text-zinc-100 tracking-tight leading-snug mb-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                      {item.title}
+                    </h4>
+                    
+                    <p className="text-sm text-slate-600 dark:text-zinc-400 leading-relaxed font-normal line-clamp-2">
+                      {item.summary}
+                    </p>
+                  </div>
+                  
+                  <div className="flex flex-row md:flex-col items-center justify-between md:justify-center gap-4 border-t md:border-t-0 md:border-l border-slate-100 dark:border-zinc-800/50 pt-4 md:pt-0 md:pl-5 min-w-[120px]">
+                    <button 
+                      onClick={() => setSelectedNews(item)}
+                      className="flex-1 w-full bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-700 dark:text-white px-4 py-2 rounded-xl text-xs font-medium transition-colors flex items-center justify-center gap-2"
+                    >
+                      {t('AI Summary')}
                     </button>
+                    {item.url && (
+                      <a 
+                        href={item.url} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="flex-1 w-full bg-indigo-50 dark:bg-indigo-500/10 hover:bg-indigo-100 dark:hover:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 px-4 py-2 rounded-xl text-xs font-medium transition-colors flex items-center justify-center gap-2 border border-indigo-100 dark:border-indigo-500/20"
+                      >
+                        {t('Original')} <ArrowUpRight className="w-3 h-3" />
+                      </a>
+                    )}
                   </div>
                 </motion.div>
               ))}
@@ -598,7 +594,7 @@ export default function GlobalPulse() {
         </div>
 
         {/* Right: Analyst Sidebar */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="lg:col-span-12 space-y-6">
           
           {/* Strategy Protocol (The "Brain") */}
           <section className={`bg-gradient-to-br from-indigo-950 via-indigo-900 to-black rounded-[2rem] p-8 lg:p-10 text-white shadow-2xl relative overflow-hidden group border border-indigo-500/20 ${activeMobileTab !== 'strategy' ? 'hidden lg:block' : 'block'}`}>
@@ -620,78 +616,75 @@ export default function GlobalPulse() {
                 <div className="p-2.5 bg-indigo-500/20 rounded-xl border border-indigo-500/30">
                   <Target className="w-5 h-5 text-indigo-400" />
                 </div>
-                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-indigo-300 shadow-indigo-500/50 drop-shadow-md">Alpha Strategy</h3>
+                <h3 className="text-sm font-bold uppercase tracking-widest text-indigo-300 drop-shadow-md">{t('Strategic Guide')}</h3>
               </div>
-              <div className="px-4 py-1.5 rounded-full bg-indigo-500/20 text-[10px] font-mono font-black border border-indigo-500/30 text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.5)]">
-                CONF: {data?.analystConfidence || 0}%
+              <div className="px-4 py-1.5 rounded-full bg-indigo-500/20 text-xs font-bold border border-indigo-500/30 text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.5)]">
+                {t('Confidence')}: {data?.analystConfidence || 0}%
               </div>
             </div>
 
-            <div className="space-y-8 relative z-10">
+            <div className="space-y-8 relative z-10 w-full xl:w-4/5 text-center sm:text-left mx-auto sm:mx-0">
               <div>
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400/80 mb-3 ml-1">Strategic Imperative</p>
-                <div className="p-6 bg-black/40 border border-indigo-500/20 rounded-[1.5rem] font-bold text-[15px] leading-relaxed tracking-tight text-indigo-50 shadow-inner">
-                  "{data?.strategicAdvice || 'Awaiting structural strategy'}"
+                <p className="text-xs font-bold uppercase tracking-widest text-indigo-400/80 mb-3 ml-1">{t('What you should do now')}</p>
+                <div className="p-6 bg-black/40 border border-indigo-500/20 rounded-2xl font-bold text-lg sm:text-xl leading-relaxed text-indigo-50 shadow-inner">
+                  "{data?.strategicAdvice || t('Analyzing strategy...')}"
                 </div>
               </div>
 
               <div>
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400/80 mb-3 ml-1">Market State</p>
-                <p className="text-2xl font-black tracking-tighter leading-tight uppercase pr-8 text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.3)]">
-                  {data?.marketMood || 'Analyzing macro vibration'}
+                <p className="text-xs font-bold uppercase tracking-widest text-indigo-400/80 mb-3 ml-1">{t('How the market is feeling')}</p>
+                <p className="text-xl sm:text-2xl font-black leading-tight text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.3)]">
+                  {data?.marketMood || t('Analyzing global signals...')}
                 </p>
               </div>
             </div>
           </section>
 
           {/* Probabilities radar */}
-          <section className={`bg-[#050505] border border-white/10 rounded-[2rem] p-8 lg:p-10 space-y-8 shadow-2xl relative overflow-hidden ${activeMobileTab !== 'radar' ? 'hidden lg:block' : 'block'}`}>
-            {/* Cyber grid background */}
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none opacity-50"></div>
-            
+          <section className={`bg-white/70 dark:bg-black/40 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-3xl p-6 lg:p-8 space-y-6 shadow-sm relative overflow-hidden ${activeMobileTab !== 'radar' ? 'hidden lg:block' : 'block'}`}>
             <div className="flex items-center justify-between relative z-10">
-              <h3 className="text-xs font-black text-cyan-400 border-l-2 border-cyan-400 pl-3 uppercase tracking-[0.25em] flex items-center gap-3 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]">
-                Predictive Models
+              <h3 className="text-sm font-semibold text-slate-800 dark:text-cyan-400 flex items-center gap-3">
+                <PieChart className="w-4 h-4" />
+                {t('What Might Happen Next')}
               </h3>
-              <Info className="w-4 h-4 text-slate-500" />
+              <Info className="w-4 h-4 text-slate-400 dark:text-slate-500" />
             </div>
 
-            <div className="space-y-6 relative z-10">
+            <div className="space-y-5 relative z-10">
               {Array.isArray(data?.probabilisticRadar) && data.probabilisticRadar.length > 0 ? data.probabilisticRadar.map((scenario, i) => (
                 <div key={i} className="group relative">
-                  <div className="flex items-center justify-between mb-3 px-1">
-                    <span className="text-[11px] font-black text-slate-200 uppercase tracking-tight max-w-[70%]">{scenario.event || 'Unknown Event'}</span>
-                    <span className="text-lg font-mono font-black text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]">{scenario.probability || 0}%</span>
+                  <div className="flex items-center justify-between mb-2 px-1">
+                    <span className="text-sm font-medium text-slate-700 dark:text-zinc-200 max-w-[70%]">{scenario.event || 'Unknown Event'}</span>
+                    <span className="text-sm font-mono font-medium text-cyan-600 dark:text-cyan-400">{scenario.probability || 0}%</span>
                   </div>
                   
-                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-3">
+                  <div className="h-2 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden mb-2">
                     <motion.div 
-                      className="h-full bg-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,1)]"
+                      className="h-full bg-cyan-500 dark:bg-cyan-400"
                       initial={{ width: 0 }}
                       animate={{ width: `${scenario.probability || 0}%` }}
                       transition={{ duration: 1.5, ease: "easeOut" }}
                     />
                   </div>
 
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center justify-between gap-4 mt-2">
                     <div className="flex items-center gap-2">
-                       <span className="text-[9px] font-black text-slate-500 uppercase">Impact</span>
-                       <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${
-                        scenario.impact === 'extreme' ? 'text-rose-400 border-rose-400/30 bg-rose-400/10' :
-                        scenario.impact === 'high' ? 'text-amber-400 border-amber-400/30 bg-amber-400/10' :
-                        'text-emerald-400 border-emerald-400/30 bg-emerald-400/10'
+                       <span className={`text-[10px] font-semibold uppercase px-2 py-0.5 rounded border ${
+                        scenario.impact === 'extreme' ? 'text-rose-600 border-rose-200 bg-rose-50 dark:text-rose-400 dark:border-rose-400/30 dark:bg-rose-400/10' :
+                        scenario.impact === 'high' ? 'text-amber-600 border-amber-200 bg-amber-50 dark:text-amber-400 dark:border-amber-400/30 dark:bg-amber-400/10' :
+                        'text-emerald-600 border-emerald-200 bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400/30 dark:bg-emerald-400/10'
                       }`}>
                         {scenario.impact || 'medium'}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 max-w-[60%] justify-end">
-                      <Zap className="w-3 h-3 text-cyan-500" />
-                      <span className="text-[9px] font-bold text-slate-400 truncate uppercase tracking-widest">{scenario.catalyst || 'Unidentified'}</span>
+                    <div className="flex items-center gap-1.5 max-w-[60%] justify-end text-slate-500 dark:text-slate-400">
+                      <Zap className="w-3 h-3 text-amber-500" />
+                      <span className="text-[10px] font-medium truncate">{scenario.catalyst || 'Unidentified'}</span>
                     </div>
                   </div>
                 </div>
               )) : (
-                <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest py-8 text-center border border-dashed border-white/10 rounded-xl">Processing Probability Vectors...</div>
+                <div className="text-xs font-medium text-slate-500 py-8 text-center bg-slate-50 dark:bg-zinc-800/50 border border-dashed border-slate-200 dark:border-white/10 rounded-xl">Processing Probability Vectors...</div>
               )}
             </div>
           </section>
@@ -699,58 +692,53 @@ export default function GlobalPulse() {
           {/* Trend & Risk Matrix */}
           <div className={`grid grid-cols-1 gap-6 ${activeMobileTab !== 'radar' ? 'hidden lg:block' : 'block'}`}>
              {/* Risk Analysis Matrix */}
-            <div className="p-8 lg:p-10 bg-black rounded-[2rem] border-2 border-rose-900/30 space-y-8 relative overflow-hidden shadow-[0_0_50px_rgba(159,18,57,0.1)]">
-              <div className="absolute top-0 right-0 p-8 opacity-5">
-                <ShieldAlert className="w-32 h-32 text-rose-500" />
-              </div>
-              
+            <div className="p-6 lg:p-8 bg-white/70 dark:bg-black/40 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-3xl space-y-6 relative overflow-hidden shadow-sm">
               <div className="flex items-center justify-between relative z-10">
-                <h3 className="text-xs font-black text-rose-500 uppercase tracking-[0.25em] flex items-center gap-3 drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]">
+                <h3 className="text-sm font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-3">
                   <ShieldAlert className="w-4 h-4" />
-                  Risk Matrix
+                  {t('Things to Watch Out For')}
                 </h3>
-                <div className="animate-pulse flex items-center justify-center">
-                  <div className="h-2 w-2 bg-rose-500 rounded-full shadow-[0_0_10px_rgba(244,63,94,1)]"></div>
+                <div className="flex items-center justify-center">
+                  <div className="h-2 w-2 bg-rose-500 rounded-full animate-pulse"></div>
                 </div>
               </div>
               
-              <div className="space-y-4 relative z-10">
+              <div className="space-y-3 relative z-10">
                 {Array.isArray(data?.riskAnalysis) && data.riskAnalysis.length > 0 ? data.riskAnalysis.map((risk, i) => (
-                  <div key={i} className="group p-5 bg-rose-950/10 border border-rose-900/20 rounded-2xl hover:bg-rose-900/20 hover:border-rose-500/40 transition-all backdrop-blur-md">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-[11px] font-black text-rose-100 uppercase tracking-tight">{risk.name || 'Systemic Risk'}</span>
-                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${
-                        risk.level === 'critical' ? 'text-rose-400 border-rose-400 bg-rose-400/20 animate-pulse' : 
-                        risk.level === 'high' ? 'text-rose-400 border-rose-400/50 bg-rose-400/10' : 
-                        'text-amber-400 border-amber-400/50 bg-amber-400/10'
+                  <div key={i} className="group p-4 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 rounded-2xl hover:border-slate-300 dark:hover:border-white/20 transition-all">
+                    <div className="flex flex-wrap items-center gap-2 justify-between mb-2">
+                      <span className="text-sm font-medium text-slate-800 dark:text-zinc-200">{risk.name || 'Systemic Risk'}</span>
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded capitalize border ${
+                        risk.level === 'critical' ? 'text-rose-600 border-rose-200 bg-rose-100 dark:text-rose-400 dark:border-rose-400/50 dark:bg-rose-400/20' : 
+                        risk.level === 'high' ? 'text-rose-600 border-rose-200 bg-rose-50 dark:text-rose-400 dark:border-rose-400/50 dark:bg-rose-400/10' : 
+                        'text-amber-600 border-amber-200 bg-amber-50 dark:text-amber-400 dark:border-amber-400/50 dark:bg-amber-400/10'
                       }`}>
                         {risk.level || 'high'}
                       </span>
                     </div>
-                    <p className="text-[10px] text-rose-300/70 font-mono tracking-tight leading-relaxed">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-normal">
                       {risk.description || 'Monitoring risk vectors.'}
                     </p>
                   </div>
                 )) : (
-                  <div className="text-[10px] font-mono text-rose-500/50 uppercase tracking-widest py-8 text-center border border-dashed border-rose-900/40 rounded-xl">Scanning Environment...</div>
+                  <div className="text-xs font-medium text-slate-500 py-8 text-center bg-slate-50 dark:bg-zinc-800/50 border border-dashed border-slate-200 dark:border-white/10 rounded-xl">Scanning Environment...</div>
                 )}
               </div>
             </div>
 
             {/* Sector Signals */}
-            <div className="p-8 lg:p-10 bg-[#050505] border border-emerald-900/30 rounded-[2rem] shadow-[0_0_30px_rgba(16,185,129,0.05)] space-y-8 relative overflow-hidden">
-               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.05),transparent_70%)] pointer-events-none"></div>
-              <h3 className="text-xs font-black text-emerald-400 uppercase tracking-[0.25em] flex items-center gap-3 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)] relative z-10">
+            <div className="p-6 lg:p-8 bg-white/70 dark:bg-black/40 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-3xl shadow-sm space-y-6 relative overflow-hidden">
+              <h3 className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-3 relative z-10">
                 <Activity className="w-4 h-4" />
-                Alpha Signals
+                {t('Trending Up')}
               </h3>
-              <div className="grid grid-cols-1 gap-4 relative z-10">
+              <div className="grid grid-cols-1 gap-3 relative z-10">
                 {Array.isArray(data?.trendRadar) && data.trendRadar.length > 0 ? data.trendRadar.slice(0, 3).map((trend, i) => (
-                  <div key={i} className="p-5 bg-emerald-950/20 rounded-2xl border border-emerald-900/30 flex flex-col gap-3 group hover:border-emerald-500/40 hover:bg-emerald-900/20 transition-all">
+                  <div key={i} className="p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 flex flex-col gap-2 group hover:border-slate-300 dark:hover:border-white/20 transition-all">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                         <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(16,185,129,1)]"></div>
-                         <span className="text-[11px] font-black text-emerald-50 uppercase tracking-tight">{trend.trend || 'Emerging Signal'}</span>
+                      <div className="flex items-center gap-2">
+                         <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                         <span className="text-sm font-medium text-slate-800 dark:text-zinc-200">{trend.trend || 'Emerging Signal'}</span>
                       </div>
                       <span className="text-[9px] font-bold font-mono text-emerald-400 border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 rounded">{trend.timeframe || 'Active'}</span>
                     </div>
