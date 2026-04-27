@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Building2, Wallet, Landmark, Globe, Plus, ShieldCheck, 
   ArrowRight, CheckCircle2, QrCode, Smartphone, ExternalLink,
-  Lock, Zap, Info, Bitcoin, TrendingUp
+  Lock, Zap, Info, Bitcoin, TrendingUp, Code2, Terminal
 } from 'lucide-react';
 
 interface ConnectorProvider {
@@ -21,20 +21,25 @@ const PROVIDERS: (ConnectorProvider & { fallbackIcon: any })[] = [
   { id: 'etoro', name: 'eToro', type: 'broker', logo: 'https://logo.clearbit.com/etoro.com', color: 'bg-green-600', description: 'Stock & Copy Trading', fallbackIcon: TrendingUp },
   { id: 'binance', name: 'Binance', type: 'crypto', logo: 'https://logo.clearbit.com/binance.com', color: 'bg-amber-400', description: 'Global crypto exchange', fallbackIcon: Bitcoin },
   { id: 'coinbase', name: 'Coinbase', type: 'crypto', logo: 'https://logo.clearbit.com/coinbase.com', color: 'bg-blue-600', description: 'Institutional crypto vault', fallbackIcon: Bitcoin },
-  { id: 'degiro', name: 'DEGIRO', type: 'broker', logo: 'https://logo.clearbit.com/degiro.com', color: 'bg-rose-700', description: 'Low-cost European broker', fallbackIcon: Landmark },
+  { id: 'custom-api', name: 'Custom API', type: 'broker', logo: '', color: 'bg-indigo-600', description: 'Developer Mode: Direct Neural Bridge', fallbackIcon: Code2 },
 ];
 
 export default function IntegrationsHub() {
   const [activeTab, setActiveTab] = useState<'all' | 'banks' | 'crypto' | 'brokers'>('all');
-  const [connectingProvider, setConnectingProvider] = useState<ConnectorProvider | null>(null);
-  const [connectionStep, setConnectionStep] = useState<'intro' | 'qr' | 'success'>('intro');
+  const [connectingProvider, setConnectingProvider] = useState<any | null>(null);
+  const [connectionStep, setConnectionStep] = useState<'intro' | 'qr' | 'custom' | 'success'>('intro');
+  const [customConfig, setCustomConfig] = useState({ endpoint: '', apiKey: '' });
 
   const tabToType: Record<string, string> = { banks: 'bank', crypto: 'crypto', brokers: 'broker' };
   const filteredProviders = PROVIDERS.filter(p => activeTab === 'all' || p.type === tabToType[activeTab]);
 
   const handleConnect = (provider: ConnectorProvider) => {
     setConnectingProvider(provider);
-    setConnectionStep('intro');
+    if (provider.id === 'custom-api') {
+      setConnectionStep('custom');
+    } else {
+      setConnectionStep('intro');
+    }
   };
 
   return (
@@ -169,6 +174,50 @@ export default function IntegrationsHub() {
                       <Lock className="w-4 h-4" />
                       <span className="text-[10px] font-black uppercase tracking-widest">End-to-End Encrypted</span>
                     </div>
+                  </motion.div>
+                )}
+
+                {connectionStep === 'custom' && (
+                  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full space-y-8">
+                    <div className="flex items-center justify-center gap-4 mb-4">
+                      <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center text-indigo-500 shadow-lg border border-indigo-500/20">
+                        <Terminal className="w-8 h-8" />
+                      </div>
+                      <Code2 className="w-6 h-6 text-indigo-400 animate-pulse" />
+                      <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                        <Zap className="w-8 h-8" />
+                      </div>
+                    </div>
+
+                    <div className="space-y-4 text-left">
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Endpoint URL</label>
+                          <input 
+                            type="text" 
+                            placeholder="https://api.yourbank.com/v1" 
+                            className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-white/10 rounded-2xl px-5 py-4 text-sm font-mono focus:border-indigo-500 transition-all outline-none"
+                            value={customConfig.endpoint}
+                            onChange={(e) => setCustomConfig({...customConfig, endpoint: e.target.value})}
+                          />
+                       </div>
+                       <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Bearer API Key</label>
+                          <input 
+                            type="password" 
+                            placeholder="sk_live_..." 
+                            className="w-full bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-white/10 rounded-2xl px-5 py-4 text-sm font-mono focus:border-indigo-500 transition-all outline-none"
+                            value={customConfig.apiKey}
+                            onChange={(e) => setCustomConfig({...customConfig, apiKey: e.target.value})}
+                          />
+                       </div>
+                    </div>
+
+                    <button 
+                      onClick={() => setConnectionStep('success')}
+                      className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2"
+                    >
+                      Establish Neural Bridge
+                    </button>
                   </motion.div>
                 )}
 
