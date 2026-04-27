@@ -137,6 +137,37 @@ export default function Palantir({ assets, liabilities, goals, userProfile }: Pa
     orbColors.bg = 'bg-rose-950/40';
   }
 
+  const handleUpgrade = async () => {
+    if (!userProfile?.email) {
+      showNotification('Profile Required', 'Please complete your profile to continue.', 'warning');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/create-checkout-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userProfile.uid,
+          userEmail: userProfile.email
+        }),
+      });
+      
+      const session = await response.json();
+      if (session.url) {
+        window.location.href = session.url;
+      } else {
+        throw new Error('No session URL received');
+      }
+    } catch (err: any) {
+      console.error('Upgrade error:', err);
+      showNotification('Checkout Error', err.message, 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 pb-24 lg:pb-12 pt-6 lg:pt-8 px-4 sm:px-6 max-w-7xl mx-auto font-sans selection:bg-amber-500/30">
       
@@ -192,7 +223,48 @@ export default function Palantir({ assets, liabilities, goals, userProfile }: Pa
           <p className="mt-8 text-xs font-black uppercase tracking-widest text-amber-500/70">Palantir is analyzing global data...</p>
         </div>
       ) : data ? (
-        <div className="space-y-8">
+        <div className="space-y-8 relative">
+
+          {/* UPGRADE OVERLAY FOR NON-PREMIUM */}
+          {!isPremium && (
+            <div className="absolute inset-0 z-40 flex items-start justify-center pt-96">
+               <div className="sticky top-[20%] w-full max-w-xl p-8 rounded-[3rem] bg-slate-900/40 backdrop-blur-2xl border border-white/10 shadow-[0_0_100px_rgba(0,0,0,0.5)] text-center overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-500 via-fuchsia-500 to-indigo-500" />
+                  
+                  <div className="w-20 h-20 bg-amber-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-amber-500/20">
+                    <Lock className="w-10 h-10 text-amber-500" />
+                  </div>
+                  
+                  <h2 className="text-3xl font-black text-white mb-4 tracking-tight">Executive Intelligence Locked</h2>
+                  <p className="text-slate-400 font-medium leading-relaxed mb-8">
+                    Upgrade to access proprietary probability vectors, structural signals, and active risk analysis. <br/>
+                    <span className="text-amber-500 font-bold italic">Start your 7-day free trial today.</span>
+                  </p>
+
+                  <div className="mb-10 px-8">
+                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
+                       <span>Palantir Capacity</span>
+                       <span className="text-amber-500">94%</span>
+                    </div>
+                    <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
+                       <div className="h-full w-[94%] bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]" />
+                    </div>
+                    <p className="mt-3 text-[10px] font-black text-rose-500 uppercase tracking-widest flex items-center justify-center gap-2">
+                       <ShieldAlert className="w-3 h-3" /> Only 312 Executive spots remaining
+                    </p>
+                  </div>
+
+                  <button 
+                    onClick={handleUpgrade}
+                    className="w-full py-5 bg-amber-500 text-slate-950 font-black text-base uppercase tracking-[0.1em] rounded-2xl hover:bg-amber-400 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-amber-500/20"
+                  >
+                    Unlock Palantir
+                  </button>
+               </div>
+            </div>
+          )}
+
+          <div className={`space-y-8 ${!isPremium ? 'blur-md select-none pointer-events-none opacity-50' : ''}`}>
 
           {/* Desktop Metric Cards (Top on Desktop, Hidden on Mobile here) */}
           <div className="hidden lg:grid grid-cols-3 gap-4 mb-8">

@@ -95,13 +95,13 @@ app.post('/api/create-checkout-session', async (req, res) => {
       customer_email: userEmail,
       line_items: [
         {
-          price: process.env.VITE_STRIPE_PRICE_ID_MONTHLY || process.env.STRIPE_PRICE_ID_MONTHLY || '',
+          price: process.env.VITE_STRIPE_PRICE_ID_MONTHLY || process.env.STRIPE_PRICE_ID_MONTHLY || 'price_placeholder', // YOUR STRIPE PRICE ID
           quantity: 1,
         },
       ],
       mode: 'subscription',
       subscription_data: {
-        trial_period_days: 15,
+        trial_period_days: 7, // 7-day free access for Palantir as requested
       },
       success_url: `${process.env.VITE_APP_URL || 'http://localhost:3000'}/?billing=success`,
       cancel_url: `${process.env.VITE_APP_URL || 'http://localhost:3000'}/?billing=cancel`,
