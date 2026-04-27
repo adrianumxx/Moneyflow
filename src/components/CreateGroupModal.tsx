@@ -89,6 +89,7 @@ export default function CreateGroupModal({ isOpen, onClose, user, onDemoAdd, onS
         description: description.trim(),
         type,
         createdBy: user.uid,
+        ownerId: user.uid,
         createdAt: serverTimestamp(),
         memberIds: [user.uid], // We will add others if they have accounts, or just mock for now
       };

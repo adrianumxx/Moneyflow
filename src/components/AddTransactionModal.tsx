@@ -99,7 +99,9 @@ export default function AddTransactionModal({ isOpen, onClose, userId, onDemoAdd
         type,
         date: Timestamp.fromDate(new Date(date)),
         isRecurring: false,
+        ownerId: userId,
         createdAt: initialTransaction?.createdAt || serverTimestamp(),
+        updatedAt: serverTimestamp(),
       };
 
       if (initialTransaction?.id) {

@@ -50,12 +50,14 @@ export default function AddGoalModal({ isOpen, onClose, userId, onDemoAdd }: Add
       }
       const goalData = {
         name,
+        ownerId: userId,
         targetAmount: parseFloat(targetAmount),
         currentAmount: parseFloat(currentAmount) || 0,
         deadline: deadline ? Timestamp.fromDate(new Date(deadline)) : null,
         category,
         status: 'active',
         createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
       };
 
       await addDoc(collection(db, 'users', userId, 'goals'), goalData);

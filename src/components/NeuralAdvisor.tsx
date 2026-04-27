@@ -1,5 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import ReactMarkdown from 'react-markdown';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Bot, 
@@ -25,12 +27,31 @@ interface NeuralAdvisorProps {
 }
 
 export default function NeuralAdvisor({ assets, liabilities, goals, transactions, userDisplayName }: NeuralAdvisorProps) {
+  const { i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [input, setInput] = useState('');
+  
+  // Create an effect to adjust the initial greeting based on the language
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { role: 'model', content: `Hi ${userDisplayName}! I'm your AI advisor. How can I help you with your finances today?` }
+    { role: 'model', content: `Access granted, ${userDisplayName}. I am Gemini, your Executive Intelligence Engine. I have real-time access to your portfolio, macro trends, and global data. What is our target today?` }
   ]);
+
+  useEffect(() => {
+    let greeting = `Access granted, ${userDisplayName}. I am Gemini, your Executive Intelligence Engine. What is our target today?`;
+    if (i18n.language === 'it') greeting = `Accesso consentito, ${userDisplayName}. Sono Gemini, il tuo Motore di Intelligenza Esecutiva. Qual è il nostro obiettivo oggi?`;
+    if (i18n.language === 'es') greeting = `Acceso concedido, ${userDisplayName}. Soy Gemini, tu Motor de Inteligencia Ejecutiva. ¿Cuál es nuestro objetivo hoy?`;
+    if (i18n.language === 'fr') greeting = `Accès autorisé, ${userDisplayName}. Je suis Gemini, votre Moteur d'Intelligence Exécutive. Quel est notre objectif aujourd'hui ?`;
+    if (i18n.language === 'de') greeting = `Zugriff gewährt, ${userDisplayName}. Ich bin Gemini, Ihr Executive Intelligence Engine. Was ist unser heutiges Ziel?`;
+    
+    setMessages(prev => {
+      if (prev.length === 1 && prev[0].role === 'model') {
+         return [{ role: 'model', content: greeting }];
+      }
+      return prev;
+    });
+  }, [i18n.language, userDisplayName]);
+
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +74,7 @@ export default function NeuralAdvisor({ assets, liabilities, goals, transactions
     try {
       const response = await chatWithFinancialAdvisor(
         [...messages, userMessage],
-        { assets, liabilities, goals, transactions, userDisplayName }
+        { assets, liabilities, goals, transactions, userDisplayName, language: i18n.language }
       );
       setMessages(prev => [...prev, { role: 'model', content: response }]);
     } catch (error) {
@@ -85,24 +106,23 @@ export default function NeuralAdvisor({ assets, liabilities, goals, transactions
               opacity: 1, 
               y: 0, 
               scale: 1,
-              height: isMinimized ? '80px' : '600px',
-              width: isMinimized ? '300px' : 'min(90vw, 450px)'
+              height: isMinimized ? '80px' : 'min(600px, 80vh)',
+              width: isMinimized ? '280px' : 'min(90vw, 450px)'
             }}
             exit={{ opacity: 0, y: 100, scale: 0.9 }}
-            className="fixed bottom-6 right-6 lg:bottom-10 lg:right-10 z-[100] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col backdrop-blur-3xl transition-all duration-500"
+            className="fixed bottom-4 right-4 lg:bottom-10 lg:right-10 z-[100] bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-white/10 rounded-[2rem] lg:rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col backdrop-blur-3xl transition-all duration-500"
           >
             {/* Header */}
-            <div className="p-6 border-b border-zinc-100 dark:border-white/5 flex items-center justify-between bg-gradient-to-r from-indigo-600/5 to-transparent">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                  <Bot className="w-6 h-6 text-white" />
+            <div className="p-4 lg:p-6 border-b border-zinc-100 dark:border-white/5 flex items-center justify-between bg-gradient-to-r from-indigo-600/5 to-transparent">
+              <div className="flex items-center gap-3 lg:gap-4">
+                <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-xl lg:rounded-2xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 shrink-0">
+                  <Bot className="w-4 h-4 lg:w-6 lg:h-6 text-white" />
                 </div>
-                <div>
-                  <h3 className="text-sm font-black text-zinc-900 dark:text-white uppercase tracking-widest italic flex items-center gap-2">
-                    AI Advisor
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <div className="min-w-0">
+                  <h3 className="text-xs lg:text-sm font-black text-zinc-800 dark:text-white uppercase tracking-wider flex items-center gap-2 truncate">
+                    Gemini Executive <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
                   </h3>
-                  <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-tighter">Your Financial Assistant</p>
+                  <p className="text-[8px] lg:text-[10px] text-zinc-500 font-bold uppercase tracking-widest truncate">Powered by Google DeepMind</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -137,7 +157,13 @@ export default function NeuralAdvisor({ assets, liabilities, goals, transactions
                           ? 'bg-indigo-600 text-white rounded-tr-none font-bold' 
                           : 'bg-zinc-100 dark:bg-white/5 text-zinc-800 dark:text-zinc-200 rounded-tl-none border border-zinc-200 dark:border-white/5 font-medium'
                       }`}>
-                        {msg.content}
+                        {msg.role === 'model' ? (
+                          <div className="prose prose-sm dark:prose-invert max-w-none">
+                            <ReactMarkdown>{msg.content}</ReactMarkdown>
+                          </div>
+                        ) : (
+                          msg.content
+                        )}
                       </div>
                     </motion.div>
                   ))}

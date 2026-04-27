@@ -94,6 +94,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
           accountName: accountInfo.name,
           balance: accountInfo.balance,
           currency: 'EUR',
+          ownerId: userId,
           lastSynced: serverTimestamp(),
           category: accountInfo.category || selectedBank.category.toLowerCase()
         });
@@ -107,7 +108,9 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
         for (const tx of txs) {
           await addDoc(collection(db, 'users', userId, 'transactions'), {
             ...tx,
+            ownerId: userId,
             bankAccountId: bankRef.id,
+            updatedAt: serverTimestamp(),
           });
         }
       }

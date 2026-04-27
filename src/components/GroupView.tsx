@@ -182,7 +182,11 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
       console.error("Error fetching group:", error);
     });
 
-    const expensesQuery = query(collection(db, 'groups', groupId, 'expenses'), orderBy('date', 'desc'));
+    const expensesQuery = query(
+      collection(db, 'groups', groupId, 'expenses'), 
+      where('memberIds', 'array-contains', user.uid),
+      orderBy('date', 'desc')
+    );
     const unsubscribeExpenses = onSnapshot(expensesQuery, (snapshot) => {
       setExpenses(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Expense)));
     }, (error) => {
@@ -278,7 +282,9 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
         date: Timestamp.fromDate(new Date(date)),
         createdAt: editingExpense ? editingExpense.createdAt : serverTimestamp(),
         splitType: splitType,
-        splits: splitType === 'equal' ? [] : splits
+        splits: splitType === 'equal' ? [] : splits,
+        groupId: groupId,
+        memberIds: members.map(m => m.uid)
       };
 
       if (editingExpense) {
@@ -568,8 +574,8 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
       `;
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: [{ parts: [{ text: prompt }] }]
+        model: "gemini-3-flash-preview",
+        contents: prompt
       });
 
       if (abortController.signal.aborted) return;

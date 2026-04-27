@@ -134,7 +134,7 @@ export default function WealthOverview({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:auto-rows-[160px]">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:auto-rows-min xl:auto-rows-[180px]">
         {/* HERO CARD: Net Worth (Large 2x2) */}
         <motion.section 
           initial={{ opacity: 0, scale: 0.95 }}
@@ -153,7 +153,7 @@ export default function WealthOverview({
                 </div>
                 <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-300">Total Net Worth</span>
               </div>
-              <h2 className="text-6xl md:text-8xl font-black font-display tracking-tighter leading-none">
+              <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-display tracking-tighter leading-none truncate">
                 €{formatCurrency(netWorth)}
               </h2>
               <div className="flex items-center gap-3 pt-2">
@@ -165,7 +165,7 @@ export default function WealthOverview({
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-8 pt-10 border-t border-white/10 mt-10">
+            <div className="grid grid-cols-2 gap-4 pt-6 md:pt-8 border-t border-white/10 mt-6 md:mt-auto">
               <div>
                 <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Total Assets</p>
                 <p className="text-2xl font-black text-emerald-400 font-display">€{formatCurrency(totalAssets)}</p>

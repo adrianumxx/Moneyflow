@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Zap, 
@@ -139,6 +140,7 @@ function Globe3D() {
 }
 
 export default function GlobalPulse() {
+  const { i18n } = useTranslation();
   const [data, setData] = useState<MarketIntelligence | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
@@ -169,7 +171,7 @@ export default function GlobalPulse() {
     try {
       const localTime = new Date().toISOString();
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const result = await getGlobalIntelligence(localTime, timezone);
+      const result = await getGlobalIntelligence(localTime, timezone, i18n.language);
       setData(result);
       setLastUpdated(new Date());
       if (!silent) showNotification('Data Updated', 'Market signals refreshed.', 'success', 'Global Pulse');
@@ -185,7 +187,7 @@ export default function GlobalPulse() {
     fetchIntelligence();
     const interval = setInterval(() => fetchIntelligence(true), 30 * 60 * 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [i18n.language]);
 
   const getSentimentIcon = (sentiment: string) => {
     switch (sentiment) {
@@ -207,7 +209,7 @@ export default function GlobalPulse() {
     }
   };
 
-  const filteredNews = (data?.news || []).filter(item => {
+  const filteredNews = (Array.isArray(data?.news) ? data.news : []).filter(item => {
     const matchesSearch = (item.title || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
                          (item.summary || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
@@ -266,13 +268,27 @@ export default function GlobalPulse() {
                 <p className="text-sm font-black text-slate-800 dark:text-white uppercase italic">CORTEX-X Intelligence Unit</p>
               </div>
               <div className="flex items-center gap-4">
+                {selectedNews.url && (
+                  <a 
+                    href={selectedNews.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-6 py-3 bg-slate-100 dark:bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-white/10 transition-colors flex items-center gap-2 text-slate-900 dark:text-white"
+                  >
+                    Open Original Source
+                    <ArrowUpRight className="w-3 h-3" />
+                  </a>
+                )}
                 <button 
                   onClick={() => window.print()}
                   className="px-6 py-3 bg-slate-100 dark:bg-white/5 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
                 >
                   Generate PDF Report
                 </button>
-                <button className="px-6 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-600/20">
+                <button 
+                  onClick={() => setSelectedNews(null)}
+                  className="px-6 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-600/20"
+                >
                   Execute Strategy
                 </button>
               </div>
@@ -298,7 +314,7 @@ export default function GlobalPulse() {
     );
   }
 
-  if (isLoading && !data) {
+  if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[75vh] space-y-12 relative overflow-hidden transition-colors duration-500">
         {/* Ambient background glows */}
@@ -307,22 +323,24 @@ export default function GlobalPulse() {
 
         <div className="relative w-full h-[350px] flex items-center justify-center">
           <Canvas shadows dpr={[1, 2]}>
-            <PerspectiveCamera makeDefault position={[0, 0, 8]} fov={45} />
-            <ambientLight intensity={0.5} />
-            <pointLight position={[10, 10, 10]} intensity={1.5} castShadow />
-            <spotLight position={[-10, 10, 10]} angle={0.15} penumbra={1} intensity={1} />
-            <Globe3D />
-            <ContactShadows position={[0, -3.5, 0]} opacity={0.4} scale={10} blur={2.5} far={4} />
-            <Environment preset="city" />
+            <React.Suspense fallback={null}>
+              <PerspectiveCamera makeDefault position={[0, 0, 8]} fov={45} />
+              <ambientLight intensity={0.5} />
+              <pointLight position={[10, 10, 10]} intensity={1.5} castShadow />
+              <spotLight position={[-10, 10, 10]} angle={0.15} penumbra={1} intensity={1} />
+              <Globe3D />
+              <ContactShadows position={[0, -3.5, 0]} opacity={0.4} scale={10} blur={2.5} far={4} />
+              <Environment preset="city" />
+            </React.Suspense>
           </Canvas>
         </div>
 
         <div className="flex flex-col items-center text-center space-y-6 px-6 max-w-sm relative z-10">
           <div className="space-y-2">
             <h2 className="text-3xl lg:text-4xl font-black text-slate-900 dark:text-white uppercase tracking-tighter italic leading-none">
-              Il tuo analista AI <span className="text-indigo-600 dark:text-indigo-400">sta analizzando...</span>
+              Your AI Analyst <span className="text-indigo-600 dark:text-indigo-400">is thinking...</span>
             </h2>
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">Sincronizzazione Global Pulse in corso</p>
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] animate-pulse">Syncing Global Market Data</p>
           </div>
           
           <div className="flex items-center gap-4 bg-white/50 dark:bg-white/5 backdrop-blur-xl p-4 rounded-3xl border border-slate-200 dark:border-white/10 w-full animate-bounce">
@@ -346,14 +364,14 @@ export default function GlobalPulse() {
           <ShieldAlert className="w-12 h-12 text-rose-500" />
         </div>
         <div className="space-y-2">
-          <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">Cipher Link Severed</h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">Non siamo riusciti a stabilire un collegamento sicuro con l'Intelligence Layer.</p>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tighter">Connection Lost</h3>
+          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">We couldn't establish a secure link with the Intelligence Layer.</p>
         </div>
         <button 
           onClick={() => fetchIntelligence()}
           className="px-8 py-4 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest text-xs hover:scale-105 active:scale-95 transition-all shadow-xl shadow-indigo-600/20"
         >
-          Riconnetti al Core
+          Reconnect to Core
         </button>
       </div>
     );
@@ -361,9 +379,33 @@ export default function GlobalPulse() {
 
   return (
     <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8 bg-slate-50/50 dark:bg-transparent min-h-screen">
-      {/* Top Banner: Global Indices */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {data?.globalIndices.map((index, i) => (
+      
+      {/* 🧠 Google Trust Infrastructure Badge */}
+      <div className="flex justify-center mb-6">
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-wrap items-center justify-center gap-1.5 px-4 py-2 bg-[#050505] rounded-full border border-white/10 shadow-[0_0_20px_rgba(255,255,255,0.05)] backdrop-blur-md"
+        >
+          <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 mr-2 flex items-center gap-1.5">
+            <span className="relative flex h-1.5 w-1.5 align-middle">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
+            </span>
+            Real-Time Data Streaming Powered By
+          </span>
+          <div className="flex items-center gap-3">
+             <div className="flex items-center gap-1 text-[9px] font-mono text-cyan-400 uppercase tracking-widest border border-cyan-400/20 bg-cyan-400/10 px-2 py-0.5 rounded-full"><Zap className="w-2.5 h-2.5" /> Google Trends</div>
+             <div className="flex items-center gap-1 text-[9px] font-mono text-rose-400 uppercase tracking-widest border border-rose-400/20 bg-rose-400/10 px-2 py-0.5 rounded-full"><Radio className="w-2.5 h-2.5" /> Google News</div>
+             <div className="flex items-center gap-1 text-[9px] font-mono text-emerald-400 uppercase tracking-widest border border-emerald-400/20 bg-emerald-400/10 px-2 py-0.5 rounded-full"><Target className="w-2.5 h-2.5" /> Google Finance</div>
+             <div className="flex items-center gap-1 text-[9px] font-mono text-indigo-400 uppercase tracking-widest border border-indigo-400/20 bg-indigo-400/10 px-2 py-0.5 rounded-full"><Layers className="w-2.5 h-2.5" /> Gemini AI</div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Top Banner: Strategic Global Indices */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {Array.isArray(data?.globalIndices) && data.globalIndices.slice(0, 6).map((index, i) => (
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -379,8 +421,8 @@ export default function GlobalPulse() {
             </div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-mono font-black text-slate-800 dark:text-white">{index.value}</span>
-              <span className={`text-xs font-bold ${index.change >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                {index.change >= 0 ? '+' : ''}{index.change}%
+              <span className={`text-xs font-bold ${Number(index.change) >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                {Number(index.change) >= 0 ? '+' : ''}{String(index.change).replace('%', '')}%
               </span>
             </div>
             <p className="text-[10px] text-slate-500 line-clamp-1 mt-2 font-medium italic">{index.description}</p>
@@ -398,14 +440,14 @@ export default function GlobalPulse() {
             <div className="absolute -inset-2 bg-indigo-500/20 blur-xl rounded-full" />
           </div>
           <div className="space-y-1">
-            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Market Pulse</h1>
+            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Gemini Alpha Engine</h1>
             <div className="flex items-center gap-3">
-              <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 flex items-center gap-1.5">
-                <div className="w-1 h-1 rounded-full bg-emerald-500 animate-ping" />
-                Live Feed
+              <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 flex items-center gap-1.5 shadow-[0_0_10px_rgba(16,185,129,0.2)]">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                Live Telemetry
               </span>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
-                Last Sync: {lastUpdated.toLocaleTimeString()}
+                Last DeepMind Sync: {lastUpdated.toLocaleTimeString()}
               </p>
             </div>
           </div>
@@ -472,11 +514,17 @@ export default function GlobalPulse() {
         {/* Left: Intelligence Stream */}
         <div className={`lg:col-span-7 space-y-6 ${activeMobileTab !== 'stream' ? 'hidden lg:block' : 'block'}`}>
           <div className="flex items-center justify-between mb-4 px-2">
-            <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-[0.25em] flex items-center gap-3">
-              <Layers className="w-4 h-4 text-indigo-500" />
-              Market Updates
+            <h3 className="text-xs font-black text-slate-800 dark:text-cyan-400 uppercase tracking-[0.25em] flex items-center gap-3 drop-shadow-[0_0_5px_rgba(34,211,238,0.3)]">
+              <Layers className="w-4 h-4" />
+              Global Telemetry Stream
             </h3>
-            <span className="text-[10px] font-bold text-slate-400 italic">Latest global signals</span>
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="text-[9px] font-mono font-bold text-slate-500 uppercase tracking-widest text-emerald-500">Live Sync</span>
+            </div>
           </div>
 
           <div className="space-y-4">
@@ -485,52 +533,62 @@ export default function GlobalPulse() {
                 <motion.div
                   key={item.id || idx}
                   layout
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20 }}
-                  transition={{ duration: 0.3, delay: idx * 0.05 }}
+                  initial={{ opacity: 0, scale: 0.98, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  transition={{ duration: 0.4, delay: idx * 0.05, ease: "easeOut" }}
                   onClick={() => setSelectedNews(item)}
-                  className="group bg-white dark:bg-[#0f172a] border border-slate-200/60 dark:border-white/5 rounded-[2rem] p-6 lg:p-8 hover:border-indigo-500/40 transition-all shadow-sm hover:shadow-2xl overflow-hidden relative cursor-pointer active:scale-[0.99]"
+                  className="group bg-white dark:bg-[#050505] border border-slate-200 dark:border-white/10 rounded-[2rem] p-6 lg:p-8 hover:border-cyan-500/50 transition-all shadow-sm hover:shadow-[0_0_30px_rgba(34,211,238,0.15)] overflow-hidden relative cursor-pointer"
                 >
-                  <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="p-2 bg-slate-50 dark:bg-white/5 rounded-xl hover:text-indigo-500">
+                  {/* Hover scanline effect */}
+                  <div className="absolute inset-0 bg-gradient-to-b from-transparent via-cyan-500/5 to-transparent opacity-0 group-hover:opacity-100 group-hover:animate-scanline pointer-events-none"></div>
+
+                  <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <button className="p-2 bg-slate-100 dark:bg-white/5 rounded-xl hover:text-cyan-400 border border-transparent hover:border-cyan-500/30">
                       <Eye className="w-4 h-4" />
                     </button>
                   </div>
                   
-                  <div className="flex flex-wrap items-center gap-3 mb-6">
-                    <span className={`px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border ${getCategoryColor(item.category)}`}>
+                  <div className="flex flex-wrap items-center gap-3 mb-6 relative z-10">
+                    <span className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-widest border ${
+                      item.category === 'macro' ? 'text-indigo-400 border-indigo-400/30 bg-indigo-400/10 shadow-[0_0_5px_rgba(129,140,248,0.3)]' :
+                      item.category === 'tech' ? 'text-cyan-400 border-cyan-400/30 bg-cyan-400/10 shadow-[0_0_5px_rgba(34,211,238,0.3)]' :
+                      item.category === 'crypto' ? 'text-emerald-400 border-emerald-400/30 bg-emerald-400/10 shadow-[0_0_5px_rgba(16,185,129,0.3)]' :
+                      item.category === 'energy' ? 'text-amber-400 border-amber-400/30 bg-amber-400/10 shadow-[0_0_5px_rgba(251,191,36,0.3)]' :
+                      item.category === 'ai' ? 'text-rose-400 border-rose-400/30 bg-rose-400/10 shadow-[0_0_5px_rgba(244,63,94,0.3)]' :
+                      'text-slate-400 border-slate-400/30 bg-slate-400/10'
+                    }`}>
                       {item.category}
                     </span>
                     <div className="h-4 w-[1px] bg-slate-200 dark:bg-white/10 mx-1" />
-                    <span className="text-[10px] font-black text-slate-400 uppercase italic tracking-tighter">{item.source}</span>
+                    <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">{item.source}</span>
                     <div className="ml-auto flex items-center gap-4">
                       {getSentimentIcon(item.sentiment)}
-                      <span className="text-[9px] font-bold text-slate-400">{item.timestamp}</span>
+                      <span className="text-[9px] font-mono font-bold text-slate-500 dark:text-slate-500 border border-slate-200 dark:border-white/10 px-2 py-0.5 rounded">{item.timestamp}</span>
                     </div>
                   </div>
 
-                  <h4 className="text-xl lg:text-2xl font-black text-slate-800 dark:text-white tracking-tighter leading-tight mb-4 group-hover:text-indigo-500 transition-colors uppercase italic">
+                  <h4 className="text-xl lg:text-2xl font-black text-slate-800 dark:text-white tracking-tighter leading-tight mb-4 group-hover:text-cyan-400 transition-colors uppercase relative z-10">
                     {item.title}
                   </h4>
                   
-                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+                  <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium relative z-10 border-l-2 border-slate-200 dark:border-white/10 pl-4">
                     {item.summary}
                   </p>
 
-                  <div className="mt-8 pt-6 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
+                  <div className="mt-8 pt-6 border-t border-slate-200 dark:border-white/10 flex items-center justify-between relative z-10">
                     <div className="flex items-center gap-4">
                       <div className="flex -space-x-2">
                         {[1, 2, 3].map(i => (
-                          <div key={i} className="w-6 h-6 rounded-full border-2 border-white dark:border-[#0f172a] bg-slate-200 dark:bg-white/10 flex items-center justify-center overflow-hidden">
-                            <div className="w-full h-full bg-indigo-500/20" />
+                          <div key={i} className="w-6 h-6 rounded border border-white dark:border-[#050505] bg-slate-100 dark:bg-white/5 flex items-center justify-center overflow-hidden">
+                            <div className="w-full h-full bg-cyan-500/20" />
                           </div>
                         ))}
                       </div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">Institutional Tracking</span>
+                      <span className="text-[9px] font-mono font-bold text-slate-500 uppercase tracking-widest">Institutional Consensus Tracking</span>
                     </div>
-                    <button className="flex items-center gap-2 text-[10px] font-black text-indigo-500 uppercase tracking-widest hover:gap-3 transition-all">
-                      Deep Dive Integration <ChevronRight className="w-3 h-3" />
+                    <button className="flex items-center gap-2 text-[9px] font-black font-mono text-cyan-500 uppercase tracking-widest hover:gap-3 transition-all group/btn">
+                      Decrypt Intelligence <ChevronRight className="w-3 h-3 group-hover/btn:text-cyan-300" />
                     </button>
                   </div>
                 </motion.div>
@@ -540,150 +598,169 @@ export default function GlobalPulse() {
         </div>
 
         {/* Right: Analyst Sidebar */}
-        <div className="lg:col-span-5 space-y-10">
+        <div className="lg:col-span-5 space-y-6">
           
           {/* Strategy Protocol (The "Brain") */}
-          <section className={`bg-indigo-600 rounded-[3rem] p-8 lg:p-10 text-white shadow-3xl shadow-indigo-600/30 relative overflow-hidden group ${activeMobileTab !== 'strategy' ? 'hidden lg:block' : 'block'}`}>
-            <div className="absolute top-0 right-0 p-8 opacity-10 scale-150 rotate-12 group-hover:rotate-45 transition-transform duration-1000">
-              <PieChart className="w-48 h-48" />
+          <section className={`bg-gradient-to-br from-indigo-950 via-indigo-900 to-black rounded-[2rem] p-8 lg:p-10 text-white shadow-2xl relative overflow-hidden group border border-indigo-500/20 ${activeMobileTab !== 'strategy' ? 'hidden lg:block' : 'block'}`}>
+            <div className="absolute inset-0 opacity-20 pointer-events-none mix-blend-screen scale-[1.5] translate-x-1/4 -translate-y-1/4 group-hover:scale-[1.6] group-hover:rotate-12 transition-all duration-[3000ms] ease-out">
+               <Canvas shadows dpr={[1, 2]}>
+                <React.Suspense fallback={null}>
+                  <PerspectiveCamera makeDefault position={[0, 0, 8]} fov={45} />
+                  <ambientLight intensity={0.5} />
+                  <pointLight position={[10, 10, 10]} intensity={1.5} />
+                  <spotLight position={[-10, 10, 10]} angle={0.15} penumbra={1} intensity={1} />
+                  <Globe3D />
+                  <Environment preset="city" />
+                </React.Suspense>
+              </Canvas>
             </div>
             
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center justify-between mb-8 relative z-10">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
-                  <Target className="w-5 h-5 text-white" />
+                <div className="p-2.5 bg-indigo-500/20 rounded-xl border border-indigo-500/30">
+                  <Target className="w-5 h-5 text-indigo-400" />
                 </div>
-                <h3 className="text-xs font-black uppercase tracking-[0.25em]">Market Strategy</h3>
+                <h3 className="text-xs font-black uppercase tracking-[0.3em] text-indigo-300 shadow-indigo-500/50 drop-shadow-md">Alpha Strategy</h3>
               </div>
-              <div className="px-4 py-1.5 rounded-full bg-white/20 text-[10px] font-mono font-bold backdrop-blur-md">
-                CONF: {data?.analystConfidence}%
+              <div className="px-4 py-1.5 rounded-full bg-indigo-500/20 text-[10px] font-mono font-black border border-indigo-500/30 text-indigo-300 shadow-[0_0_15px_rgba(99,102,241,0.5)]">
+                CONF: {data?.analystConfidence || 0}%
               </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-8 relative z-10">
               <div>
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/60 mb-3 ml-1 italic">Suggested Action</p>
-                <div className="p-6 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] font-bold text-sm leading-relaxed tracking-tight italic">
-                  "{data?.strategicAdvice}"
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400/80 mb-3 ml-1">Strategic Imperative</p>
+                <div className="p-6 bg-black/40 border border-indigo-500/20 rounded-[1.5rem] font-bold text-[15px] leading-relaxed tracking-tight text-indigo-50 shadow-inner">
+                  "{data?.strategicAdvice || 'Awaiting structural strategy'}"
                 </div>
               </div>
 
               <div>
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/60 mb-3 ml-1 italic">Market Vibe</p>
-                <p className="text-xl font-black tracking-tighter leading-tight italic uppercase pr-10">
-                  {data?.marketMood}
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400/80 mb-3 ml-1">Market State</p>
+                <p className="text-2xl font-black tracking-tighter leading-tight uppercase pr-8 text-white drop-shadow-[0_2px_10px_rgba(255,255,255,0.3)]">
+                  {data?.marketMood || 'Analyzing macro vibration'}
                 </p>
               </div>
             </div>
           </section>
 
           {/* Probabilities radar */}
-          <section className={`bg-white dark:bg-[#0f172a] border border-slate-200/60 dark:border-white/5 rounded-[3rem] p-8 lg:p-10 space-y-8 shadow-sm ${activeMobileTab !== 'radar' ? 'hidden lg:block' : 'block'}`}>
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-[0.25em] flex items-center gap-3">
-                <Target className="w-4 h-4 text-violet-500" />
-                Market Probabilities
+          <section className={`bg-[#050505] border border-white/10 rounded-[2rem] p-8 lg:p-10 space-y-8 shadow-2xl relative overflow-hidden ${activeMobileTab !== 'radar' ? 'hidden lg:block' : 'block'}`}>
+            {/* Cyber grid background */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none opacity-50"></div>
+            
+            <div className="flex items-center justify-between relative z-10">
+              <h3 className="text-xs font-black text-cyan-400 border-l-2 border-cyan-400 pl-3 uppercase tracking-[0.25em] flex items-center gap-3 drop-shadow-[0_0_8px_rgba(34,211,238,0.5)]">
+                Predictive Models
               </h3>
-              <Info className="w-4 h-4 text-slate-300" />
+              <Info className="w-4 h-4 text-slate-500" />
             </div>
 
-            <div className="space-y-6">
-              {data?.probabilisticRadar.map((scenario, i) => (
+            <div className="space-y-6 relative z-10">
+              {Array.isArray(data?.probabilisticRadar) && data.probabilisticRadar.length > 0 ? data.probabilisticRadar.map((scenario, i) => (
                 <div key={i} className="group relative">
                   <div className="flex items-center justify-between mb-3 px-1">
-                    <span className="text-[11px] font-black text-slate-700 dark:text-slate-200 uppercase tracking-tight max-w-[70%]">{scenario.event}</span>
-                    <span className="text-lg font-mono font-black text-violet-500">{scenario.probability}%</span>
+                    <span className="text-[11px] font-black text-slate-200 uppercase tracking-tight max-w-[70%]">{scenario.event || 'Unknown Event'}</span>
+                    <span className="text-lg font-mono font-black text-cyan-400 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]">{scenario.probability || 0}%</span>
                   </div>
                   
-                  <div className="h-2 w-full bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden mb-3">
+                  <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden mb-3">
                     <motion.div 
+                      className="h-full bg-cyan-400 drop-shadow-[0_0_8px_rgba(34,211,238,1)]"
                       initial={{ width: 0 }}
-                      animate={{ width: `${scenario.probability}%` }}
-                      className="h-full bg-gradient-to-r from-violet-500 to-indigo-500"
+                      animate={{ width: `${scenario.probability || 0}%` }}
+                      transition={{ duration: 1.5, ease: "easeOut" }}
                     />
                   </div>
 
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black text-slate-400 uppercase">Impact</span>
-                      <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-md ${
-                        scenario.impact === 'extreme' ? 'text-rose-500 bg-rose-500/10' :
-                        scenario.impact === 'high' ? 'text-amber-500 bg-amber-500/10' :
-                        'text-emerald-500 bg-emerald-500/10'
+                       <span className="text-[9px] font-black text-slate-500 uppercase">Impact</span>
+                       <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${
+                        scenario.impact === 'extreme' ? 'text-rose-400 border-rose-400/30 bg-rose-400/10' :
+                        scenario.impact === 'high' ? 'text-amber-400 border-amber-400/30 bg-amber-400/10' :
+                        'text-emerald-400 border-emerald-400/30 bg-emerald-400/10'
                       }`}>
-                        {scenario.impact}
+                        {scenario.impact || 'medium'}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 max-w-[60%]">
-                      <Zap className="w-3 h-3 text-slate-300" />
-                      <span className="text-[10px] font-bold text-slate-500 truncate italic">{scenario.catalyst}</span>
+                    <div className="flex items-center gap-1.5 max-w-[60%] justify-end">
+                      <Zap className="w-3 h-3 text-cyan-500" />
+                      <span className="text-[9px] font-bold text-slate-400 truncate uppercase tracking-widest">{scenario.catalyst || 'Unidentified'}</span>
                     </div>
                   </div>
                 </div>
-              ))}
+              )) : (
+                <div className="text-[10px] font-mono text-slate-500 uppercase tracking-widest py-8 text-center border border-dashed border-white/10 rounded-xl">Processing Probability Vectors...</div>
+              )}
             </div>
           </section>
 
           {/* Trend & Risk Matrix */}
           <div className={`grid grid-cols-1 gap-6 ${activeMobileTab !== 'radar' ? 'hidden lg:block' : 'block'}`}>
              {/* Risk Analysis Matrix */}
-            <div className="p-8 lg:p-10 bg-slate-900 rounded-[3rem] border border-white/5 space-y-8 relative overflow-hidden shadow-2xl">
+            <div className="p-8 lg:p-10 bg-black rounded-[2rem] border-2 border-rose-900/30 space-y-8 relative overflow-hidden shadow-[0_0_50px_rgba(159,18,57,0.1)]">
               <div className="absolute top-0 right-0 p-8 opacity-5">
-                <ShieldAlert className="w-32 h-32" />
+                <ShieldAlert className="w-32 h-32 text-rose-500" />
               </div>
               
               <div className="flex items-center justify-between relative z-10">
-                <h3 className="text-xs font-black text-rose-500 uppercase tracking-[0.25em] flex items-center gap-3">
+                <h3 className="text-xs font-black text-rose-500 uppercase tracking-[0.25em] flex items-center gap-3 drop-shadow-[0_0_8px_rgba(244,63,94,0.5)]">
                   <ShieldAlert className="w-4 h-4" />
                   Risk Matrix
                 </h3>
-                <div className="px-3 py-1 rounded-full bg-rose-500/10 text-rose-500 text-[9px] font-black uppercase border border-rose-500/20">
-                  Critical Watch
+                <div className="animate-pulse flex items-center justify-center">
+                  <div className="h-2 w-2 bg-rose-500 rounded-full shadow-[0_0_10px_rgba(244,63,94,1)]"></div>
                 </div>
               </div>
               
-              <div className="space-y-6 relative z-10">
-                {data?.riskAnalysis.map((risk, i) => (
-                  <div key={i} className="group p-5 bg-white/5 border border-white/5 rounded-3xl hover:border-rose-500/30 transition-all">
+              <div className="space-y-4 relative z-10">
+                {Array.isArray(data?.riskAnalysis) && data.riskAnalysis.length > 0 ? data.riskAnalysis.map((risk, i) => (
+                  <div key={i} className="group p-5 bg-rose-950/10 border border-rose-900/20 rounded-2xl hover:bg-rose-900/20 hover:border-rose-500/40 transition-all backdrop-blur-md">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-[11px] font-black text-slate-200 uppercase tracking-tight">{risk.name}</span>
-                      <span className={`text-[9px] font-black uppercase ${
-                        risk.level === 'critical' || risk.level === 'high' ? 'text-rose-500' : 'text-amber-500'
+                      <span className="text-[11px] font-black text-rose-100 uppercase tracking-tight">{risk.name || 'Systemic Risk'}</span>
+                      <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded border ${
+                        risk.level === 'critical' ? 'text-rose-400 border-rose-400 bg-rose-400/20 animate-pulse' : 
+                        risk.level === 'high' ? 'text-rose-400 border-rose-400/50 bg-rose-400/10' : 
+                        'text-amber-400 border-amber-400/50 bg-amber-400/10'
                       }`}>
-                        {risk.level}
+                        {risk.level || 'high'}
                       </span>
                     </div>
-                    <p className="text-[11px] text-slate-500 leading-relaxed font-medium italic">
-                      {risk.description}
+                    <p className="text-[10px] text-rose-300/70 font-mono tracking-tight leading-relaxed">
+                      {risk.description || 'Monitoring risk vectors.'}
                     </p>
                   </div>
-                ))}
+                )) : (
+                  <div className="text-[10px] font-mono text-rose-500/50 uppercase tracking-widest py-8 text-center border border-dashed border-rose-900/40 rounded-xl">Scanning Environment...</div>
+                )}
               </div>
             </div>
 
             {/* Sector Signals */}
-            <div className="p-8 lg:p-10 bg-white dark:bg-[#0f172a] border border-slate-200/60 dark:border-white/5 rounded-[3rem] shadow-sm space-y-8">
-              <h3 className="text-xs font-black text-indigo-500 uppercase tracking-[0.25em] flex items-center gap-3">
-                <TrendingUp className="w-4 h-4" />
+            <div className="p-8 lg:p-10 bg-[#050505] border border-emerald-900/30 rounded-[2rem] shadow-[0_0_30px_rgba(16,185,129,0.05)] space-y-8 relative overflow-hidden">
+               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(16,185,129,0.05),transparent_70%)] pointer-events-none"></div>
+              <h3 className="text-xs font-black text-emerald-400 uppercase tracking-[0.25em] flex items-center gap-3 drop-shadow-[0_0_8px_rgba(16,185,129,0.5)] relative z-10">
+                <Activity className="w-4 h-4" />
                 Alpha Signals
               </h3>
-              <div className="grid grid-cols-1 gap-4">
-                {data?.trendRadar.slice(0, 3).map((trend, i) => (
-                  <div key={i} className="p-5 bg-slate-50 dark:bg-white/[0.03] rounded-3xl border border-slate-100 dark:border-white/5 flex items-start gap-4 group hover:shadow-lg transition-all">
-                    <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-500 shrink-0">
-                      <Activity className="w-4 h-4" />
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-black text-slate-800 dark:text-white uppercase tracking-tight">{trend.trend}</span>
-                        <span className="text-[9px] font-bold text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded-lg">{trend.timeframe}</span>
+              <div className="grid grid-cols-1 gap-4 relative z-10">
+                {Array.isArray(data?.trendRadar) && data.trendRadar.length > 0 ? data.trendRadar.slice(0, 3).map((trend, i) => (
+                  <div key={i} className="p-5 bg-emerald-950/20 rounded-2xl border border-emerald-900/30 flex flex-col gap-3 group hover:border-emerald-500/40 hover:bg-emerald-900/20 transition-all">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                         <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-[0_0_8px_rgba(16,185,129,1)]"></div>
+                         <span className="text-[11px] font-black text-emerald-50 uppercase tracking-tight">{trend.trend || 'Emerging Signal'}</span>
                       </div>
-                      <p className="text-[11px] text-slate-500 font-medium italic leading-relaxed">
-                        {trend.potentialImpact}
-                      </p>
+                      <span className="text-[9px] font-bold font-mono text-emerald-400 border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 rounded">{trend.timeframe || 'Active'}</span>
                     </div>
+                    <p className="text-[10px] text-emerald-400/60 font-mono tracking-tight leading-relaxed ml-4.5 border-l border-emerald-900 pl-3">
+                      {trend.potentialImpact || 'Awaiting deep impact analysis.'}
+                    </p>
                   </div>
-                ))}
+                )) : (
+                   <div className="text-[10px] font-mono text-emerald-500/50 uppercase tracking-widest py-8 text-center border border-dashed border-emerald-900/40 rounded-xl">Searching for Alpha...</div>
+                )}
               </div>
             </div>
           </div>

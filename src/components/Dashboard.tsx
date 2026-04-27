@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 import { Group, Expense, BudgetType, CATEGORIES, Transaction } from '../types';
 import { db } from '../firebase';
-import { collection, query, onSnapshot, orderBy, limit, doc, updateDoc, deleteDoc, Timestamp } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, limit, doc, updateDoc, deleteDoc, Timestamp, where, serverTimestamp } from 'firebase/firestore';
 import { User } from 'firebase/auth';
 import { formatCurrency } from '../utils/format';
 import { handleFirestoreError, OperationType } from '../utils/errorHandling';
@@ -157,6 +157,8 @@ export default function Dashboard({
           description: editDescription,
           category: editCategory,
           date: Timestamp.fromDate(new Date(editDate)),
+          ownerId: user.uid,
+          updatedAt: serverTimestamp(),
         });
       }
       setEditingExpense(null);
@@ -330,6 +332,7 @@ export default function Dashboard({
     const unsubscribes = groups.map(group => {
       const expensesQuery = query(
         collection(db, 'groups', group.id, 'expenses'),
+        where('memberIds', 'array-contains', user.uid),
         orderBy('date', 'desc'),
         limit(20)
       );

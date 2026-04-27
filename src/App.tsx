@@ -71,11 +71,14 @@ import TransactionsView from './components/TransactionsView';
 import AddGoalModal from './components/AddGoalModal';
 import CFOReportModal from './components/CFOReportModal';
 import SubscriptionSettings from './components/SubscriptionSettings';
+import PreferencesSettings from './components/PreferencesSettings';
 import FeedbackModal from './components/FeedbackModal';
 import GlobalPulse from './components/GlobalPulse';
 import NeuralAdvisor from './components/NeuralAdvisor';
+import { useTranslation } from 'react-i18next';
 
 export default function App() {
+  const { t } = useTranslation();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -144,37 +147,59 @@ export default function App() {
 
         // Only fetch from Firestore if it's a real user (not demo)
         // Fetch Assets
-        const assetsQuery = query(collection(db, 'users', currentUser.uid, 'assets'));
+        const assetsQuery = query(
+          collection(db, 'users', currentUser.uid, 'assets'),
+          where('ownerId', '==', currentUser.uid)
+        );
         onSnapshot(assetsQuery, (snap) => {
           setAssets(snap.docs.map(d => ({ id: d.id, ...d.data() } as Asset)));
         }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/assets`));
 
         // Fetch Liabilities
-        const liabilitiesQuery = query(collection(db, 'users', currentUser.uid, 'liabilities'));
+        const liabilitiesQuery = query(
+          collection(db, 'users', currentUser.uid, 'liabilities'),
+          where('ownerId', '==', currentUser.uid)
+        );
         onSnapshot(liabilitiesQuery, (snap) => {
           setLiabilities(snap.docs.map(d => ({ id: d.id, ...d.data() } as Liability)));
         }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/liabilities`));
 
         // Fetch Goals
-        const goalsQuery = query(collection(db, 'users', currentUser.uid, 'goals'));
+        const goalsQuery = query(
+          collection(db, 'users', currentUser.uid, 'goals'),
+          where('ownerId', '==', currentUser.uid)
+        );
         onSnapshot(goalsQuery, (snap) => {
           setGoals(snap.docs.map(d => ({ id: d.id, ...d.data() } as FinancialGoal)));
         }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/goals`));
 
         // Fetch Insights
-        const insightsQuery = query(collection(db, 'users', currentUser.uid, 'insights'), orderBy('createdAt', 'desc'), limit(5));
+        const insightsQuery = query(
+          collection(db, 'users', currentUser.uid, 'insights'), 
+          where('ownerId', '==', currentUser.uid),
+          orderBy('createdAt', 'desc'), 
+          limit(5)
+        );
         onSnapshot(insightsQuery, (snap) => {
           setInsights(snap.docs.map(d => ({ id: d.id, ...d.data() } as AIInsight)));
         }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/insights`));
 
         // Fetch Transactions
-        const txsQuery = query(collection(db, 'users', currentUser.uid, 'transactions'), orderBy('date', 'desc'), limit(20));
+        const txsQuery = query(
+          collection(db, 'users', currentUser.uid, 'transactions'), 
+          where('ownerId', '==', currentUser.uid),
+          orderBy('date', 'desc'), 
+          limit(20)
+        );
         onSnapshot(txsQuery, (snap) => {
           setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() } as Transaction)));
         }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/transactions`));
 
         // Fetch Bank Accounts
-        const banksQuery = query(collection(db, 'users', currentUser.uid, 'bankAccounts'));
+        const banksQuery = query(
+          collection(db, 'users', currentUser.uid, 'bankAccounts'),
+          where('ownerId', '==', currentUser.uid)
+        );
         onSnapshot(banksQuery, (snap) => {
           setBankAccounts(snap.docs.map(d => ({ id: d.id, ...d.data() } as BankAccount)));
         }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/bankAccounts`));
@@ -407,7 +432,7 @@ export default function App() {
             Money<span className="text-indigo-600 dark:text-indigo-400">flow</span>
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mb-12 leading-relaxed text-lg font-medium">
-            Your all-in-one personal finance dashboard. Secure, smart, and easy to use.
+            The next-generation Wealth OS for global citizens. Secure, AI-powered, and beautiful.
           </p>
 
           <div className="space-y-6">
@@ -479,16 +504,6 @@ export default function App() {
 
   return (
     <div className="flex h-screen mesh-gradient font-sans selection:bg-indigo-100 selection:text-indigo-900 relative overflow-hidden transition-colors duration-300">
-      {/* Debug Overlay */}
-      {isDev() && (
-        <div className="fixed bottom-4 right-4 z-[100] bg-black/80 text-white p-4 rounded-2xl text-[10px] font-mono max-w-xs pointer-events-none">
-          <p className="font-bold mb-1 text-indigo-400">DEBUG INFO</p>
-          <p>Groups: {groups.length}</p>
-          <p>User: {user.uid.slice(0, 8)}...</p>
-          {lastError && <p className="text-red-400 mt-2">Error: {lastError}</p>}
-        </div>
-      )}
-
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {isSidebarOpen && (
@@ -547,7 +562,7 @@ export default function App() {
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === 'wealth' && !selectedGroupId ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
             >
               <PieChart className="w-5 h-5" />
-              <span className="font-bold">Wealth</span>
+              <span className="font-bold">Wealth Overview</span>
             </button>
             <button 
               onClick={() => {
@@ -569,7 +584,7 @@ export default function App() {
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === 'forecast' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
             >
               <Activity className="w-5 h-5" />
-              <span className="font-bold">Growth Predictions</span>
+              <span className="font-bold">Forecast AI</span>
             </button>
             <button 
               onClick={() => {
@@ -580,7 +595,7 @@ export default function App() {
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === 'pulse' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
             >
               <Zap className={`w-5 h-5 ${activeTab === 'pulse' ? 'fill-white' : ''}`} />
-              <span className="font-bold">Global Markets</span>
+              <span className="font-bold">Global Pulse</span>
               {activeTab !== 'pulse' && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />}
             </button>
             <button 
@@ -592,7 +607,7 @@ export default function App() {
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === 'ledger' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
             >
               <Receipt className="w-5 h-5" />
-              <span className="font-bold">Transaction History</span>
+              <span className="font-bold">Global Ledger</span>
             </button>
             <button 
               onClick={() => {
@@ -615,13 +630,13 @@ export default function App() {
           </nav>
 
           <div className="pt-4 border-t border-zinc-100 dark:border-white/5 pb-6">
-            <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Bank Sync</p>
+            <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">App Connector</p>
             <button 
               onClick={() => setIsConnectBankOpen(true)}
               className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
             >
               <Zap className="w-5 h-5 bg-white/20 rounded-lg p-1" />
-              <span className="font-bold">Connect Bank</span>
+              <span className="font-bold">App Integrations</span>
             </button>
           </div>
 
@@ -800,7 +815,12 @@ export default function App() {
                   if (!user.uid.startsWith('demo-')) {
                     // Save to firestore for persistence
                     for (const insight of newInsights) {
-                       await addDoc(collection(db, 'users', user!.uid, 'insights'), insight);
+                       await addDoc(collection(db, 'users', user!.uid, 'insights'), {
+                         ...insight,
+                         ownerId: user!.uid,
+                         createdAt: serverTimestamp(),
+                         updatedAt: serverTimestamp(),
+                       });
                     }
                   }
                 }}
@@ -889,15 +909,15 @@ export default function App() {
             >
               <div className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
                 <div>
-                  <h1 className="text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white mb-2">Account Settings</h1>
-                  <p className="text-slate-500">Manage your profile, preferences, and premium subscription.</p>
+                  <h1 className="text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white mb-2">{t('Account Settings')}</h1>
+                  <p className="text-slate-500">{t('Manage your profile, preferences, and premium subscription.')}</p>
                 </div>
                 <button
                   onClick={() => setIsFeedbackOpen(true)}
                   className="flex items-center gap-3 px-6 py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-zinc-200 dark:shadow-black/20"
                 >
                   <MessageSquare className="w-5 h-5 text-indigo-500" />
-                  Suggest a Feature
+                  {t('Suggest a Feature')}
                 </button>
               </div>
               <SubscriptionSettings 
@@ -905,6 +925,7 @@ export default function App() {
                 userId={user.uid}
                 userEmail={user.email}
               />
+              <PreferencesSettings />
             </motion.div>
           ) : (
             <motion.div

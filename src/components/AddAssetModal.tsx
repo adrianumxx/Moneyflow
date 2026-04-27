@@ -72,6 +72,7 @@ export default function AddAssetModal({ isOpen, onClose, userId, onDemoAdd }: Ad
       }
       await addDoc(collection(db, 'users', userId, 'assets'), {
         ...assetData,
+        ownerId: userId,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });

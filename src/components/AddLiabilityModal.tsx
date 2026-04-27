@@ -70,6 +70,7 @@ export default function AddLiabilityModal({ isOpen, onClose, userId, onDemoAdd }
       }
       await addDoc(collection(db, 'users', userId, 'liabilities'), {
         ...liabilityData,
+        ownerId: userId,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });

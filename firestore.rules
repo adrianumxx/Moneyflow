@@ -7,20 +7,27 @@ service cloud.firestore {
     }
 
     // Phase 3: Primitive Definitions
-    function isSignedIn() { return request.auth != null; }
-    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
-    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    // Mandating email_verified for all standard operations as per Pillar 4
+    function isSignedIn() { 
+      return request.auth != null && request.auth.token.email_verified == true; 
+    }
+    function isOwner(userId) { 
+      return isSignedIn() && request.auth.uid == userId; 
+    }
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
     
-    // Auth tokens NEVER contain custom claims. Look up roles in trusted docs if needed.
-    // In this app, we don't have an explicit admin collection, so we use a hardcoded email for emergency.
+    // Auth tokens NEVER contain custom claims. Use document lookups for roles.
     function isAdmin() { 
-      return isSignedIn() && (request.auth.token.email == "adrianomelilloXX@gmail.com" && request.auth.token.email_verified == true);
+      // Hardcoded emergency admin check
+      return isSignedIn() && (request.auth.token.email == "adrianomelilloXX@gmail.com");
     }
 
     // ===============================================================
-    // Validation Blueprints (Phase 4)
+    // Validation Blueprints (Pillar 2)
     // ===============================================================
 
     function isValidUser(data) {
@@ -31,29 +38,51 @@ service cloud.firestore {
     }
 
     function isValidAsset(data) {
-      return data.name is string && data.name.size() <= 100 &&
+      return data.ownerId == request.auth.uid &&
+             data.name is string && data.name.size() <= 100 &&
              data.type is string && data.type in ['cash', 'investment', 'real_estate', 'crypto', 'savings', 'retirement', 'other'] &&
-             data.value is number;
+             data.value is number &&
+             (data.get('updatedAt', null) == null || data.updatedAt is timestamp);
     }
 
     function isValidLiability(data) {
-      return data.name is string && data.name.size() <= 100 &&
+      return data.ownerId == request.auth.uid &&
+             data.name is string && data.name.size() <= 100 &&
              data.totalAmount is number &&
-             data.remainingAmount is number;
+             data.remainingAmount is number &&
+             (data.get('updatedAt', null) == null || data.updatedAt is timestamp);
     }
 
     function isValidTransaction(data) {
-      return data.amount is number &&
+      return data.ownerId == request.auth.uid &&
+             data.amount is number &&
              data.description is string && data.description.size() <= 200 &&
              data.category is string &&
              data.type is string && data.type in ['expense', 'income'] &&
-             data.date is timestamp;
+             data.date is timestamp &&
+             (data.get('updatedAt', null) == null || data.updatedAt is timestamp);
     }
 
     function isValidGoal(data) {
-      return data.name is string && data.name.size() <= 100 &&
+      return data.ownerId == request.auth.uid &&
+             data.name is string && data.name.size() <= 100 &&
              data.targetAmount is number &&
-             data.deadline is timestamp;
+             data.deadline is timestamp &&
+             (data.get('updatedAt', null) == null || data.updatedAt is timestamp);
+    }
+
+    function isValidBankAccount(data) {
+      return data.ownerId == request.auth.uid &&
+             data.institutionName is string && data.institutionName.size() <= 100 &&
+             data.balance is number &&
+             (data.get('updatedAt', null) == null || data.updatedAt is timestamp);
+    }
+
+    function isValidInsight(data) {
+      return data.ownerId == request.auth.uid &&
+             data.title is string && data.title.size() <= 200 &&
+             data.description is string && data.description.size() <= 1000 &&
+             (data.get('updatedAt', null) == null || data.updatedAt is timestamp);
     }
 
     // ===============================================================
@@ -62,81 +91,103 @@ service cloud.firestore {
 
     // User Profile & Subcollections
     match /users/{userId} {
-      // Apply ID poisoning guard on single doc targets
       allow get: if isOwner(userId) && isValidId(userId);
       allow create: if isOwner(userId) && isValidUser(incoming());
       allow update: if isOwner(userId) && isValidUser(incoming()) && 
                     incoming().uid == existing().uid &&
-                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'currency', 'monthlyIncomeTarget']);
+                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'currency', 'monthlyIncomeTarget', 'updatedAt']);
 
-      // Private Subcollections
+      // Private Subcollections (Applying Pillar 8: evaluate resource.data in list)
       match /assets/{assetId} {
-        allow list, get: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
         allow create: if isOwner(userId) && isValidAsset(incoming());
         allow update: if isOwner(userId) && isValidAsset(incoming()) && 
-                      incoming().diff(existing()).affectedKeys().hasOnly(['name', 'type', 'value', 'institution', 'updatedAt']);
+                      incoming().ownerId == existing().ownerId &&
+                      incoming().diff(existing()).affectedKeys().hasAll(['updatedAt']) &&
+                      incoming().diff(existing()).affectedKeys().hasAny(['name', 'type', 'value', 'institution', 'notes', 'annualReturn', 'updatedAt']);
         allow delete: if isOwner(userId);
       }
 
       match /liabilities/{liabilityId} {
-        allow list, get: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
         allow create: if isOwner(userId) && isValidLiability(incoming());
         allow update: if isOwner(userId) && isValidLiability(incoming()) && 
-                      incoming().diff(existing()).affectedKeys().hasOnly(['name', 'type', 'totalAmount', 'remainingAmount', 'monthlyPayment']);
+                      incoming().ownerId == existing().ownerId &&
+                      incoming().diff(existing()).affectedKeys().hasAny(['name', 'type', 'totalAmount', 'remainingAmount', 'monthlyPayment', 'updatedAt']);
         allow delete: if isOwner(userId);
       }
 
       match /goals/{goalId} {
-        allow list, get: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
         allow create: if isOwner(userId) && isValidGoal(incoming());
         allow update: if isOwner(userId) && isValidGoal(incoming()) && 
-                      incoming().diff(existing()).affectedKeys().hasOnly(['name', 'targetAmount', 'currentAmount', 'deadline', 'status']);
+                      incoming().ownerId == existing().ownerId &&
+                      incoming().diff(existing()).affectedKeys().hasAny(['name', 'targetAmount', 'currentAmount', 'deadline', 'status', 'updatedAt']);
         allow delete: if isOwner(userId);
       }
 
       match /transactions/{transactionId} {
-        allow list, get: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
         allow create: if isOwner(userId) && isValidTransaction(incoming());
         allow update: if isOwner(userId) && isValidTransaction(incoming()) && 
-                      incoming().diff(existing()).affectedKeys().hasOnly(['amount', 'description', 'category', 'date', 'type']);
+                      incoming().ownerId == existing().ownerId &&
+                      incoming().diff(existing()).affectedKeys().hasAny(['amount', 'description', 'category', 'date', 'type', 'updatedAt']);
         allow delete: if isOwner(userId);
       }
 
       match /bankAccounts/{bankId} {
-        allow list, get: if isOwner(userId);
-        allow create, update, delete: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow create: if isOwner(userId) && isValidBankAccount(incoming());
+        allow update, delete: if isOwner(userId);
       }
 
       match /insights/{insightId} {
-        allow list, get, delete: if isOwner(userId);
-        allow create: if isOwner(userId); // Prototype allows client-side AI writing
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow delete: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidInsight(incoming());
       }
     }
 
-    // Shared Groups
+    // Shared Groups (Pillar 1: Relational Sync)
     match /groups/{groupId} {
       function isGroupMember() {
         return isSignedIn() && (request.auth.uid in resource.data.memberIds);
       }
 
       allow get: if isSignedIn();
-      // Secure List Query: Evaluate resource.data to prevent blanket scans
       allow list: if isSignedIn() && (request.auth.uid in resource.data.memberIds);
       
-      allow create: if isSignedIn() && incoming().createdBy == request.auth.uid;
-      allow update: if isGroupMember() && incoming().diff(existing()).affectedKeys().hasAny(['name', 'description', 'memberIds', 'maxBudget', 'budgetType']);
-      allow delete: if isSignedIn() && resource.data.createdBy == request.auth.uid;
+      allow create: if isSignedIn() && incoming().createdBy == request.auth.uid && incoming().ownerId == request.auth.uid;
+      allow update: if isGroupMember() && (
+        (isAdmin()) ||
+        incoming().diff(existing()).affectedKeys().hasAny(['name', 'description', 'memberIds', 'maxBudget', 'budgetType', 'updatedAt'])
+      );
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.createdBy == request.auth.uid);
 
       match /expenses/{expenseId} {
-        // Relational check: get() on parent is O(1) for subcollection query.
-        // But for strict compliance with "no get in list", we expect member validation.
-        allow list: if isSignedIn() && get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds.hasAny([request.auth.uid]);
-        allow get, write: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
-      }
+        // Relational check optimized for Pillar 8: evaluate resource.data in list
+        allow list: if isSignedIn() && (request.auth.uid in resource.data.memberIds);
+        allow get: if isSignedIn() && (request.auth.uid in resource.data.memberIds);
+        
+        // Use get() on parent for create to ensure membership and sync memberIds (Pillar 1)
+        allow create: if isSignedIn() && 
+                      (request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds) &&
+                      incoming().groupId == groupId &&
+                      incoming().memberIds == get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
 
-      match /members/{memberId} {
-        allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
-        allow write: if isSignedIn(); // Simplified for member management prototype
+        allow update: if isSignedIn() && (request.auth.uid in resource.data.memberIds) &&
+                      incoming().groupId == groupId &&
+                      incoming().memberIds == get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds &&
+                      incoming().paidBy == existing().paidBy &&
+                      incoming().diff(existing()).affectedKeys().hasOnly(['amount', 'description', 'category', 'date', 'splitType', 'splits', 'updatedAt']);
+
+        allow delete: if isSignedIn() && (request.auth.uid in resource.data.memberIds);
       }
     }
   }
