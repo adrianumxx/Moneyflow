@@ -809,6 +809,8 @@ export default function Palantir({ assets, liabilities, goals, userProfile }: Pa
             </p>
           </section>
 
+            </div>
+          </div>
         </div>
       ) : (
         <div className="text-center text-slate-500 py-20 font-bold">Nothing critical right now — markets are breathing normally.</div>
