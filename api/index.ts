@@ -110,8 +110,11 @@ app.post('/api/create-checkout-session', async (req, res) => {
 
     res.json({ url: session.url });
   } catch (error: any) {
-    console.error('Stripe Error:', error);
-    res.status(500).json({ error: error.message });
+    console.error('CRITICAL STRIPE ERROR:', error.message);
+    res.status(500).json({ 
+      error: error.message,
+      tip: "Ensure your STRIPE_PRICE_ID_MONTHLY is correct and valid in your Stripe Dashboard."
+    });
   }
 });
 

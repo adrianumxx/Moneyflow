@@ -14,22 +14,18 @@ interface ConnectBankModalProps {
 type Category = 'ALL' | 'BANK' | 'INVESTMENT' | 'CRYPTO';
 
 const INSTITUTIONS = [
-  { id: 'revolut', name: 'Revolut', category: 'BANK', color: '#000000', logo: 'https://logo.clearbit.com/revolut.com' },
-  { id: 'belfius', name: 'Belfius', category: 'BANK', color: '#004B93', logo: 'https://logo.clearbit.com/belfius.be' },
-  { id: 'beobank', name: 'Beobank', category: 'BANK', color: '#E30613', logo: 'https://logo.clearbit.com/beobank.be' },
-  { id: 'ing-be', name: 'ING Belgium', category: 'BANK', color: '#FF6200', logo: 'https://logo.clearbit.com/ing.be' },
-  { id: 'kbc', name: 'KBC Bank', category: 'BANK', color: '#00AEEF', logo: 'https://logo.clearbit.com/kbc.be' },
-  { id: 'spuerkeess', name: 'Spuerkeess (BCEE)', category: 'BANK', color: '#E30613', logo: 'https://logo.clearbit.com/spuerkeess.lu' },
-  { id: 'bgl', name: 'BGL BNP Paribas', category: 'BANK', color: '#00965E', logo: 'https://logo.clearbit.com/bgl.lu' },
-  { id: 'bil', name: 'BIL', category: 'BANK', color: '#004B93', logo: 'https://logo.clearbit.com/bil.com' },
+  { id: 'revolut', name: 'Revolut', category: 'BANK', color: '#ffffff', logo: 'https://logo.clearbit.com/revolut.com' },
   { id: 'binance', name: 'Binance', category: 'CRYPTO', color: '#F3BA2F', logo: 'https://logo.clearbit.com/binance.com' },
-  { id: 'ibkr', name: 'Interactive Brokers', category: 'INVESTMENT', color: '#B31920', logo: 'https://logo.clearbit.com/interactivebrokers.com' },
-  { id: 'etoro', name: 'eToro', category: 'INVESTMENT', color: '#7CC242', logo: 'https://logo.clearbit.com/etoro.com' },
   { id: 'coinbase', name: 'Coinbase', category: 'CRYPTO', color: '#0052FF', logo: 'https://logo.clearbit.com/coinbase.com' },
-  { id: 'wise', name: 'Wise', category: 'BANK', color: '#00B9FF', logo: 'https://logo.clearbit.com/wise.com' },
-  { id: 'degiro', name: 'DEGIRO', category: 'INVESTMENT', color: '#00263E', logo: 'https://logo.clearbit.com/degiro.com' },
   { id: 'n26', name: 'N26', category: 'BANK', color: '#00aab5', logo: 'https://logo.clearbit.com/n26.com' },
+  { id: 'etoro', name: 'eToro', category: 'INVESTMENT', color: '#7CC242', logo: 'https://logo.clearbit.com/etoro.com' },
+  { id: 'degiro', name: 'DEGIRO', category: 'INVESTMENT', color: '#00263E', logo: 'https://logo.clearbit.com/degiro.com' },
+  { id: 'wise', name: 'Wise', category: 'BANK', color: '#00B9FF', logo: 'https://logo.clearbit.com/wise.com' },
+  { id: 'ibkr', name: 'Interactive Brokers', category: 'INVESTMENT', color: '#B31920', logo: 'https://logo.clearbit.com/interactivebrokers.com' },
+  { id: 'ing-be', name: 'ING Belgium', category: 'BANK', color: '#FF6200', logo: 'https://logo.clearbit.com/ing.com' },
   { id: 'kraken', name: 'Kraken', category: 'CRYPTO', color: '#5841D8', logo: 'https://logo.clearbit.com/kraken.com' },
+  { id: 'ledger', name: 'Ledger', category: 'CRYPTO', color: '#000000', logo: 'https://logo.clearbit.com/ledger.com' },
+  { id: 'metamask', name: 'MetaMask', category: 'CRYPTO', color: '#E2761B', logo: 'https://logo.clearbit.com/metamask.io' }
 ];
 
 export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBankModalProps) {
