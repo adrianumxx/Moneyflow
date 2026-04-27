@@ -68,8 +68,8 @@ export default function NeuralAdvisor({ isVisible, onClose, context, language = 
             {/* Header */}
             <div className="p-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-indigo-600/5">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 relative flex items-center justify-center">
-                  <img src="/assets/ai_assistant.png" alt="Neural Partner" className="w-full h-full object-contain drop-shadow-glow" />
+                <div className="w-10 h-10 relative flex items-center justify-center rounded-full overflow-hidden border border-indigo-500/30 shadow-lg shadow-indigo-500/20">
+                  <img src="/assets/ai_assistant.png" alt="Neural Partner" className="w-full h-full object-cover scale-110" />
                 </div>
                 <div>
                   <p className="text-[9px] font-black uppercase tracking-widest text-indigo-500">Neural Partner</p>

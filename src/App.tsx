@@ -976,15 +976,15 @@ export default function App() {
           onClick={triggerAdvice}
           whileHover={{ scale: 1.1, rotate: 5 }}
           whileTap={{ scale: 0.9 }}
-          className="fixed bottom-8 right-8 z-50 w-16 h-16 bg-white/10 dark:bg-slate-900/40 backdrop-blur-xl border border-indigo-500/20 rounded-[2rem] flex items-center justify-center shadow-2xl group overflow-hidden"
+          className="fixed bottom-8 right-8 z-50 w-16 h-16 bg-white/10 dark:bg-slate-900/40 backdrop-blur-xl border border-indigo-500/30 rounded-full flex items-center justify-center shadow-2xl group overflow-hidden"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-fuchsia-600/20 group-hover:opacity-100 opacity-0 transition-opacity" />
           <img 
             src="/assets/ai_assistant.png" 
             alt="AI Partner" 
-            className="w-12 h-12 object-contain drop-shadow-glow" 
+            className="w-full h-full object-cover scale-110" 
           />
-          <div className="absolute top-2 right-2 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
+          <div className="absolute top-1 right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse shadow-lg" />
         </motion.button>
 
         {/* Neural Advisor Assistant (Conversational Chat) */}
