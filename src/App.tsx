@@ -461,7 +461,7 @@ export default function App() {
     }
   };
 
-  const isProfileLoading = user && !user.uid.startsWith('demo-') && !userProfile;
+  const isProfileLoading = user && !user.uid.startsWith('demo-') && !userProfile && loading;
 
   // Emergency reset if stuck in loading
   const handleEmergencyLogout = async () => {
@@ -469,31 +469,42 @@ export default function App() {
     window.location.reload();
   };
 
-  if (loading || isProfileLoading) {
+  if (loading || (user && !user.uid.startsWith('demo-') && !userProfile && loading)) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50 dark:bg-[#020617] transition-colors duration-300">
-        <motion.div 
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full mb-4 shadow-glow"
-        />
-        <motion.p 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-indigo-600 dark:text-indigo-400 font-bold tracking-widest text-xs uppercase mb-8"
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#020617] transition-colors duration-300">
+        <div className="relative">
+          <motion.div 
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="w-24 h-24 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full shadow-[0_0_50px_rgba(99,102,241,0.2)]"
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+             <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center backdrop-blur-xl border border-white/5">
+                <LayoutDashboard className="w-6 h-6 text-indigo-500" />
+             </div>
+          </div>
+        </div>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-8 text-center"
         >
-          {isProfileLoading ? 'Syncing Neural Profile...' : 'Initializing Wealth OS...'}
-        </motion.p>
+          <h2 className="text-white font-black tracking-[0.3em] uppercase text-[10px] mb-2">Moneyflow OS</h2>
+          <p className="text-indigo-400 font-bold tracking-widest text-[9px] uppercase animate-pulse">
+            {user && !userProfile ? 'Syncing Neural Profile...' : 'Intelligence Core Initializing...'}
+          </p>
+        </motion.div>
         
         {/* Emergency Button after 3 seconds */}
         <motion.button
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 3 }}
+          transition={{ delay: 4 }}
           onClick={handleEmergencyLogout}
-          className="px-6 py-2 bg-rose-500/10 text-rose-500 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/20 transition-all"
+          className="mt-12 px-8 py-3 bg-white/5 hover:bg-white/10 text-slate-500 hover:text-white rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all border border-white/5"
         >
-          Stuck? Click to Reset
+          Stuck? Click to Reset Session
         </motion.button>
       </div>
     );
