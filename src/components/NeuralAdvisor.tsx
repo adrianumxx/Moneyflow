@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Sparkles, ArrowRight, X, Bot } from 'lucide-react';
+import { Sparkles, ArrowRight, X, Bot, MessageCircle } from 'lucide-react';
 
 interface NeuralAdvisorProps {
   isVisible: boolean;
@@ -11,46 +11,49 @@ interface NeuralAdvisorProps {
 }
 
 export default function NeuralAdvisor({ isVisible, onClose, message, actionLabel, onAction }: NeuralAdvisorProps) {
+  // Use the generated 3D icon path
+  const neuralIconPath = "C:\\Users\\Adriano\\.gemini\\antigravity\\brain\\f1154b25-2b51-4e37-913c-70622f47cb40\\neural_brain_3d_icon_1777332980615.png";
+
   return (
     <AnimatePresence>
       {isVisible && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.9, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="fixed bottom-24 right-8 z-50 w-80"
+          initial={{ opacity: 0, scale: 0.8, x: 20 }}
+          animate={{ opacity: 1, scale: 1, x: 0 }}
+          exit={{ opacity: 0, scale: 0.8, x: 20 }}
+          className="fixed bottom-24 right-6 z-50 w-72"
         >
-          <div className="bg-white dark:bg-slate-900 border border-indigo-500/20 rounded-[2rem] p-6 shadow-premium backdrop-blur-xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full -mr-16 -mt-16 blur-3xl group-hover:bg-indigo-500/10 transition-colors" />
+          <div className="bg-white/80 dark:bg-slate-900/90 border border-indigo-500/20 rounded-[2.5rem] p-5 shadow-2xl backdrop-blur-2xl relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full -mr-16 -mt-16 blur-3xl" />
             
             <button 
               onClick={onClose}
               className="absolute top-4 right-4 p-1 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full transition-colors text-slate-400"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3 h-3" />
             </button>
 
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/20">
-                <Bot className="w-6 h-6" />
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-12 h-12 relative flex items-center justify-center">
+                <img src={neuralIconPath} alt="Neural Core" className="w-full h-full object-contain drop-shadow-glow" />
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Neural Advisor</p>
-                <p className="text-xs font-bold text-slate-900 dark:text-white">Active Analysis</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-indigo-500">Intelligence Core</p>
+                <p className="text-[10px] font-bold text-slate-900 dark:text-white">Neural Response</p>
               </div>
             </div>
 
-            <p className="text-sm font-medium text-slate-600 dark:text-slate-300 leading-relaxed mb-6">
+            <p className="text-[11px] font-medium text-slate-600 dark:text-slate-300 leading-tight mb-4 pr-4">
               {message}
             </p>
 
             {actionLabel && (
               <button
                 onClick={onAction}
-                className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all group/btn"
+                className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all group/btn"
               >
                 {actionLabel}
-                <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                <ArrowRight className="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" />
               </button>
             )}
           </div>

@@ -135,28 +135,20 @@ export default function App() {
     visible: false,
     message: ''
   });
-
-  // Neural Advice Trigger
-  useEffect(() => {
-    if (activeTab === 'dashboard') {
-      const timer = setTimeout(() => {
-        setAdvisorState({
-          visible: true,
-          message: "Neural Analysis: Your savings rate is up by 2% this week. I've optimized your forecast for the next 30 days.",
-          actionLabel: "View Intelligence"
-        });
-      }, 3000);
-      return () => clearTimeout(timer);
-    } else if (activeTab === 'sync') {
-      setAdvisorState({
-        visible: true,
-        message: "Network Security: Neural Sync is active. Connect your primary bank to enable deep liquidity flows.",
-        actionLabel: "Connect Now"
-      });
-    } else {
-      setAdvisorState(prev => ({ ...prev, visible: false }));
-    }
-  }, [activeTab]);
+  // Manual Neural Advisor Trigger
+  const triggerAdvice = () => {
+    const messages = [
+      "I've analyzed your latest flows: Your savings rate is up by 2% this week. Keep it up!",
+      "Neural Sync is active. Connect your primary bank to enable deep liquidity flows.",
+      "Pattern detected: Your housing expenses are stable. Would you like to see a 12-month forecast?",
+      "Opportunity: Based on your liquidity, you could reach your next goal 2 months faster with a minor adjustment."
+    ];
+    setAdvisorState({
+      visible: true,
+      message: messages[Math.floor(Math.random() * messages.length)],
+      actionLabel: "View Insights"
+    });
+  };
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [dataDeletedPopup, setDataDeletedPopup] = useState(false);
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
@@ -977,6 +969,20 @@ export default function App() {
         <div className="sticky top-0 z-40">
           <GlobalPulse />
         </div>
+
+        {/* Neural Floating Trigger */}
+        <button 
+          onClick={triggerAdvice}
+          className="fixed bottom-8 right-8 z-50 w-12 h-12 bg-white dark:bg-slate-900 border border-indigo-500/30 rounded-2xl flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all group overflow-hidden"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 to-fuchsia-600/10 group-hover:opacity-100 opacity-0 transition-opacity" />
+          <img 
+            src="C:\Users\Adriano\.gemini\antigravity\brain\f1154b25-2b51-4e37-913c-70622f47cb40\neural_brain_3d_icon_1777332980615.png" 
+            alt="AI" 
+            className="w-8 h-8 object-contain drop-shadow-sm" 
+          />
+          <div className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
+        </button>
 
         {/* Neural Advisor Assistant */}
         <NeuralAdvisor 

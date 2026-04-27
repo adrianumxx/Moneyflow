@@ -23,18 +23,13 @@ export default function GlobalPulse() {
   }, []);
 
   return (
-    <div className="h-10 bg-indigo-600/10 dark:bg-indigo-500/5 backdrop-blur-xl border-b border-indigo-500/10 flex items-center px-6 overflow-hidden">
-      <div className="flex items-center gap-6 w-full max-w-7xl mx-auto">
-        <div className="flex items-center gap-2 shrink-0">
+    <div className="h-6 bg-indigo-600/5 dark:bg-indigo-500/5 backdrop-blur-xl border-b border-indigo-500/5 flex items-center px-4 overflow-hidden">
+      <div className="flex items-center gap-4 w-full max-w-7xl mx-auto">
+        <div className="flex items-center gap-1.5 shrink-0">
           <div className="relative">
-            <Cpu className="w-4 h-4 text-indigo-500" />
-            <motion.div 
-              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-              className="absolute inset-0 bg-indigo-500 rounded-full blur-sm -z-10"
-            />
+            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
           </div>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500">Neural Core</span>
+          <span className="text-[8px] font-black uppercase tracking-[0.2em] text-indigo-500">Neural Link</span>
         </div>
         
         <div className="h-4 w-[1px] bg-indigo-500/20" />
