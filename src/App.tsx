@@ -111,7 +111,7 @@ export default function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [activeTab, setActiveTab] = useState<'wealth' | 'groups' | 'forecast' | 'ledger' | 'pulse' | 'settings' | 'palantir' | 'dashboard'>('wealth');
+  const [activeTab, setActiveTab] = useState<'wealth' | 'groups' | 'forecast' | 'ledger' | 'pulse' | 'settings' | 'palantir' | 'dashboard' | 'sync'>('dashboard');
   const [lastError, setLastError] = useState<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -805,25 +805,6 @@ export default function App() {
                 <span className="font-bold">{t(item.label)}</span>
               </button>
             ))}
-          </nav>
-
-          <div className="pt-4 border-t border-zinc-100 dark:border-white/5 pb-6">
-            <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">App Connector</p>
-            <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Neural Sync</p>
-            <button 
-              onClick={() => { setActiveTab('sync'); setIsSidebarOpen(false); }}
-              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group ${activeTab === 'sync' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
-            >
-              <div className="flex items-center gap-3">
-                <Globe className={`w-5 h-5 ${activeTab === 'sync' ? 'text-white' : 'text-indigo-500'}`} />
-                <span className="font-bold">App Connector</span>
-              </div>
-              <div className="flex items-center gap-1 bg-indigo-500/10 px-2 py-0.5 rounded-full">
-                <span className="text-[8px] font-black text-indigo-500 uppercase">Live</span>
-              </div>
-            </button>
-          </div>
-
           <div className="pt-4 border-t border-zinc-100 dark:border-white/5 pb-6">
             <p className="px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3">Wealth Management</p>
             <button 
@@ -913,6 +894,7 @@ export default function App() {
                 Save Progress & Sign Up
               </button>
             )}
+          </div>
           </div>
           <div className="flex items-center gap-2">
             <button 
