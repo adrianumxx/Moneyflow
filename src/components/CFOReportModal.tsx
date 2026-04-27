@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Send, FileText, PieChart, Sparkles, ShieldCheck, Mail, CheckCircle2, Loader2, Download } from 'lucide-react';
 
@@ -13,6 +13,15 @@ export default function CFOReportModal({ isOpen, onClose, onSend }: CFOReportMod
   const [isSending, setIsSending] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isSuccess) {
+      const timer = setTimeout(() => {
+        handleClose();
+      }, 4000); // Auto close after 4 seconds to return to the app smoothly
+      return () => clearTimeout(timer);
+    }
+  }, [isSuccess]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

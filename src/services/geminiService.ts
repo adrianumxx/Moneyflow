@@ -28,7 +28,7 @@ export async function generateFinancialInsights(
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -77,7 +77,7 @@ export async function categorizeTransaction(description: string, amount: number)
 
   try {
     const result = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.5-flash",
       contents: prompt,
     });
     const category = (result.text || "other").trim().toLowerCase() as TransactionCategory;
@@ -159,7 +159,7 @@ export async function getGlobalIntelligence(localTime?: string, timezone?: strin
   
   try {
     const result = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.5-flash",
       contents: `You are Gemini, the elite predictive AI engine powered by Google DeepMind. Your job is to give the user an "Unfair Advantage" over 99% of the planet. Analyze today's (${dateAnchor}) global data from Google Trends, Google Finance, and Google News regarding Tech, Energy, Crypto, Banks, AI, Geopolitics, and Macroeconomics.
       
 CRITICAL RULES:

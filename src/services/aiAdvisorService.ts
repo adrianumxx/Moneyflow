@@ -46,7 +46,7 @@ export async function chatWithFinancialAdvisor(
 
   try {
     const chat = ai.chats.create({
-      model: "gemini-3-flash-preview",
+      model: "gemini-2.5-flash",
       config: {
         systemInstruction: systemPrompt,
         temperature: 0.7,

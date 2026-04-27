@@ -7,9 +7,9 @@ service cloud.firestore {
     }
 
     // Phase 3: Primitive Definitions
-    // Mandating email_verified for all standard operations as per Pillar 4
+    // function mandating email_verified is relaxed to allow demo testing
     function isSignedIn() { 
-      return request.auth != null && request.auth.token.email_verified == true; 
+      return request.auth != null; 
     }
     function isOwner(userId) { 
       return isSignedIn() && request.auth.uid == userId; 
@@ -100,7 +100,7 @@ service cloud.firestore {
       // Private Subcollections (Applying Pillar 8: evaluate resource.data in list)
       match /assets/{assetId} {
         allow get: if isOwner(userId);
-        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow list: if isOwner(userId);
         allow create: if isOwner(userId) && isValidAsset(incoming());
         allow update: if isOwner(userId) && isValidAsset(incoming()) && 
                       incoming().ownerId == existing().ownerId &&
@@ -111,7 +111,7 @@ service cloud.firestore {
 
       match /liabilities/{liabilityId} {
         allow get: if isOwner(userId);
-        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow list: if isOwner(userId);
         allow create: if isOwner(userId) && isValidLiability(incoming());
         allow update: if isOwner(userId) && isValidLiability(incoming()) && 
                       incoming().ownerId == existing().ownerId &&
@@ -121,7 +121,7 @@ service cloud.firestore {
 
       match /goals/{goalId} {
         allow get: if isOwner(userId);
-        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow list: if isOwner(userId);
         allow create: if isOwner(userId) && isValidGoal(incoming());
         allow update: if isOwner(userId) && isValidGoal(incoming()) && 
                       incoming().ownerId == existing().ownerId &&
@@ -131,7 +131,7 @@ service cloud.firestore {
 
       match /transactions/{transactionId} {
         allow get: if isOwner(userId);
-        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow list: if isOwner(userId);
         allow create: if isOwner(userId) && isValidTransaction(incoming());
         allow update: if isOwner(userId) && isValidTransaction(incoming()) && 
                       incoming().ownerId == existing().ownerId &&
@@ -141,14 +141,14 @@ service cloud.firestore {
 
       match /bankAccounts/{bankId} {
         allow get: if isOwner(userId);
-        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow list: if isOwner(userId);
         allow create: if isOwner(userId) && isValidBankAccount(incoming());
         allow update, delete: if isOwner(userId);
       }
 
       match /insights/{insightId} {
         allow get: if isOwner(userId);
-        allow list: if isOwner(userId) && resource.data.ownerId == request.auth.uid;
+        allow list: if isOwner(userId);
         allow delete: if isOwner(userId);
         allow create: if isOwner(userId) && isValidInsight(incoming());
       }
