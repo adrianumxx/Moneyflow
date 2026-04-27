@@ -897,7 +897,6 @@ export default function App() {
               </button>
             )}
           </div>
-          </div>
           <div className="flex items-center gap-2">
             <button 
               onClick={() => {
