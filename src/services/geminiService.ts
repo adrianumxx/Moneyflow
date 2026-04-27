@@ -32,6 +32,19 @@ export async function generateFinancialInsights(
       contents: prompt,
       config: {
         responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: {
+            type: Type.OBJECT,
+            properties: {
+              id: { type: Type.STRING, description: "A unique identifier" },
+              title: { type: Type.STRING },
+              description: { type: Type.STRING },
+              type: { type: Type.STRING, enum: ["warning", "optimization", "opportunity"], description: "The type of insight" },
+            },
+            required: ["id", "title", "description", "type"],
+          }
+        }
       }
     });
 

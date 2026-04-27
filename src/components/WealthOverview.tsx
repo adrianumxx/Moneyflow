@@ -132,11 +132,19 @@ export default function WealthOverview({
           <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Wealth Dashboard</h2>
           <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">AI-Powered Portfolio Insights</p>
         </div>
-        <div className="flex items-center gap-3">
-           <div className="px-5 py-2.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 flex items-center gap-3 shadow-sm">
+        <div className="flex items-center gap-3 w-full md:w-auto">
+           <div className="flex-1 md:flex-none px-5 py-2.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 flex items-center justify-center md:justify-start gap-3 shadow-sm">
              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Live Status: Secure</span>
            </div>
+           
+           <button 
+             onClick={handleFinancialReport}
+             className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-2 flex-shrink-0"
+           >
+             <FileText className="w-4 h-4" />
+             {t('Get Report')}
+           </button>
         </div>
       </div>
 
