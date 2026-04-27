@@ -212,7 +212,12 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-      if (currentUser && !currentUser.uid.startsWith('demo-')) {
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
+
+      if (!currentUser.uid.startsWith('demo-')) {
         // Ensure user profile document exists (create on first login)
         const profileRef = doc(db, 'users', currentUser.uid);
         try {
@@ -236,8 +241,13 @@ export default function App() {
             });
             console.log('New user profile created with 15-day trial (Palantir: 7 days)');
           }
-        } catch (err) {
+        } catch (err: any) {
           console.error('Error ensuring user profile exists:', err);
+          setAuthError(`Firestore Error: ${err.message}`);
+          // If this fails, we might be stuck. Let's alert the user if it's a permission issue.
+          if (err.code === 'permission-denied') {
+            window.alert("Firestore Permission Denied. Please check your Firestore Rules and ensure the database is created.");
+          }
         }
 
         // Fetch User Profile (real-time listener)
