@@ -10,6 +10,46 @@ function getGenAI() {
   });
 }
 
+router.post('/chat', async (req, res) => {
+  try {
+    const { query, context, language } = req.body;
+    const ai = getGenAI();
+
+    const systemPrompt = `
+      You are the "Neural Partner" of Moneyflow, a premium financial ecosystem. 
+      You are a high-level Financial Partner, Entrepreneur, Investor, and Tax Expert.
+      Your tone is sophisticated, professional, and actionable. You help the user manage their wealth.
+
+      USER DATA (REAL-TIME CONTEXT):
+      - Assets: ${JSON.stringify(context.assets?.map((a: any) => ({ name: a.name, val: a.value, type: a.type })))}
+      - Bank Balances: ${JSON.stringify(context.bankAccounts?.map((b: any) => ({ name: b.institutionName, bal: b.balance })))}
+      - Liabilities: ${JSON.stringify(context.liabilities?.map((l: any) => ({ name: l.name, rem: l.remainingAmount })))}
+      - Recent Transactions: ${JSON.stringify(context.transactions?.slice(0, 10).map((t: any) => ({ desc: t.description, amt: t.amount, type: t.type, cat: t.category })))}
+      - Goals: ${JSON.stringify(context.goals?.map((g: any) => ({ name: g.name, target: g.targetAmount, current: g.currentAmount })))}
+
+      INSTRUCTIONS:
+      1. Use the data provided above to answer specific questions. If the user asks about their balance, look at the bank accounts and assets.
+      2. If they ask about spending, look at the transactions.
+      3. Be precise with numbers. 
+      4. Respond in ${language === 'it' ? 'Italian' : 'English'}.
+      5. Always sound like a trusted partner, never a robot.
+    `;
+
+    const result = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: [
+        { role: 'user', parts: [{ text: systemPrompt }] },
+        { role: 'user', parts: [{ text: query }] }
+      ],
+    });
+
+    res.json({ response: result.text || "Mi scuso, non sono riuscito a processare questa richiesta." });
+  } catch (error: any) {
+    console.error("Gemini Chat Error:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.post('/insights', async (req, res) => {
   try {
     const { assets, liabilities, goals, incomes } = req.body;

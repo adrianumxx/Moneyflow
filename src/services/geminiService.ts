@@ -2,6 +2,32 @@ import { Asset, Liability, FinancialGoal, AIInsight, Income, TransactionCategory
 import { Timestamp, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
 
+export async function chatWithNeuralPartner(
+  query: string,
+  context: {
+    assets: any[];
+    liabilities: any[];
+    goals: any[];
+    transactions: any[];
+    bankAccounts: any[];
+  },
+  language: string = 'it'
+): Promise<string> {
+  try {
+    const response = await fetch('/api/gemini/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, context, language })
+    });
+    if (!response.ok) throw new Error('Failed to chat with AI');
+    const { response: aiResponse } = await response.json();
+    return aiResponse;
+  } catch (error) {
+    console.error("Chat Error:", error);
+    return "Mi scuso, ho difficoltà a connettermi al Neural Core in questo momento. Riprova tra poco.";
+  }
+}
+
 export async function logPalantirMemory(userId: string, narrative: string) {
   if (!userId || userId.startsWith('demo-')) return;
   try {

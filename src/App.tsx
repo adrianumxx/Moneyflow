@@ -987,17 +987,18 @@ export default function App() {
           <div className="absolute top-2 right-2 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
         </motion.button>
 
-        {/* Neural Advisor Assistant */}
+        {/* Neural Advisor Assistant (Conversational Chat) */}
         <NeuralAdvisor 
           isVisible={advisorState.visible}
-          message={advisorState.message}
-          actionLabel={advisorState.actionLabel}
-          onClose={() => setAdvisorState(prev => ({ ...prev, visible: false }))}
-          onAction={() => {
-            if (activeTab === 'dashboard') setActiveTab('palantir');
-            if (activeTab === 'sync') setIsConnectBankOpen(true);
-            setAdvisorState(prev => ({ ...prev, visible: false }));
+          context={{
+            assets,
+            liabilities,
+            goals,
+            transactions,
+            bankAccounts
           }}
+          language={i18n.language}
+          onClose={() => setAdvisorState(prev => ({ ...prev, visible: false }))}
         />
 
         <AnimatePresence mode="wait">
