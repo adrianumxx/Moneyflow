@@ -115,27 +115,33 @@ export default function WealthOverview({
   const assetData = useMemo(() => {
     const data: Record<string, number> = {};
     
-    // Add manual assets
+    // 1. Adjusted Liquidity (Bank Balance + All Transactions)
+    const adjustedLiquidity = totalBankBalance + totalTransactionFlow;
+    if (adjustedLiquidity > 0) {
+      data['Liquidity'] = adjustedLiquidity;
+    }
+
+    // 2. Manual Assets
     assets.forEach(asset => {
       const cat = asset.type || 'Other';
       data[cat] = (data[cat] || 0) + asset.value;
     });
 
-    // Add bank balances as 'Liquidity'
-    if (totalBankBalance > 0) {
-      data['Liquidity'] = (data['Liquidity'] || 0) + totalBankBalance;
+    // 3. Liabilities (as a debt sector for sincerity)
+    if (totalLiabilities > 0) {
+      data['Debt/Liabilities'] = totalLiabilities;
     }
 
     // Convert to array for Recharts
     const result = Object.entries(data).map(([name, value]) => ({ name, value }));
     
-    // If absolutely no data, add a small placeholder for UI consistency
+    // Fallback for empty state
     if (result.length === 0) {
-      return [{ name: 'Empty Portfolio', value: 0.1 }];
+      return [{ name: 'Neutral', value: 0.1 }];
     }
     
     return result;
-  }, [assets, totalBankBalance]);
+  }, [assets, totalBankBalance, totalTransactionFlow, totalLiabilities]);
 
   const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'];
 
