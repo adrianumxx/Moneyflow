@@ -49,7 +49,11 @@ import {
   MessageSquare,
   Bug,
   Briefcase,
-  Globe
+  Globe,
+  History,
+  TrendingUp,
+  Settings as SettingsIcon,
+  Link
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Group, UserProfile, Asset, Liability, FinancialGoal, AIInsight, Transaction, BankAccount, Expense } from './types';
@@ -61,6 +65,10 @@ import { generateCFOReportData } from './services/geminiService';
 
 // Components
 import Dashboard from './components/Dashboard';
+import Sidebar from './components/Sidebar';
+import Ledger from './components/Ledger';
+import SettingsView from './components/Settings';
+import Palantir from './components/Palantir';
 import GroupView from './components/GroupView';
 import CreateGroupModal from './components/CreateGroupModal';
 import WealthOverview from './components/WealthOverview';
@@ -77,10 +85,19 @@ import PreferencesSettings from './components/PreferencesSettings';
 import FeedbackModal from './components/FeedbackModal';
 import GlobalPulse from './components/GlobalPulse';
 import NeuralAdvisor from './components/NeuralAdvisor';
+import IntegrationsHub from './components/IntegrationsHub';
 import { useTranslation } from 'react-i18next';
 
 export default function App() {
   const { t, i18n } = useTranslation();
+  const navigationItems = [
+    { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { id: 'palantir', icon: Globe, label: 'Palantir' },
+    { id: 'sync', icon: Link, label: 'Sync Hub' },
+    { id: 'ledger', icon: History, label: 'Ledger' },
+    { id: 'forecast', icon: TrendingUp, label: 'Forecast' },
+    { id: 'settings', icon: SettingsIcon, label: 'Settings' }
+  ];
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -92,7 +109,7 @@ export default function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [activeTab, setActiveTab] = useState<'wealth' | 'groups' | 'forecast' | 'ledger' | 'pulse' | 'settings'>('wealth');
+  const [activeTab, setActiveTab] = useState<'wealth' | 'groups' | 'forecast' | 'ledger' | 'pulse' | 'settings' | 'palantir' | 'dashboard'>('wealth');
   const [lastError, setLastError] = useState<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -651,80 +668,20 @@ export default function App() {
           </div>
 
           <nav className="space-y-1.5">
-            <button 
-              onClick={() => {
-                setActiveTab('wealth');
-                setSelectedGroupId(null);
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === 'wealth' && !selectedGroupId ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
-            >
-              <PieChart className="w-5 h-5" />
-              <span className="font-bold">{t('Wealth Overview')}</span>
-            </button>
-            <button 
-              onClick={() => {
-                setActiveTab('groups');
-                setSelectedGroupId(null);
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === 'groups' && !selectedGroupId ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
-            >
-              <Users className="w-5 h-5" />
-              <span className="font-bold">{t('Budget Groups')}</span>
-            </button>
-            <button 
-              onClick={() => {
-                setActiveTab('forecast');
-                setSelectedGroupId(null);
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === 'forecast' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
-            >
-              <Activity className="w-5 h-5" />
-              <span className="font-bold">{t('Forecast AI')}</span>
-            </button>
-            <button 
-              onClick={() => {
-                setActiveTab('pulse');
-                setSelectedGroupId(null);
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === 'pulse' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
-            >
-              <Zap className={`w-5 h-5 ${activeTab === 'pulse' ? 'fill-white' : ''}`} />
-              <span className="font-bold">{t('Global Pulse')}</span>
-              {activeTab !== 'pulse' && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />}
-            </button>
-            <button 
-              onClick={() => {
-                setActiveTab('ledger');
-                setSelectedGroupId(null);
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === 'ledger' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
-            >
-              <Receipt className="w-5 h-5" />
-              <span className="font-bold">{t('Global Ledger')}</span>
-            </button>
-            <button 
-              onClick={() => {
-                setActiveTab('settings');
-                setSelectedGroupId(null);
-                setIsSidebarOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === 'settings' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
-            >
-              <Settings className="w-5 h-5" />
-              <span className="font-bold">{t('Settings')}</span>
-            </button>
-            <button 
-              onClick={() => setIsFeedbackOpen(true)}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 dark:text-zinc-400 hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all font-bold"
-            >
-              <MessageSquare className="w-5 h-5" />
-              {t('Feedback')}
-            </button>
+            {navigationItems.map(item => (
+              <button 
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id as any);
+                  setSelectedGroupId(null);
+                  setIsSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === item.id ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
+              >
+                <item.icon className="w-5 h-5" />
+                <span className="font-bold">{t(item.label)}</span>
+              </button>
+            ))}
           </nav>
 
           <div className="pt-4 border-t border-zinc-100 dark:border-white/5 pb-6">
@@ -930,7 +887,7 @@ export default function App() {
                 theme={theme}
               />
             </motion.div>
-          ) : activeTab === 'groups' ? (
+          ) : activeTab === 'dashboard' || activeTab === 'groups' ? (
             <motion.div
               key="dashboard"
               initial={{ opacity: 0, y: 10 }}
@@ -965,16 +922,27 @@ export default function App() {
                 bankAccounts={bankAccounts}
               />
             </motion.div>
-          ) : activeTab === 'pulse' ? (
+          ) : activeTab === 'palantir' ? (
             <motion.div
-              key="pulse"
-              initial={{ opacity: 0, y: 10 }}
+              key="palantir"
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
               className="p-0 sm:p-4 lg:p-6"
             >
-              <GlobalPulse assets={assets} liabilities={liabilities} goals={goals} />
+              <Palantir assets={assets} liabilities={liabilities} goals={goals} userProfile={userProfile} />
+            </motion.div>
+          ) : activeTab === 'sync' ? (
+            <motion.div
+              key="sync"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="p-0 sm:p-4 lg:p-6"
+            >
+              <IntegrationsHub />
             </motion.div>
           ) : activeTab === 'ledger' ? (
             <motion.div
@@ -1054,7 +1022,7 @@ export default function App() {
               }`}
             >
               <Users className={`w-6 h-6 ${(activeTab === 'groups' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
-              <span className="text-[9px] font-black uppercase tracking-tighter">Circles</span>
+              <span className="text-[11px] font-black uppercase tracking-widest">Circles</span>
             </button>
             <button
               onClick={() => {
@@ -1069,22 +1037,37 @@ export default function App() {
               }`}
             >
               <Briefcase className={`w-6 h-6 ${(activeTab === 'wealth' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
-              <span className="text-[9px] font-black uppercase tracking-tighter">Wealth</span>
+              <span className="text-[11px] font-black uppercase tracking-widest">Wealth</span>
             </button>
             <button
               onClick={() => {
-                setActiveTab('pulse');
+                setActiveTab('palantir');
                 setSelectedGroupId(null);
                 setIsSidebarOpen(false);
               }}
               className={`flex flex-col items-center gap-1 transition-all ${
-                activeTab === 'pulse' && !selectedGroupId
+                activeTab === 'palantir' && !selectedGroupId
                   ? 'text-indigo-600 dark:text-indigo-400 scale-110' 
                   : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
               }`}
             >
-              <Globe className={`w-6 h-6 ${(activeTab === 'pulse' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
-              <span className="text-[9px] font-black uppercase tracking-tighter">Pulse</span>
+              <Globe className={`w-6 h-6 ${(activeTab === 'palantir' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
+              <span className="text-[11px] font-black uppercase tracking-widest">Palantir</span>
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('sync');
+                setSelectedGroupId(null);
+                setIsSidebarOpen(false);
+              }}
+              className={`flex flex-col items-center gap-1 transition-all ${
+                activeTab === 'sync' && !selectedGroupId
+                  ? 'text-indigo-600 dark:text-indigo-400 scale-110' 
+                  : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
+              }`}
+            >
+              <Link className={`w-6 h-6 ${(activeTab === 'sync' && !selectedGroupId) ? 'stroke-indigo-500' : ''}`} />
+              <span className="text-[11px] font-black uppercase tracking-widest">Sync</span>
             </button>
             <button
               onClick={() => {
@@ -1099,7 +1082,7 @@ export default function App() {
               }`}
             >
               <Receipt className={`w-6 h-6 ${(activeTab === 'ledger' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
-              <span className="text-[9px] font-black uppercase tracking-tighter">Ledger</span>
+              <span className="text-[11px] font-black uppercase tracking-widest">Ledger</span>
             </button>
           </div>
         </div>

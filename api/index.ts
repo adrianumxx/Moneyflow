@@ -18,8 +18,8 @@ if (!admin.apps.length) {
 
 const db = admin.firestore();
 const stripeKey = process.env.STRIPE_SECRET_KEY || process.env.VITE_STRIPE_SECRET_KEY || '';
-const stripe = new Stripe(stripeKey, {
-  apiVersion: '2025-02-11-preview' as any,
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy_key_for_local_dev', {
+  apiVersion: '2023-10-16' as any,
 });
 
 const app = express();
@@ -79,6 +79,9 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
 });
 
 app.use(express.json());
+
+import geminiRoutes from './geminiRoutes';
+app.use('/api/gemini', geminiRoutes);
 
 // API Routes
 app.post('/api/create-checkout-session', async (req, res) => {
