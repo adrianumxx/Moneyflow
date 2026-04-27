@@ -443,14 +443,23 @@ export default function App() {
     }
   };
 
-  if (loading) {
+  const isProfileLoading = user && !user.uid.startsWith('demo-') && !userProfile;
+
+  if (loading || isProfileLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-zinc-50 dark:bg-zinc-950 transition-colors duration-300">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50 dark:bg-[#020617] transition-colors duration-300">
         <motion.div 
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-          className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full"
+          className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full mb-4 shadow-glow"
         />
+        <motion.p 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-indigo-600 dark:text-indigo-400 font-bold tracking-widest text-xs uppercase"
+        >
+          {isProfileLoading ? 'Syncing Neural Profile...' : 'Initializing Wealth OS...'}
+        </motion.p>
       </div>
     );
   }
