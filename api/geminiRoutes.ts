@@ -170,14 +170,16 @@ router.post('/global-pulse', async (req, res) => {
       `;
     }
 
-    const contents = `You are Gemini, acting as PALANTIR, the elite predictive AI engine for the MoneyFlow app. Your job is to translate complex global signals into plain, actionable language for a mass-market audience (adults 25-65, no finance background). Analyze today's (${dateAnchor}) global data from Google Trends, Google Finance, and Google News regarding Tech, Energy, Crypto, Banks, AI, Geopolitics, and Macroeconomics.
+    const contents = `You are Gemini, acting as PALANTIR, the elite predictive AI engine for the MoneyFlow app. Your job is to translate complex global signals into plain, actionable language. You MUST use your Google Search tool to scan Google News and Google Trends regarding Tech, Energy, Crypto, Banks, AI, Geopolitics, and Macroeconomics FOR TODAY (${dateAnchor}).
+    
+    CRITICAL OBJECTIVE: Identify emerging trends before they go mainstream. Look for spikes in search volume on Google Trends that correlate with financial news. 
 
     ${userArchetypeString}
     ${personalizedContextString}
     ${memoryContextString}
     
 CRITICAL RULES:
-1. Deliver sharp, predictive insights about upcoming macro trends, systemic risks, and massive capital rotational shifts.
+1. Deliver sharp, predictive insights about upcoming macro trends, systemic risks, and massive capital rotational shifts. Use LIVE data from your search tool.
 2. The tone MUST be confident, clear, honest, and slightly urgent when warranted. Never alarmist. Write as a brilliant, trusted friend who understands global finance, NOT a machine or Bloomberg terminal. Zero jargon.
 3. You MUST provide exactly 8 real, recent news items. You MUST use your Google Search tool to find actual real-time news articles from today. Provide deeply analytical but plain-language summaries.
 4. Each news item MUST include the real, clickable URL to the actual article. Do not hallucinate URLs!
@@ -252,7 +254,7 @@ Return JSON EXACTLY matching this schema:
 }`;
 
     const result = await ai.models.generateContent({
-      model: "gemini-3.1-pro-preview",
+      model: "gemini-2.0-flash-exp",
       contents: contents,
       config: { 
         responseMimeType: "application/json",
