@@ -32,6 +32,13 @@ import { Float, Environment, ContactShadows, PerspectiveCamera } from '@react-th
 import * as THREE from 'three';
 import { getGlobalIntelligence, MarketIntelligence, NewsItem, MarketIndex, ProbabilisticScenario } from '../services/geminiService';
 import { useNotifications } from '../context/NotificationContext';
+import { Asset, Liability, Goal } from '../types';
+
+interface GlobalPulseProps {
+  assets?: Asset[];
+  liabilities?: Liability[];
+  goals?: Goal[];
+}
 
 function Globe3D() {
   const planetRef = React.useRef<THREE.Mesh>(null);
@@ -140,7 +147,7 @@ function Globe3D() {
   );
 }
 
-export default function GlobalPulse() {
+export default function GlobalPulse({ assets, liabilities, goals }: GlobalPulseProps) {
   const { t, i18n } = useTranslation();
   const [data, setData] = useState<MarketIntelligence | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -172,7 +179,7 @@ export default function GlobalPulse() {
     try {
       const localTime = new Date().toISOString();
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const result = await getGlobalIntelligence(localTime, timezone, i18n.language);
+      const result = await getGlobalIntelligence(localTime, timezone, i18n.language, { assets: assets || [], liabilities: liabilities || [], goals: goals || [] });
       setData(result);
       setLastUpdated(new Date());
       if (!silent) showNotification('Data Updated', 'Market signals refreshed.', 'success', 'Global Pulse');
@@ -546,10 +553,10 @@ export default function GlobalPulse() {
               </div>
 
               <div className="mt-auto relative z-10 w-full xl:w-4/5 text-left pointer-events-none pb-4">
-                <div className="mb-6">
+                <div className="mb-6 pointer-events-auto">
                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/50 mb-2 ml-1">{t('Strategic Counsel')}</p>
-                  <div className="p-6 bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl font-medium text-base sm:text-lg leading-relaxed text-indigo-50 shadow-2xl">
-                    "{data?.strategicAdvice || t('Analyzing strategy...')}"
+                  <div className="p-6 bg-black/40 backdrop-blur-md border border-white/10 rounded-3xl font-medium text-base sm:text-lg leading-relaxed text-indigo-50 shadow-2xl whitespace-pre-line">
+                    {data?.strategicAdvice || t('Analyzing strategy...')}
                   </div>
                 </div>
 

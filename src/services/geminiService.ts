@@ -28,7 +28,7 @@ export async function generateFinancialInsights(
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -77,7 +77,7 @@ export async function categorizeTransaction(description: string, amount: number)
 
   try {
     const result = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       contents: prompt,
     });
     const category = (result.text || "other").trim().toLowerCase() as TransactionCategory;
@@ -179,7 +179,7 @@ export async function generateCFOReportData(
 
   try {
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3-flash-preview",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -206,12 +206,19 @@ export interface MarketIntelligence {
   analystConfidence: number; // 0-100
 }
 
-export async function getGlobalIntelligence(localTime?: string, timezone?: string, language: string = 'en'): Promise<MarketIntelligence> {
+export async function getGlobalIntelligence(
+  localTime?: string, 
+  timezone?: string, 
+  language: string = 'en',
+  userContext?: { assets: any[], liabilities: any[], goals: any[] }
+): Promise<MarketIntelligence> {
   const ai = new GoogleGenAI({ 
     apiKey: getEnv('GEMINI_API_KEY') 
   });
   
-  const cacheKey = `pulse_intel_v9_${new Date().toISOString().split('T')[0]}_${language}`;
+  // Hash the context somewhat to prevent infinite caching across different user states
+  const contextLengths = userContext ? `${userContext.assets.length}_${userContext.liabilities.length}` : '0_0';
+  const cacheKey = `pulse_intel_v13_${new Date().toISOString().split('T')[0]}_${language}_${contextLengths}`;
   try {
     const cached = localStorage.getItem(cacheKey);
     if (cached) {
@@ -222,34 +229,48 @@ export async function getGlobalIntelligence(localTime?: string, timezone?: strin
 
   const dateAnchor = localTime ? new Date(localTime).toLocaleDateString('en-US', { dateStyle: 'full' }) : 'April 27, 2026';
   
+  let personalizedContextString = '';
+  if (userContext && (userContext.assets.length > 0 || userContext.liabilities.length > 0)) {
+    const totalAssets = userContext.assets.reduce((sum, a) => sum + (a.value || 0), 0);
+    const totalLiabilities = userContext.liabilities.reduce((sum, l) => sum + (l.remainingAmount || 0), 0);
+    personalizedContextString = `
+    THE USER'S FINANCIAL CONTEXT (USE THIS TO TAILOR ADVICE AND NEWS RELEVANCE):
+    - Total Assets: €${totalAssets} (Details: ${JSON.stringify(userContext.assets.map(a => `${a.name}(${a.type}): €${a.value}`))})
+    - Total Liabilities: €${totalLiabilities} (Details: ${JSON.stringify(userContext.liabilities.map(l => `${l.name}(${l.type}): €${l.remainingAmount}`))})
+    TAILOR THE 'strategicAdvice' AND POTENTIAL IMPACTS TO THIS SPECIFIC PORTFOLIO (without exposing their exact numbers publicly, just use the strategy).
+    `;
+  }
+
   try {
     const result = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.1-pro-preview",
       contents: `You are Gemini, the elite predictive AI engine powered by Google DeepMind. Your job is to give the user an "Unfair Advantage" over 99% of the planet. Analyze today's (${dateAnchor}) global data from Google Trends, Google Finance, and Google News regarding Tech, Energy, Crypto, Banks, AI, Geopolitics, and Macroeconomics.
+
+      ${personalizedContextString}
       
 CRITICAL RULES:
-1. Deliver sharp, predictive insights about EXPLOSIVE upcoming market trends.
-2. The language MUST be incredibly simple, accessible, and easy to understand for ANY normal person on the planet. Explain complex terms like you're talking to a 10-year-old. No confusing financial jargon.
-3. You MUST provide exactly 5 real, recent news items. You MUST use your Google Search tool to find actual real-time news articles from today.
-4. Each news item MUST include the real, clickable URL to the actual article (e.g. from Bloomberg, CNBC, Financial Times, Coindesk, etc). Do not hallucinate URLs! Provide the exact link from the search.
-5. Maintain a friendly, brilliant, and super-clear persona. You are the user's personal financial guide.
-6. Provide actionable, high-conviction strategic advice that is straightforward.
-7. The globalIndices MUST conceptually track these 8 categories, giving them cool, simple names:
-  - Tech & AI Growth (Overall Tech)
-  - Digital Assets (Crypto)
-  - Global Energy (Oil/Renewables)
-  - Market Stability (VIX/Volatility)
-  - Currency Strength (EUR/USD liquidity)
-  - Stock Market Health (S&P 500)
-  - Consumer Confidence (Retail spending/economy)
-  - Real Estate Heat (Housing market)
+1. Deliver sharp, predictive insights about upcoming macro trends, systemic risks, and massive capital rotational shifts.
+2. The tone MUST be elite, institutional-grade, highly analytical, and sophisticated. Use professional financial, geopolitical, and macroeconomic terminology (e.g., liquidity sweeps, structural deficits, yield curve inversion, beta-slip). Speak to the user as if they are a high-net-worth sovereign wealth manager or a top-tier macro hedge fund partner.
+3. You MUST provide exactly 8 real, recent news items. You MUST use your Google Search tool to find actual real-time news articles from today. Provide deeply analytical summaries, not generic ones. Since the user wants to feel like they have a crystal ball, give a massive variety of high-signal news (Tech, Crypto, Macro, Geo).
+4. Each news item MUST include the real, clickable URL to the actual article (e.g. from Bloomberg, CNBC, Financial Times, Coindesk). Do not hallucinate URLs! Provide the exact link from the search.
+5. Maintain a hyper-professional, "Palantir-esque", ruthlessly objective, elite analyst persona. No friendly fluff. Pure, high-signal, asymmetric intelligence.
+6. Provide actionable, high-conviction strategic advice that positions for structural asymmetry. Focus on where smart money is moving before it hits retail. Base it strongly on the user's inputted data if available!
+7. The globalIndices MUST conceptually track these 8 categories, giving them institutional-grade names:
+  - Global Compute Substrate (Tech & AI)
+  - Sovereign Neutral Assets (Crypto/BTC)
+  - Primary Energy Vectors (Oil/Renewables)
+  - Systemic Volatility Index (VIX/Macro Risk)
+  - Fiat Liquidity Dynamics (EUR/USD, M2)
+  - Total Market Beta (S&P 500)
+  - Consumer Demand Elasticity (Retail/Sentiment)
+  - Real Asset Infrastructure (Housing/REITs)
 8. VERY IMPORTANT: You MUST write EVERYTHING (titles, summaries, advice, mood, descriptions, etc) in this language code: ${language.toUpperCase()}.
 
 Return JSON EXACTLY matching this schema:
 {
   "news": [{ "id", "source", "title", "url": "real accurate url", "summary", "fullReport", "category": "finance"|"tech"|"energy"|"macro"|"crypto"|"ai", "sentiment": "positive"|"negative"|"neutral", "timestamp" }],
-  "marketMood": "string (1 sentence summary of the global geopolitical/economic vibe)",
-  "strategicAdvice": "string (1-2 sentences of ruthless, high-conviction strategic action)",
+  "marketMood": "string (1-2 sentence summary of the global geopolitical/economic vibe mixed with how it impacts the user's specific assets)",
+  "strategicAdvice": "string (Bullet points separated by newline \\n, extremely detailed, containing 3-5 massive insights, actionable tips, and rotational calls strictly tailored to the user's portfolio data if provided)",
   "globalIndices": [{ "name", "value", "change", "trend": "up"|"down"|"stable", "description" }],
   "trendRadar": [{ "trend", "potentialImpact", "timeframe" }],
   "probabilisticRadar": [{ "event", "probability", "impact": "low"|"medium"|"high"|"extreme", "catalyst" }],
@@ -286,8 +307,8 @@ Validate indices as current numbers where possible using tools.`,
     if (parsed) {
       const data: MarketIntelligence = {
         news: Array.isArray(parsed.news) ? parsed.news : [],
-        marketMood: typeof parsed.marketMood === 'string' ? parsed.marketMood : (parsed.marketMood?.vibe || JSON.stringify(parsed.marketMood) || "Global markets are shifting really fast. Here is what you need to know."),
-        strategicAdvice: typeof parsed.strategicAdvice === 'string' ? parsed.strategicAdvice : (parsed.strategicAdvice?.explanation || JSON.stringify(parsed.strategicAdvice) || "Stay sharp, don't panic, and look for big opportunities in tech and crypto."),
+        marketMood: typeof parsed.marketMood === 'string' ? parsed.marketMood : (parsed.marketMood?.vibe || JSON.stringify(parsed.marketMood) || "Global markets are experiencing elevated theta. Structural shifts require immediate attention."),
+        strategicAdvice: typeof parsed.strategicAdvice === 'string' ? parsed.strategicAdvice : (parsed.strategicAdvice?.explanation || JSON.stringify(parsed.strategicAdvice) || "Maintain defensive liquidity while looking for asymmetric beta in sovereign neutral assets and computation substrate."),
         globalIndices: Array.isArray(parsed.globalIndices) ? parsed.globalIndices : [],
         trendRadar: Array.isArray(parsed.trendRadar) ? parsed.trendRadar : [],
         probabilisticRadar: Array.isArray(parsed.probabilisticRadar) ? parsed.probabilisticRadar : [],

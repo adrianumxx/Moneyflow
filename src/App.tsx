@@ -974,7 +974,7 @@ export default function App() {
               transition={{ duration: 0.3 }}
               className="p-0 sm:p-4 lg:p-6"
             >
-              <GlobalPulse />
+              <GlobalPulse assets={assets} liabilities={liabilities} goals={goals} />
             </motion.div>
           ) : activeTab === 'ledger' ? (
             <motion.div
