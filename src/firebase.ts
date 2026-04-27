@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithRedirect, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
@@ -11,10 +11,14 @@ if (isPlaceholder) {
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
+
+// Enable local persistence
+setPersistence(auth, browserLocalPersistence);
+
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
 export const googleProvider = new GoogleAuthProvider();
 
-export const signIn = () => signInWithRedirect(auth, googleProvider);
+export const signIn = () => signInWithPopup(auth, googleProvider);
 export const signUpWithEmail = (email: string, pass: string) => createUserWithEmailAndPassword(auth, email, pass);
 export const logInWithEmail = (email: string, pass: string) => signInWithEmailAndPassword(auth, email, pass);
 export const logOut = () => signOut(auth);

@@ -193,22 +193,7 @@ export default function App() {
 
   useEffect(() => {
     console.log("Auth Guard: Initializing...");
-    setLoading(true);
-    import('firebase/auth').then(({ getRedirectResult }) => {
-      console.log("Auth Guard: Checking redirect result...");
-      getRedirectResult(auth).then((result) => {
-        console.log("Auth Guard: Redirect result resolved", result?.user ? "with user" : "no user");
-        if (!result?.user) {
-           // If no redirect result, onAuthStateChanged will handle the final loading state
-           console.log("Auth Guard: No redirect result, waiting for Auth State...");
-        }
-      }).catch((error) => {
-        console.error("Auth Guard: Redirect error", error);
-        setAuthError(error.message);
-        setLoading(false); 
-      });
-    });
-
+    // No more getRedirectResult needed as we are back to Popup
     (window as any).openCreateGroupModal = () => setIsCreateModalOpen(true);
     return () => {
       delete (window as any).openCreateGroupModal;
