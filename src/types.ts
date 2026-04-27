@@ -22,6 +22,10 @@ export interface UserProfile {
   subscriptionStatus?: string;
   plan?: 'free' | 'premium';
   updatedAt?: Timestamp;
+  hasCompletedOnboarding?: boolean;
+  primaryGoal?: string;
+  experienceLevel?: string;
+  baseCurrency?: string;
 }
 
 export interface Transaction {

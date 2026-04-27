@@ -65,6 +65,7 @@ import { generateCFOReportData } from './services/geminiService';
 
 // Components
 import Dashboard from './components/Dashboard';
+import MagicOnboarding from './components/MagicOnboarding';
 import Sidebar from './components/Sidebar';
 import Ledger from './components/Ledger';
 import SettingsView from './components/Settings';
@@ -188,8 +189,28 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser && !currentUser.uid.startsWith('demo-')) {
-        // Fetch User Profile
+        // Ensure user profile document exists (create on first login)
         const profileRef = doc(db, 'users', currentUser.uid);
+        try {
+          const profileSnap = await getDoc(profileRef);
+          if (!profileSnap.exists()) {
+            // FIRST LOGIN: Create the user document so onboarding can trigger
+            await setDoc(profileRef, {
+              uid: currentUser.uid,
+              displayName: currentUser.displayName || null,
+              email: currentUser.email || null,
+              photoURL: currentUser.photoURL || null,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              hasCompletedOnboarding: false,
+              plan: 'free',
+            });
+          }
+        } catch (err) {
+          console.error('Error ensuring user profile exists:', err);
+        }
+
+        // Fetch User Profile (real-time listener)
         onSnapshot(profileRef, (snap) => {
           if (snap.exists()) {
             setUserProfile({ uid: snap.id, ...snap.data() } as UserProfile);
@@ -259,52 +280,6 @@ export default function App() {
         const hasSeenWelcome = localStorage.getItem(`hasSeenWelcome_${currentUser.uid}`);
         if (!hasSeenWelcome) {
           setShowWelcomePopup(true);
-        }
-
-        // Ensure user profile exists
-        const userRef = doc(db, 'users', currentUser.uid);
-        const userSnap = await getDoc(userRef);
-        if (!userSnap.exists()) {
-          try {
-            await setDoc(userRef, {
-              uid: currentUser.uid,
-              displayName: currentUser.displayName,
-              email: currentUser.email,
-              photoURL: currentUser.photoURL,
-              createdAt: serverTimestamp(),
-            });
-
-            // Initial data injection removed - starting from zero as requested
-          } catch (error) {
-            console.error("Error creating user profile:", error);
-          }
-        } else {
-          const data = userSnap.data();
-          const createdAt = data.createdAt?.toDate();
-          if (createdAt && (Date.now() - createdAt.getTime() > 24 * 60 * 60 * 1000)) {
-            try {
-              // Delete all groups created by this user
-              console.log("Checking for demo data reset...");
-              const groupsQuery = query(collection(db, 'groups'), where('memberIds', 'array-contains', currentUser.uid));
-              const groupsSnap = await getDocs(groupsQuery);
-              console.log(`Found ${groupsSnap.docs.length} groups for user ${currentUser.uid}`);
-              for (const groupDoc of groupsSnap.docs) {
-                if (groupDoc.data().createdBy === currentUser.uid) {
-                  console.log(`Deleting group ${groupDoc.id} due to demo reset`);
-                  await deleteDoc(doc(db, 'groups', groupDoc.id));
-                }
-              }
-              // Reset their createdAt
-              await setDoc(userRef, {
-                ...data,
-                createdAt: serverTimestamp(),
-              });
-              // Show popup
-              setDataDeletedPopup(true);
-            } catch (error) {
-              console.error("Error resetting demo data:", error);
-            }
-          }
         }
 
         // Test connection
@@ -619,6 +594,16 @@ export default function App() {
 
   return (
     <div className="flex h-screen mesh-gradient font-sans selection:bg-indigo-100 selection:text-indigo-900 relative overflow-hidden transition-colors duration-300">
+      {/* Magic Onboarding Overlay */}
+      {user && !user.uid.startsWith('demo-') && userProfile && !userProfile.hasCompletedOnboarding && (
+        <MagicOnboarding 
+          userId={user.uid} 
+          onComplete={() => {
+            // The onSnapshot in App.tsx will pick up the firestore change
+            console.log('Onboarding complete!');
+          }} 
+        />
+      )}
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {isSidebarOpen && (
@@ -686,36 +671,48 @@ export default function App() {
 
           <div className="pt-4 border-t border-zinc-100 dark:border-white/5 pb-6">
             <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">App Connector</p>
+            <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Neural Sync</p>
             <button 
-              onClick={() => setIsConnectBankOpen(true)}
-              className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+              onClick={() => { setActiveTab('sync'); setIsSidebarOpen(false); }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group ${activeTab === 'sync' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
             >
-              <Zap className="w-5 h-5 bg-white/20 rounded-lg p-1" />
-              <span className="font-bold">App Integrations</span>
+              <div className="flex items-center gap-3">
+                <Globe className={`w-5 h-5 ${activeTab === 'sync' ? 'text-white' : 'text-indigo-500'}`} />
+                <span className="font-bold">App Connector</span>
+              </div>
+              <div className="flex items-center gap-1 bg-indigo-500/10 px-2 py-0.5 rounded-full">
+                <span className="text-[8px] font-black text-indigo-500 uppercase">Live</span>
+              </div>
             </button>
           </div>
 
-          <div className="pt-4 border-t border-zinc-100 dark:border-white/5">
+          <div className="pt-4 border-t border-zinc-100 dark:border-white/5 pb-6">
             <p className="px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3">Wealth Management</p>
             <button 
               onClick={() => { setIsAddAssetModalOpen(true); setIsSidebarOpen(false); }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white transition-all font-bold"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white transition-all font-bold group"
             >
-              <Plus className="w-5 h-5 text-indigo-500" />
+              <div className="p-1.5 bg-indigo-500/10 rounded-lg group-hover:bg-indigo-500 group-hover:text-white transition-colors">
+                <Plus className="w-4 h-4" />
+              </div>
               Add Manual Asset
             </button>
             <button 
               onClick={() => { setIsAddLiabilityModalOpen(true); setIsSidebarOpen(false); }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white transition-all font-bold"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white transition-all font-bold group"
             >
-              <MinusCircle className="w-5 h-5 text-red-500" />
+              <div className="p-1.5 bg-red-500/10 rounded-lg group-hover:bg-red-500 group-hover:text-white transition-colors">
+                <MinusCircle className="w-4 h-4" />
+              </div>
               Add Liability
             </button>
             <button 
               onClick={() => { setIsAddTransactionModalOpen(true); setIsSidebarOpen(false); }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white transition-all font-bold"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white transition-all font-bold group"
             >
-              <Receipt className="w-5 h-5 text-zinc-400" />
+              <div className="p-1.5 bg-slate-100 dark:bg-white/10 rounded-lg group-hover:bg-slate-900 dark:group-hover:bg-white transition-colors">
+                <Receipt className="w-4 h-4" />
+              </div>
               Add Manual Entry
             </button>
           </div>

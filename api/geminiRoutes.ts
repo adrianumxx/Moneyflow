@@ -133,11 +133,22 @@ router.post('/cfo-report', async (req, res) => {
 
 router.post('/global-pulse', async (req, res) => {
   try {
-    const { localTime, language, userContext } = req.body;
+    const { localTime, language, userContext, pastMemory, userProfile } = req.body;
     const ai = getGenAI();
     
     const dateAnchor = localTime ? new Date(localTime).toLocaleDateString('en-US', { dateStyle: 'full' }) : 'Today';
     
+    let userArchetypeString = '';
+    if (userProfile && userProfile.primaryGoal) {
+      userArchetypeString = `
+      USER STRATEGIC ARCHETYPE:
+      - Primary Goal: ${userProfile.primaryGoal}
+      - Financial Experience: ${userProfile.experienceLevel}
+      - Preferred Currency: ${userProfile.baseCurrency || 'EUR'}
+      TAILOR YOUR ENTIRE TONE AND RECOMMENDATIONS TO THIS ARCHETYPE.
+      `;
+    }
+
     let personalizedContextString = '';
     if (userContext && (userContext.assets?.length > 0 || userContext.liabilities?.length > 0)) {
       const totalAssets = userContext.assets.reduce((sum: number, a: any) => sum + (a.value || 0), 0);
@@ -150,9 +161,20 @@ router.post('/global-pulse', async (req, res) => {
       `;
     }
 
+    let memoryContextString = '';
+    if (pastMemory && pastMemory.length > 0) {
+      memoryContextString = `
+      PAST ADVICE LOG (MEMORY):
+      These are the narratives you recently gave the user. Acknowledge them if relevant, saying things like "As I mentioned last time..." or "Following up on my previous warning...":
+      ${pastMemory.map((msg: string, i: number) => `[Interaction -${i + 1}]: ${msg}`).join('\n')}
+      `;
+    }
+
     const contents = `You are Gemini, acting as PALANTIR, the elite predictive AI engine for the MoneyFlow app. Your job is to translate complex global signals into plain, actionable language for a mass-market audience (adults 25-65, no finance background). Analyze today's (${dateAnchor}) global data from Google Trends, Google Finance, and Google News regarding Tech, Energy, Crypto, Banks, AI, Geopolitics, and Macroeconomics.
 
+    ${userArchetypeString}
     ${personalizedContextString}
+    ${memoryContextString}
     
 CRITICAL RULES:
 1. Deliver sharp, predictive insights about upcoming macro trends, systemic risks, and massive capital rotational shifts.
@@ -161,6 +183,11 @@ CRITICAL RULES:
 4. Each news item MUST include the real, clickable URL to the actual article. Do not hallucinate URLs!
 5. No number should appear without a human translation in plain English explaining what it means for them.
 6. VERY IMPORTANT: You MUST write EVERYTHING (titles, summaries, advice, descriptions, etc) in this language code: ${(language || 'en').toUpperCase()}.
+7. CALCULATE YIELD: Using current real-world interest rates and inflation (use Google Search), generate a 'yieldOptimizer' strategy specifically tailored to the user's cash reserves.
+8. CALCULATE TAX SHIELD: Predict if the user is near a higher tax bracket and suggest a loophole (deduction, donation) to save taxes.
+9. CALCULATE NEGOTIATOR: Identify fixed cost optimizations (utilities, subscriptions) and suggest switches.
+10. CALCULATE BLACK SWAN: Determine how many months the user's liquid cash can cover their expenses/liabilities if income goes to 0.
+11. CALCULATE ARBITRAGE: Compare debt interest rates vs savings yield to find a guaranteed arbitrage spread.
 
 Return JSON EXACTLY matching this schema:
 {
@@ -192,6 +219,32 @@ Return JSON EXACTLY matching this schema:
     "concept": string,
     "explanation": string (3 sentences plain language),
     "relevanceToday": string (1 sentence why it matters today)
+  },
+  "yieldOptimizer": {
+    "detectedInefficiency": string (short explanation of lost yield, e.g. "Cash losing 2.5% to inflation"),
+    "actionableStrategy": string (exact action, e.g. "Move 10k to XEON ETF for 3.8% yield"),
+    "estimatedAnnualAlpha": number (estimated profit in USD/EUR),
+    "confidenceScore": number (1-100)
+  },
+  "taxShield": {
+    "riskLevel": "SAFE" | "WARNING" | "CRITICAL",
+    "description": string (e.g. "You are $500 away from the next tax bracket"),
+    "loopholeAction": string (e.g. "Donate $500 to a registered charity to save $1200 in taxes")
+  },
+  "negotiator": {
+    "targetExpense": string (e.g. "Energy Bill"),
+    "currentMarketRate": string (e.g. "-30% vs last year"),
+    "potentialSavings": number (annual savings in USD/EUR)
+  },
+  "blackSwan": {
+    "runwayMonths": number,
+    "survivalAssessment": string (e.g. "You have 4.2 months of liquid runway. Freeze high-risk investments.")
+  },
+  "arbitrageFinder": {
+    "inefficientDebt": string (e.g. "Car Loan at 6.5%"),
+    "idleAsset": string (e.g. "Savings at 2%"),
+    "arbitrageSpread": number (percentage difference),
+    "action": string (e.g. "Liquidate $5k from savings to pay off car loan")
   },
   "newsFeed": [
     { "id": string, "category": "MACRO" | "ENERGY" | "CRYPTO" | "GEOPOLITICS" | "TECH" | "MARKETS", "source": string, "headline": string, "impactScore": number (1-10), "meaning": string, "escalationProbability": number, "affects": string, "trend": "up" | "down" | "neutral", "aiSummary": string, "url": string }

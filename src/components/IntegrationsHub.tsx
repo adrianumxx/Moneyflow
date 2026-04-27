@@ -1,125 +1,217 @@
 import React, { useState } from 'react';
-import { Building2, Wallet, Landmark, Globe, Plus, ShieldCheck, ArrowRight, CheckCircle2 } from 'lucide-react';
-import CryptoConnector from './CryptoConnector';
+import { motion, AnimatePresence } from 'motion/react';
+import { 
+  Building2, Wallet, Landmark, Globe, Plus, ShieldCheck, 
+  ArrowRight, CheckCircle2, QrCode, Smartphone, ExternalLink,
+  Lock, Zap, Info
+} from 'lucide-react';
+
+interface ConnectorProvider {
+  id: string;
+  name: string;
+  type: 'bank' | 'crypto' | 'broker';
+  logo: string;
+  color: string;
+  description: string;
+}
+
+const PROVIDERS: ConnectorProvider[] = [
+  { id: 'revolut', name: 'Revolut', type: 'bank', logo: 'https://logo.clearbit.com/revolut.com', color: 'bg-zinc-800', description: 'Instant multi-currency sync' },
+  { id: 'n26', name: 'N26', type: 'bank', logo: 'https://logo.clearbit.com/n26.com', color: 'bg-emerald-600', description: 'European digital banking' },
+  { id: 'etoro', name: 'eToro', type: 'broker', logo: 'https://logo.clearbit.com/etoro.com', color: 'bg-green-600', description: 'Stock & Copy Trading' },
+  { id: 'binance', name: 'Binance', type: 'crypto', logo: 'https://logo.clearbit.com/binance.com', color: 'bg-amber-400', description: 'Global crypto exchange' },
+  { id: 'coinbase', name: 'Coinbase', type: 'crypto', logo: 'https://logo.clearbit.com/coinbase.com', color: 'bg-blue-600', description: 'Institutional crypto vault' },
+  { id: 'degiro', name: 'DEGIRO', type: 'broker', logo: 'https://logo.clearbit.com/degiro.com', color: 'bg-rose-700', description: 'Low-cost European broker' },
+];
 
 export default function IntegrationsHub() {
-  const [activeTab, setActiveTab] = useState<'banks' | 'crypto' | 'brokers'>('banks');
-  const [connectingProvider, setConnectingProvider] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'all' | 'banks' | 'crypto' | 'brokers'>('all');
+  const [connectingProvider, setConnectingProvider] = useState<ConnectorProvider | null>(null);
+  const [connectionStep, setConnectionStep] = useState<'intro' | 'qr' | 'success'>('intro');
 
-  const handleBankConnect = (providerName: string) => {
-    setConnectingProvider(providerName);
-    // Simulate OAuth redirect or Plaid Link open
-    setTimeout(() => {
-      alert(`In a real environment, this would open the ${providerName} OAuth flow or Plaid Link modal. You need API keys for this to work in production.`);
-      setConnectingProvider(null);
-    }, 1500);
+  const tabToType: Record<string, string> = { banks: 'bank', crypto: 'crypto', brokers: 'broker' };
+  const filteredProviders = PROVIDERS.filter(p => activeTab === 'all' || p.type === tabToType[activeTab]);
+
+  const handleConnect = (provider: ConnectorProvider) => {
+    setConnectingProvider(provider);
+    setConnectionStep('intro');
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-200 pb-24 lg:pb-12 pt-6 lg:pt-8 px-4 sm:px-6 max-w-7xl mx-auto font-sans">
-      <div className="mb-8">
-        <h1 className="text-3xl font-black tracking-tight text-white mb-2">Wealth Synchronization</h1>
-        <p className="text-slate-400 max-w-2xl text-sm">
-          Connect your bank accounts, crypto wallets, and brokerage platforms to aggregate your net worth in real-time. 
-          Secured by bank-grade 256-bit encryption. We never store your credentials.
-        </p>
+    <div className="min-h-screen bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-slate-200 pb-24 lg:pb-12 pt-6 lg:pt-8 px-4 sm:px-6 max-w-7xl mx-auto font-sans selection:bg-indigo-500/30">
+      <div className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+        <div className="space-y-2">
+          <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white font-display">Neural Connector</h1>
+          <p className="text-slate-500 dark:text-slate-400 max-w-xl text-sm font-medium">
+            Synchronize your global assets in seconds. Real-time encryption with bank-grade protocol security.
+          </p>
+        </div>
+        <div className="flex items-center gap-3 bg-white dark:bg-white/5 p-2 rounded-2xl border border-slate-200 dark:border-white/10 shadow-sm">
+           <div className="p-2 bg-indigo-500/10 rounded-lg">
+             <ShieldCheck className="w-5 h-5 text-indigo-500" />
+           </div>
+           <div>
+             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Security Standard</p>
+             <p className="text-xs font-bold text-slate-900 dark:text-slate-200">256-bit AES Encryption</p>
+           </div>
+        </div>
       </div>
 
-      {/* TABS */}
-      <div className="flex gap-4 mb-8 border-b border-slate-800 pb-px">
-        <button 
-          onClick={() => setActiveTab('banks')}
-          className={`pb-4 px-2 text-sm font-bold uppercase tracking-widest transition-colors relative ${activeTab === 'banks' ? 'text-amber-500' : 'text-slate-500 hover:text-slate-300'}`}
-        >
-          <Building2 className="w-4 h-4 inline-block mr-2 -mt-0.5" />
-          Banks
-          {activeTab === 'banks' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-amber-500 rounded-t-full"></span>}
-        </button>
-        <button 
-          onClick={() => setActiveTab('crypto')}
-          className={`pb-4 px-2 text-sm font-bold uppercase tracking-widest transition-colors relative ${activeTab === 'crypto' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}
-        >
-          <Wallet className="w-4 h-4 inline-block mr-2 -mt-0.5" />
-          Crypto
-          {activeTab === 'crypto' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-indigo-500 rounded-t-full"></span>}
-        </button>
-        <button 
-          onClick={() => setActiveTab('brokers')}
-          className={`pb-4 px-2 text-sm font-bold uppercase tracking-widest transition-colors relative ${activeTab === 'brokers' ? 'text-emerald-500' : 'text-slate-500 hover:text-slate-300'}`}
-        >
-          <Landmark className="w-4 h-4 inline-block mr-2 -mt-0.5" />
-          Brokers
-          {activeTab === 'brokers' && <span className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-500 rounded-t-full"></span>}
-        </button>
+      {/* FILTERS */}
+      <div className="flex overflow-x-auto no-scrollbar gap-2 mb-10 pb-2">
+        {['all', 'banks', 'crypto', 'brokers'].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab as any)}
+            className={`px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+              activeTab === tab 
+                ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-600/20 scale-105' 
+                : 'bg-white dark:bg-white/5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
 
-      {/* CONTENT */}
-      <div className="space-y-8">
-        
-        {activeTab === 'banks' && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="bg-emerald-950/20 border border-emerald-900/30 rounded-2xl p-4 mb-8 flex items-center gap-3">
-              <ShieldCheck className="w-6 h-6 text-emerald-500 shrink-0" />
-              <p className="text-xs text-emerald-100/70 leading-relaxed">
-                <strong className="text-emerald-400">PSD2 Compliant.</strong> Read-only access. We use GoCardless (EU) and Plaid (US) to securely fetch your transactions. Your bank login details never touch our servers.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* GoCardless / EU Banks */}
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-slate-700 transition-colors flex flex-col justify-between h-56 group">
-                <div>
-                  <div className="w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center mb-4 text-blue-400">
-                    <Globe className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-lg font-black text-white mb-1">European Banks</h3>
-                  <p className="text-xs text-slate-400 font-medium">Powered by GoCardless Open Banking API.</p>
-                </div>
-                <button 
-                  onClick={() => handleBankConnect('GoCardless')}
-                  disabled={connectingProvider !== null}
-                  className="w-full py-3 bg-slate-950 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-amber-500 hover:text-amber-950 transition-colors flex items-center justify-center gap-2 group-hover:border-amber-500/50 border border-transparent"
-                >
-                  {connectingProvider === 'GoCardless' ? 'Connecting...' : <><Plus className="w-4 h-4" /> Connect EU Bank</>}
-                </button>
+      {/* PROVIDER GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredProviders.map((provider) => (
+          <motion.div
+            layoutId={provider.id}
+            key={provider.id}
+            onClick={() => handleConnect(provider)}
+            className="group relative bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-8 cursor-pointer hover:shadow-premium dark:hover:bg-white/[0.08] transition-all overflow-hidden"
+          >
+            <div className={`absolute top-0 right-0 w-32 h-32 ${provider.color} opacity-0 group-hover:opacity-10 rounded-full -mr-16 -mt-16 blur-3xl transition-opacity`} />
+            
+            <div className="flex justify-between items-start mb-6">
+              <div className="w-16 h-16 rounded-[1.5rem] bg-white dark:bg-white/10 p-2 border border-slate-200 dark:border-white/20 shadow-sm overflow-hidden flex items-center justify-center">
+                <img src={provider.logo} alt={provider.name} className="w-full h-full object-contain" />
               </div>
-
-              {/* Plaid / US Banks */}
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 hover:border-slate-700 transition-colors flex flex-col justify-between h-56 group">
-                <div>
-                  <div className="w-12 h-12 bg-slate-800 rounded-2xl flex items-center justify-center mb-4 text-slate-200">
-                    <Building2 className="w-6 h-6" />
-                  </div>
-                  <h3 className="text-lg font-black text-white mb-1">US & Global Banks</h3>
-                  <p className="text-xs text-slate-400 font-medium">Powered by Plaid Secure Link.</p>
-                </div>
-                <button 
-                  onClick={() => handleBankConnect('Plaid')}
-                  disabled={connectingProvider !== null}
-                  className="w-full py-3 bg-slate-950 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-amber-500 hover:text-amber-950 transition-colors flex items-center justify-center gap-2 group-hover:border-amber-500/50 border border-transparent"
-                >
-                  {connectingProvider === 'Plaid' ? 'Connecting...' : <><Plus className="w-4 h-4" /> Connect via Plaid</>}
-                </button>
+              <div className="p-2 bg-slate-50 dark:bg-white/5 rounded-full text-slate-400 group-hover:text-indigo-500 transition-colors">
+                <Plus className="w-5 h-5" />
               </div>
             </div>
-          </div>
-        )}
 
-        {activeTab === 'crypto' && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-             <CryptoConnector />
-          </div>
-        )}
-
-        {activeTab === 'brokers' && (
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 py-20 flex flex-col items-center justify-center text-center">
-            <Landmark className="w-16 h-16 text-slate-800 mb-6" />
-            <h3 className="text-2xl font-black text-white mb-2">Brokerage Integration</h3>
-            <p className="text-slate-500 max-w-md">Interactive Brokers, Robinhood, eToro, and Degiro connections are currently in closed beta for Executive members.</p>
-          </div>
-        )}
-
+            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-1 group-hover:translate-x-1 transition-transform">{provider.name}</h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{provider.description}</p>
+            
+            <div className="mt-8 pt-6 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Direct Connect</span>
+              <ArrowRight className="w-4 h-4 text-slate-300 group-hover:translate-x-1 transition-all" />
+            </div>
+          </motion.div>
+        ))}
       </div>
+
+      {/* CONNECTION MODAL OVERLAY */}
+      <AnimatePresence>
+        {connectingProvider && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              exit={{ opacity: 0 }}
+              onClick={() => setConnectingProvider(null)}
+              className="absolute inset-0 bg-slate-950/80 backdrop-blur-md" 
+            />
+            
+            <motion.div
+              layoutId={connectingProvider.id}
+              className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[3rem] p-8 sm:p-12 shadow-2xl overflow-hidden border border-white/20"
+            >
+              <div className="flex flex-col items-center text-center">
+                {connectionStep === 'intro' && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full space-y-8">
+                    <div className="flex items-center justify-center gap-6 mb-4">
+                      <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-fuchsia-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                        <Wallet className="w-8 h-8" />
+                      </div>
+                      <Zap className="w-6 h-6 text-indigo-400 animate-pulse" />
+                      <div className="w-16 h-16 bg-white rounded-2xl p-2 border border-slate-200 shadow-sm flex items-center justify-center overflow-hidden">
+                        <img src={connectingProvider.logo} alt={connectingProvider.name} className="w-full h-full object-contain" />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Connect {connectingProvider.name}</h2>
+                      <p className="text-slate-500 text-sm font-medium">To synchronize your assets, we recommend using our <span className="text-indigo-600 dark:text-indigo-400">Magic Link</span> for mobile handover.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <button 
+                        onClick={() => setConnectionStep('qr')}
+                        className="p-6 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-3xl flex flex-col items-center gap-4 hover:border-indigo-500/50 transition-all group"
+                      >
+                        <Smartphone className="w-8 h-8 text-indigo-500 group-hover:scale-110 transition-transform" />
+                        <span className="text-xs font-black uppercase tracking-widest">Mobile App</span>
+                      </button>
+                      <button className="p-6 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-3xl flex flex-col items-center gap-4 hover:border-indigo-500/50 transition-all group opacity-50 cursor-not-allowed">
+                        <ExternalLink className="w-8 h-8 text-slate-400" />
+                        <span className="text-xs font-black uppercase tracking-widest">Desktop Sync</span>
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2 justify-center text-emerald-500">
+                      <Lock className="w-4 h-4" />
+                      <span className="text-[10px] font-black uppercase tracking-widest">End-to-End Encrypted</span>
+                    </div>
+                  </motion.div>
+                )}
+
+                {connectionStep === 'qr' && (
+                  <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="w-full space-y-8">
+                    <div className="w-56 h-56 bg-white p-4 rounded-[2rem] mx-auto shadow-xl border-4 border-slate-100 relative overflow-hidden group">
+                      <QrCode className="w-full h-full text-slate-900" />
+                      <div className="absolute inset-0 bg-indigo-600/5 animate-pulse pointer-events-none" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight">Scan for Magic Handover</h3>
+                      <p className="text-slate-500 text-xs font-medium px-4">Open your phone camera to securely authorize {connectingProvider.name} within our mobile encrypted sandbox.</p>
+                    </div>
+
+                    <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3 text-left">
+                      <Info className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                      <p className="text-[10px] text-amber-600 dark:text-amber-400 font-bold leading-tight">
+                        IMPORTANT: Do not close this browser window until the authorization on your phone is confirmed.
+                      </p>
+                    </div>
+
+                    <button 
+                      onClick={() => setConnectionStep('success')}
+                      className="text-xs font-black uppercase tracking-widest text-indigo-500 hover:text-indigo-600"
+                    >
+                      Wait for confirmation...
+                    </button>
+                  </motion.div>
+                )}
+
+                {connectionStep === 'success' && (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full space-y-8">
+                    <div className="w-24 h-24 bg-emerald-500 rounded-full mx-auto flex items-center justify-center shadow-[0_0_40px_rgba(16,185,129,0.5)]">
+                      <CheckCircle2 className="w-12 h-12 text-white" />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase italic">Connection Verified</h2>
+                      <p className="text-slate-500 text-sm font-medium">Your {connectingProvider.name} assets are now streaming to the Neural Core.</p>
+                    </div>
+
+                    <button 
+                      onClick={() => setConnectingProvider(null)}
+                      className="w-full py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl hover:bg-indigo-700 transition-all"
+                    >
+                      Return to Hub
+                    </button>
+                  </motion.div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

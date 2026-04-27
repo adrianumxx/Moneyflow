@@ -44,10 +44,12 @@ export default function Palantir({ assets, liabilities, goals, userProfile }: Pa
     try {
       const language = i18n.language || 'en';
       const intel = await getPalantirIntelligence(
+        userProfile?.uid || 'demo-user',
         new Date().toISOString(),
         Intl.DateTimeFormat().resolvedOptions().timeZone,
         language,
-        { assets: assets || [], liabilities: liabilities || [], goals: goals || [] }
+        { assets: assets || [], liabilities: liabilities || [], goals: goals || [] },
+        userProfile
       );
       setData(intel);
       setLastUpdated(new Date());
@@ -348,6 +350,185 @@ export default function Palantir({ assets, liabilities, goals, userProfile }: Pa
                 )}
 
                 <div className={`space-y-10 ${!isPremium ? 'opacity-30 select-none pointer-events-none' : ''}`}>
+                  
+                  {/* YIELD OPTIMIZER (L'Alpha Generator) */}
+                  {data.yieldOptimizer && (
+                    <section>
+                      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-emerald-400" /> Yield Optimizer
+                      </p>
+                      <div className="bg-emerald-950/20 border border-emerald-900/40 rounded-3xl p-6 sm:p-8 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                          <TrendingUp className="w-32 h-32 text-emerald-500" />
+                        </div>
+                        <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
+                          <div className="flex-grow">
+                            <div className="flex items-center gap-2 mb-3">
+                              <span className="text-[10px] font-black uppercase tracking-widest bg-rose-500/20 text-rose-400 px-2 py-1 rounded">
+                                Inefficiency Detected
+                              </span>
+                              <span className="text-[10px] font-bold text-slate-500">
+                                Confidence: {data.yieldOptimizer.confidenceScore}%
+                              </span>
+                            </div>
+                            <p className="text-sm text-slate-300 mb-4 leading-relaxed">
+                              {data.yieldOptimizer.detectedInefficiency}
+                            </p>
+                            <div className="bg-[#020617]/50 border border-slate-800 rounded-xl p-4">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-2">Alpha Strategy</p>
+                              <p className="text-sm font-bold text-white">{data.yieldOptimizer.actionableStrategy}</p>
+                            </div>
+                          </div>
+                          <div className="shrink-0 text-left md:text-right w-full md:w-auto border-t md:border-t-0 border-slate-800 pt-6 md:pt-0">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Estimated Annual Alpha</p>
+                            <p className="text-4xl sm:text-5xl font-black text-emerald-400 tracking-tight">
+                              +${data.yieldOptimizer.estimatedAnnualAlpha.toLocaleString()}
+                            </p>
+                            <button className="mt-4 w-full py-3 bg-emerald-500 text-emerald-950 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-emerald-400 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/20">
+                              Execute Strategy
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  )}
+
+                  {/* TAX SHIELD */}
+                  {data.taxShield && (
+                    <section>
+                      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
+                        <ShieldAlert className="w-4 h-4 text-violet-400" /> Tax Shield
+                      </p>
+                      <div className={`bg-violet-950/20 border border-violet-900/40 rounded-3xl p-6 sm:p-8 relative overflow-hidden group`}>
+                        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                          <ShieldAlert className="w-32 h-32 text-violet-500" />
+                        </div>
+                        <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
+                          <div className="flex-grow">
+                            <div className="flex items-center gap-2 mb-3">
+                              <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded ${data.taxShield.riskLevel === 'CRITICAL' ? 'bg-rose-500/20 text-rose-400' : data.taxShield.riskLevel === 'WARNING' ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                                {data.taxShield.riskLevel}
+                              </span>
+                            </div>
+                            <p className="text-sm font-medium text-slate-300 mb-4 leading-relaxed">
+                              {data.taxShield.description}
+                            </p>
+                            <div className="bg-[#020617]/50 border border-slate-800 rounded-xl p-4">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-2">Loophole Strategy</p>
+                              <p className="text-sm font-bold text-white">{data.taxShield.loopholeAction}</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  )}
+
+                  {/* NEGOTIATOR */}
+                  {data.negotiator && (
+                    <section>
+                      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
+                        <TrendingDown className="w-4 h-4 text-sky-400" /> Silent Negotiator
+                      </p>
+                      <div className="bg-sky-950/20 border border-sky-900/40 rounded-3xl p-6 sm:p-8 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                          <TrendingDown className="w-32 h-32 text-sky-500" />
+                        </div>
+                        <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
+                          <div className="flex-grow">
+                            <p className="text-sm text-slate-300 mb-2 leading-relaxed">
+                              Target Expense: <strong className="text-white">{data.negotiator.targetExpense}</strong>
+                            </p>
+                            <p className="text-sm text-slate-300 mb-4 leading-relaxed">
+                              Market Rate: <strong className="text-sky-400">{data.negotiator.currentMarketRate}</strong>
+                            </p>
+                          </div>
+                          <div className="shrink-0 text-left md:text-right w-full md:w-auto border-t md:border-t-0 border-slate-800 pt-6 md:pt-0">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Potential Annual Savings</p>
+                            <p className="text-4xl sm:text-5xl font-black text-sky-400 tracking-tight">
+                              +${data.negotiator.potentialSavings.toLocaleString()}
+                            </p>
+                            <button className="mt-4 w-full py-3 bg-sky-500 text-sky-950 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-sky-400 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-sky-500/20">
+                              Auto-Negotiate
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  )}
+
+                  {/* BLACK SWAN */}
+                  {data.blackSwan && (
+                    <section>
+                      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-slate-400" /> Black Swan Protocol
+                      </p>
+                      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                          <AlertCircle className="w-32 h-32 text-slate-500" />
+                        </div>
+                        <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
+                          <div className="flex-grow">
+                            <p className="text-sm text-slate-300 mb-4 leading-relaxed">
+                              {data.blackSwan.survivalAssessment}
+                            </p>
+                            <div className="w-full bg-slate-950 rounded-full h-2 mb-2">
+                              <div className={`h-2 rounded-full ${data.blackSwan.runwayMonths < 3 ? 'bg-rose-500' : data.blackSwan.runwayMonths < 6 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min((data.blackSwan.runwayMonths / 12) * 100, 100)}%` }}></div>
+                            </div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Target: 6.0 Months</p>
+                          </div>
+                          <div className="shrink-0 text-left md:text-right w-full md:w-auto border-t md:border-t-0 border-slate-800 pt-6 md:pt-0">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Liquid Runway</p>
+                            <p className="text-4xl sm:text-5xl font-black text-white tracking-tight">
+                              {data.blackSwan.runwayMonths} <span className="text-xl text-slate-500">mo</span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  )}
+
+                  {/* ARBITRAGE FINDER */}
+                  {data.arbitrageFinder && (
+                    <section>
+                      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-fuchsia-400" /> Arbitrage Finder
+                      </p>
+                      <div className="bg-fuchsia-950/20 border border-fuchsia-900/40 rounded-3xl p-6 sm:p-8 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
+                          <Globe className="w-32 h-32 text-fuchsia-500" />
+                        </div>
+                        <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
+                          <div className="flex-grow">
+                            <div className="flex items-center gap-4 mb-4">
+                              <div className="flex flex-col">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Inefficient Debt</span>
+                                <span className="text-sm font-bold text-rose-400">{data.arbitrageFinder.inefficientDebt}</span>
+                              </div>
+                              <span className="text-slate-600">vs</span>
+                              <div className="flex flex-col">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Idle Asset</span>
+                                <span className="text-sm font-bold text-emerald-400">{data.arbitrageFinder.idleAsset}</span>
+                              </div>
+                            </div>
+                            <div className="bg-[#020617]/50 border border-slate-800 rounded-xl p-4">
+                              <p className="text-[10px] font-black uppercase tracking-widest text-fuchsia-500 mb-2">Arbitrage Action</p>
+                              <p className="text-sm font-bold text-white">{data.arbitrageFinder.action}</p>
+                            </div>
+                          </div>
+                          <div className="shrink-0 text-left md:text-right w-full md:w-auto border-t md:border-t-0 border-slate-800 pt-6 md:pt-0">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Guaranteed Spread</p>
+                            <p className="text-4xl sm:text-5xl font-black text-fuchsia-400 tracking-tight">
+                              +{data.arbitrageFinder.arbitrageSpread}%
+                            </p>
+                            <button className="mt-4 w-full py-3 bg-fuchsia-500 text-fuchsia-950 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-fuchsia-400 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-fuchsia-500/20">
+                              Execute Rebalance
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  )}
+
                   {/* PROBABILITY VECTORS */}
                   <section>
                     <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
@@ -544,6 +725,14 @@ export default function Palantir({ assets, liabilities, goals, userProfile }: Pa
                 </div>
               )) : <p className="text-sm text-slate-500 px-2 col-span-full">No intelligence gathered for this filter.</p>}
             </div>
+          </section>
+
+          {/* LEGAL & RISK DISCLAIMER */}
+          <section className="mt-16 pt-8 border-t border-slate-800/50 text-center px-4">
+            <p className="text-[9px] sm:text-[10px] text-slate-600 font-medium uppercase tracking-widest leading-relaxed max-w-3xl mx-auto">
+              <strong className="text-slate-500 block mb-2">LEGAL & RISK DISCLAIMER</strong>
+              Palantir is an autonomous quantitative intelligence engine, not a licensed fiduciary or financial advisor. All Alpha Generators, Strategic Counsels, and Probability Vectors are mathematical analyses based on current market data and probability models. AI architectures are subject to hallucinations and systemic errors. Capital is at risk. Execute independent verification before any capital allocation. Moneyflow assumes no liability for financial losses.
+            </p>
           </section>
 
         </div>

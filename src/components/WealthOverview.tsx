@@ -153,40 +153,55 @@ export default function WealthOverview({
         <motion.section 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="md:col-span-2 md:row-span-2 relative p-10 rounded-[3rem] bg-slate-950 text-white overflow-hidden shadow-glow"
+          className="md:col-span-2 md:row-span-2 relative p-10 rounded-[3rem] bg-brand-dark text-white overflow-hidden shadow-glow group"
         >
+          {/* Animated Background Gradients */}
           <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none">
-            <div className="absolute top-0 right-0 w-[80%] h-[80%] bg-indigo-600/20 rounded-full -mr-20 -mt-20 blur-[100px] animate-pulse" />
+            <div className="absolute top-0 right-0 w-[80%] h-[80%] bg-brand-primary/20 rounded-full -mr-20 -mt-20 blur-[120px] animate-pulse" />
+            <div className="absolute bottom-0 left-0 w-[60%] h-[60%] bg-brand-secondary/10 rounded-full -ml-20 -mb-20 blur-[100px]" />
           </div>
           
           <div className="relative z-10 flex flex-col h-full justify-between">
             <div className="space-y-2">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-white/10 rounded-xl backdrop-blur-md">
-                  <ShieldCheck className="w-5 h-5 text-indigo-400" />
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10 group-hover:rotate-12 transition-transform duration-500">
+                  <ShieldCheck className="w-6 h-6 text-brand-secondary" />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-300">{t('Total Net Worth')}</span>
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-300">{t('Total Net Worth')}</span>
+                  <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest italic leading-none">Verified Assets Hub</span>
+                </div>
               </div>
-              <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-display tracking-tighter leading-none truncate w-full" title={`€${formatCurrency(netWorth)}`}>
+              <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-display tracking-tighter leading-none truncate w-full drop-shadow-2xl" title={`€${formatCurrency(netWorth)}`}>
                 €{formatCurrency(netWorth)}
               </h2>
-              <div className="flex items-center gap-3 pt-2">
-                <span className="flex items-center gap-1 text-emerald-400 font-black bg-emerald-400/10 px-3 py-1.5 rounded-xl text-[10px] border border-emerald-400/20">
-                  <ArrowUpRight className="w-3 h-3" />
+              <div className="flex items-center gap-3 pt-6">
+                <span className="flex items-center gap-2 text-emerald-400 font-black bg-emerald-400/10 px-4 py-2 rounded-2xl text-xs border border-emerald-400/20 shadow-success">
+                  <ArrowUpRight className="w-4 h-4" />
                   +2.4% Growth
                 </span>
-                <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest italic">{t('Encrypted Asset Sync')}</span>
+                <div className="h-10 w-[1px] bg-white/10 mx-2 hidden sm:block" />
+                <div className="hidden sm:flex flex-col">
+                  <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Neural Link</span>
+                  <span className="text-white text-[10px] font-bold">Active Stream</span>
+                </div>
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4 pt-6 md:pt-8 border-t border-white/10 mt-6 md:mt-auto">
-              <div>
-                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">{t('Total Assets')}</p>
-                <p className="text-2xl font-black text-emerald-400 font-display truncate">€{formatCurrency(totalAssets)}</p>
+            <div className="grid grid-cols-2 gap-8 pt-8 border-t border-white/10 mt-12 md:mt-auto">
+              <div className="space-y-1">
+                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{t('Total Assets')}</p>
+                <p className="text-3xl font-black text-emerald-400 font-display truncate">€{formatCurrency(totalAssets)}</p>
+                <div className="h-1 w-full bg-emerald-500/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 w-[75%] rounded-full shadow-success" />
+                </div>
               </div>
-              <div>
-                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">{t('Total Debt')}</p>
-                <p className="text-2xl font-black text-rose-500 font-display truncate">€{formatCurrency(totalLiabilities)}</p>
+              <div className="space-y-1">
+                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{t('Total Debt')}</p>
+                <p className="text-3xl font-black text-rose-500 font-display truncate">€{formatCurrency(totalLiabilities)}</p>
+                <div className="h-1 w-full bg-rose-500/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-rose-500 w-[25%] rounded-full shadow-[0_0_15px_rgba(244,63,94,0.3)]" />
+                </div>
               </div>
             </div>
           </div>
@@ -373,24 +388,46 @@ export default function WealthOverview({
           </div>
         </section>
 
-        {/* Predictive Growth (1x1) */}
+        {/* Wealth Velocity (1x1) */}
         <section className="glass-card rounded-[3rem] p-8 shadow-premium flex flex-col justify-between bg-zinc-900 dark:bg-[#020617] text-white">
-           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/50">Growth Estimate</h3>
-            <TrendingUp className="w-4 h-4 text-indigo-400" />
+           <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/50">Wealth Velocity</h3>
+            <Zap className="w-4 h-4 text-emerald-400" />
           </div>
-          <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">5Y Forecast</p>
+          <div className="flex flex-col h-full justify-end">
             {(() => {
-               const totalVal = assets.reduce((sum, a) => sum + a.value, 0);
-               const weightedReturn = totalVal > 0 
-                 ? assets.reduce((sum, a) => sum + (a.value * (a.annualReturn || 0)), 0) / totalVal
-                 : 7;
-               const futureValue = netWorth * Math.pow(1 + (weightedReturn / 100), 5);
+               const velocity = monthlyIncome - monthlyExpenses;
+               const isPositive = velocity > 0;
+               const yearsToMillion = isPositive && netWorth < 1000000 
+                  ? ((1000000 - netWorth) / (velocity * 12)).toFixed(1)
+                  : null;
+               
                return (
-                 <p className="text-3xl font-black text-indigo-400 font-display tracking-tighter">
-                   €{formatCurrency(futureValue)}
-                 </p>
+                 <>
+                   <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">Monthly Acceleration</p>
+                   <p className={`text-3xl font-black font-display tracking-tighter ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
+                     {isPositive ? '+' : ''}€{formatCurrency(velocity)}<span className="text-sm">/mo</span>
+                   </p>
+                   {yearsToMillion ? (
+                      <div className="mt-4 p-3 bg-white/5 rounded-xl border border-white/10">
+                        <p className="text-[10px] font-bold text-white/60">
+                          At this speed: <strong className="text-white text-xs">{yearsToMillion} years</strong> to €1M.
+                        </p>
+                      </div>
+                   ) : isPositive && netWorth >= 1000000 ? (
+                      <div className="mt-4 p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                        <p className="text-[10px] font-bold text-emerald-400">
+                          Milestone achieved. You are a millionaire.
+                        </p>
+                      </div>
+                   ) : (
+                      <div className="mt-4 p-3 bg-rose-500/10 rounded-xl border border-rose-500/20">
+                        <p className="text-[10px] font-bold text-rose-400">
+                          Velocity negative. Wealth is bleeding.
+                        </p>
+                      </div>
+                   )}
+                 </>
                );
             })()}
           </div>

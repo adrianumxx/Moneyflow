@@ -95,7 +95,7 @@ service cloud.firestore {
       allow create: if isOwner(userId) && isValidUser(incoming());
       allow update: if isOwner(userId) && isValidUser(incoming()) && 
                     incoming().uid == existing().uid &&
-                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'currency', 'monthlyIncomeTarget', 'updatedAt']);
+                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'currency', 'monthlyIncomeTarget', 'updatedAt', 'primaryGoal', 'experienceLevel', 'baseCurrency', 'hasCompletedOnboarding', 'stripeCustomerId', 'subscriptionStatus', 'plan']);
 
       // Private Subcollections (Applying Pillar 8: evaluate resource.data in list)
       match /assets/{assetId} {
@@ -151,6 +151,15 @@ service cloud.firestore {
         allow list: if isOwner(userId);
         allow delete: if isOwner(userId);
         allow create: if isOwner(userId) && isValidInsight(incoming());
+      }
+
+      // Palantir RAG Memory (AI advice history)
+      match /palantir_memory/{memoryId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && 
+                      incoming().narrative is string && incoming().narrative.size() <= 5000;
+        allow delete: if isOwner(userId);
       }
     }
 

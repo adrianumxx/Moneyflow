@@ -1,5 +1,34 @@
 import { Asset, Liability, FinancialGoal, AIInsight, Income, TransactionCategory } from "../types";
-import { Timestamp } from "firebase/firestore";
+import { Timestamp, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp } from "firebase/firestore";
+import { db } from "../firebase";
+
+export async function logPalantirMemory(userId: string, narrative: string) {
+  if (!userId || userId.startsWith('demo-')) return;
+  try {
+    await addDoc(collection(db, 'users', userId, 'palantir_memory'), {
+      narrative,
+      timestamp: serverTimestamp()
+    });
+  } catch (error) {
+    console.error("Failed to log Palantir memory", error);
+  }
+}
+
+export async function getRecentPalantirMemory(userId: string): Promise<string[]> {
+  if (!userId || userId.startsWith('demo-')) return [];
+  try {
+    const q = query(
+      collection(db, 'users', userId, 'palantir_memory'),
+      orderBy('timestamp', 'desc'),
+      limit(3)
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(doc => doc.data().narrative);
+  } catch (error) {
+    console.error("Failed to fetch Palantir memory", error);
+    return [];
+  }
+}
 
 export async function generateFinancialInsights(
   assets: Asset[],
@@ -139,6 +168,37 @@ export interface PalantirEducationalInsight {
   relevanceToday: string;
 }
 
+export interface PalantirYieldOptimizer {
+  detectedInefficiency: string;
+  actionableStrategy: string;
+  estimatedAnnualAlpha: number;
+  confidenceScore: number;
+}
+
+export interface PalantirTaxShield {
+  riskLevel: 'SAFE' | 'WARNING' | 'CRITICAL';
+  description: string;
+  loopholeAction: string;
+}
+
+export interface PalantirNegotiator {
+  targetExpense: string;
+  currentMarketRate: string;
+  potentialSavings: number;
+}
+
+export interface PalantirBlackSwan {
+  runwayMonths: number;
+  survivalAssessment: string;
+}
+
+export interface PalantirArbitrageFinder {
+  inefficientDebt: string;
+  idleAsset: string;
+  arbitrageSpread: number;
+  action: string;
+}
+
 export interface PalantirIntelligence {
   orb: PalantirOrb;
   narrative: string;
@@ -149,13 +209,20 @@ export interface PalantirIntelligence {
   activeRisks: PalantirActiveRisk[];
   newsFeed: PalantirNewsItem[];
   educationalInsight: PalantirEducationalInsight;
+  yieldOptimizer?: PalantirYieldOptimizer;
+  taxShield?: PalantirTaxShield;
+  negotiator?: PalantirNegotiator;
+  blackSwan?: PalantirBlackSwan;
+  arbitrageFinder?: PalantirArbitrageFinder;
 }
 
 export async function getPalantirIntelligence(
+  userId: string,
   localTime?: string, 
   timezone?: string, 
   language: string = 'en',
-  userContext?: { assets: any[], liabilities: any[], goals: any[] }
+  userContext?: { assets: any[], liabilities: any[], goals: any[] },
+  userProfile?: any
 ): Promise<PalantirIntelligence> {
   const contextLengths = userContext ? `${userContext.assets.length}_${userContext.liabilities.length}` : '0_0';
   const cacheKey = `palantir_intel_v1_${new Date().toISOString().split('T')[0]}_${language}_${contextLengths}`;
@@ -169,10 +236,12 @@ export async function getPalantirIntelligence(
   } catch (e) { localStorage.removeItem(cacheKey); }
 
   try {
+    const pastMemory = await getRecentPalantirMemory(userId);
+
     const response = await fetch('/api/gemini/global-pulse', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ localTime, timezone, language, userContext })
+      body: JSON.stringify({ localTime, timezone, language, userContext, pastMemory, userProfile })
     });
     
     if (!response.ok) throw new Error('Failed to fetch global intelligence');
@@ -181,6 +250,7 @@ export async function getPalantirIntelligence(
     
     if (parsed && parsed.orb) {
       localStorage.setItem(cacheKey, JSON.stringify({ data: parsed, timestamp: Date.now() }));
+      logPalantirMemory(userId, parsed.narrative).catch(console.error);
       return parsed as PalantirIntelligence;
     }
     
@@ -223,6 +293,32 @@ export async function getPalantirIntelligence(
         concept: 'Yield Curve Inversion',
         explanation: 'When short-term bonds pay more than long-term bonds. It usually means investors expect the economy to slow down soon. It is considered one of the most reliable recession indicators.',
         relevanceToday: 'The curve has been inverted for 18 months, signaling structural stress.'
+      },
+      yieldOptimizer: {
+        detectedInefficiency: "Excessive uninvested cash losing 2.5% purchasing power to inflation.",
+        actionableStrategy: "Rotate 15,000 to an MMF (Money Market Fund) yielding 3.8%.",
+        estimatedAnnualAlpha: 570,
+        confidenceScore: 88
+      },
+      taxShield: {
+        riskLevel: 'WARNING',
+        description: 'You are $800 away from the 43% tax bracket.',
+        loopholeAction: 'Contribute $800 to a registered pension fund to deduct it from taxable income.'
+      },
+      negotiator: {
+        targetExpense: 'Energy Bill',
+        currentMarketRate: '-28% vs last year',
+        potentialSavings: 312
+      },
+      blackSwan: {
+        runwayMonths: 4.2,
+        survivalAssessment: 'You have 4.2 months of liquid runway. Pause high-risk DCA until you reach 6 months.'
+      },
+      arbitrageFinder: {
+        inefficientDebt: 'Car Loan (6.5%)',
+        idleAsset: 'Bank Savings (2.0%)',
+        arbitrageSpread: 4.5,
+        action: 'Liquidate $5,000 from savings to aggressively pay down the car loan.'
       },
       newsFeed: [
         { id: '1', category: 'MACRO', source: 'Financial Times', headline: 'Central Banks Hold Rates Steady', impactScore: 8, meaning: 'Your mortgage rate won\'t go down anytime soon.', escalationProbability: 20, affects: 'Borrowers', trend: 'neutral', aiSummary: 'Banks are waiting for more data before cutting rates.', url: '#' }
