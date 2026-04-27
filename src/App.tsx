@@ -970,19 +970,21 @@ export default function App() {
           <GlobalPulse />
         </div>
 
-        {/* Neural Floating Trigger */}
-        <button 
+        {/* Neural Floating Trigger (Piggy Partner) */}
+        <motion.button 
           onClick={triggerAdvice}
-          className="fixed bottom-8 right-8 z-50 w-12 h-12 bg-white dark:bg-slate-900 border border-indigo-500/30 rounded-2xl flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all group overflow-hidden"
+          animate={{ y: [0, -4, 0] }}
+          transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+          className="fixed bottom-8 right-8 z-50 w-16 h-16 bg-white/10 dark:bg-slate-900/40 backdrop-blur-xl border border-indigo-500/20 rounded-[2rem] flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all group overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/10 to-fuchsia-600/10 group-hover:opacity-100 opacity-0 transition-opacity" />
+          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600/20 to-fuchsia-600/20 group-hover:opacity-100 opacity-0 transition-opacity" />
           <img 
-            src="/assets/neural_brain.png" 
-            alt="AI" 
-            className="w-8 h-8 object-contain drop-shadow-sm" 
+            src="/assets/piggy_partner.png" 
+            alt="Piggy Partner" 
+            className="w-12 h-12 object-contain drop-shadow-glow" 
           />
-          <div className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse" />
-        </button>
+          <div className="absolute top-2 right-2 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+        </motion.button>
 
         {/* Neural Advisor Assistant */}
         <NeuralAdvisor 
