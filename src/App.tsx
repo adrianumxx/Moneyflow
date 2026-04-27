@@ -1447,9 +1447,9 @@ export default function App() {
         userEmail={user.email || undefined} 
       />
 
-      {/* Welcome Popup */}
+      {/* Welcome Popup - Only for DEMO users */}
       <AnimatePresence>
-        {showWelcomePopup && (
+        {showWelcomePopup && user.uid.startsWith('demo-') && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div 
               initial={{ opacity: 0 }} 
@@ -1459,31 +1459,33 @@ export default function App() {
                 setShowWelcomePopup(false);
                 localStorage.setItem(`hasSeenWelcome_${user.uid}`, 'true');
               }}
-              className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
+              className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm" 
             />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[40px] shadow-2xl p-10 text-center"
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative w-full max-w-lg glass-card p-10 rounded-[3rem] text-center shadow-premium overflow-hidden"
             >
-              <div className="w-20 h-20 bg-indigo-50 dark:bg-indigo-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20">
-                <LayoutDashboard className="w-10 h-10" />
+              <div className="absolute top-0 left-0 w-full h-1.5 addictive-gradient" />
+              
+              <div className="w-20 h-20 bg-indigo-600/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8">
+                <LayoutDashboard className="w-10 h-10 text-indigo-500" />
               </div>
-              <h3 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white mb-4 font-display">Welcome to the Demo!</h3>
-              <p className="text-zinc-500 dark:text-zinc-400 mb-10 leading-relaxed text-sm">
-                This is a demo application. To keep the demo fresh, <span className="font-bold text-zinc-900 dark:text-white">all data is automatically deleted every 24 hours</span>.
-                <br /><br />
-                If you want to create your own permanent version, click the <span className="font-bold text-zinc-900 dark:text-white">Remix</span> button in the top right!
+              
+              <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-4">Neural Exploration</h2>
+              <p className="text-slate-500 dark:text-slate-400 mb-10 leading-relaxed font-medium">
+                You are currently exploring a <span className="text-indigo-500 font-bold">Neural Archetype</span>. This is a sandbox environment with simulated data to demonstrate the Palantir's reasoning capabilities.
               </p>
+              
               <button
                 onClick={() => {
                   setShowWelcomePopup(false);
                   localStorage.setItem(`hasSeenWelcome_${user.uid}`, 'true');
                 }}
-                className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-500/20 active:scale-95"
+                className="w-full py-5 addictive-gradient text-white rounded-[2rem] font-black hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-indigo-600/20 text-lg"
               >
-                Got it, let's go!
+                Enter Neural Interface
               </button>
             </motion.div>
           </div>
