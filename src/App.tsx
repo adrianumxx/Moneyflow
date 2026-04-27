@@ -805,6 +805,8 @@ export default function App() {
                 <span className="font-bold">{t(item.label)}</span>
               </button>
             ))}
+          </nav>
+
           <div className="pt-4 border-t border-zinc-100 dark:border-white/5 pb-6">
             <p className="px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3">Wealth Management</p>
             <button 
