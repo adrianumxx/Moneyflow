@@ -192,15 +192,20 @@ export default function App() {
   };
 
   useEffect(() => {
+    console.log("Auth Guard: Initializing...");
     setLoading(true);
     import('firebase/auth').then(({ getRedirectResult }) => {
-      getRedirectResult(auth).then(() => {
-        // If there was a result, onAuthStateChanged will handle it
-        // If no result (just a fresh load), we still need to let onAuthStateChanged run
+      console.log("Auth Guard: Checking redirect result...");
+      getRedirectResult(auth).then((result) => {
+        console.log("Auth Guard: Redirect result resolved", result?.user ? "with user" : "no user");
+        if (!result?.user) {
+           // If no redirect result, onAuthStateChanged will handle the final loading state
+           console.log("Auth Guard: No redirect result, waiting for Auth State...");
+        }
       }).catch((error) => {
-        console.error("Error during redirect sign-in:", error);
+        console.error("Auth Guard: Redirect error", error);
         setAuthError(error.message);
-        setLoading(false); // Stop loading so user can see error
+        setLoading(false); 
       });
     });
 
@@ -212,18 +217,22 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      console.log("Auth State Changed:", currentUser ? `User: ${currentUser.uid}` : "No user");
       setUser(currentUser);
+      
       if (!currentUser) {
+        console.log("Auth: Setting loading false (No user)");
         setLoading(false);
         return;
       }
 
       if (!currentUser.uid.startsWith('demo-')) {
-        // Ensure user profile document exists (create on first login)
+        console.log("Auth: Fetching profile for", currentUser.uid);
         const profileRef = doc(db, 'users', currentUser.uid);
         try {
           const profileSnap = await getDoc(profileRef);
           if (!profileSnap.exists()) {
+            console.log("Auth: Creating new profile...");
             // FIRST LOGIN: Create the user document so onboarding can trigger
             // Automatically start a 7-day Palantir trial + 15-day base trial
             await setDoc(profileRef, {
