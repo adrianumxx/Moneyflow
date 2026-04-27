@@ -93,9 +93,9 @@ export default function WealthOverview({
     return tx.type === 'income' ? sum + Math.abs(tx.amount) : sum - Math.abs(tx.amount);
   }, 0);
 
-  const totalAssets = assets.reduce((sum, a) => sum + a.value, 0) + totalBankBalance;
+  const totalAssets = assets.reduce((sum, a) => sum + a.value, 0) + totalBankBalance + totalTransactionFlow;
   const totalLiabilities = liabilities.reduce((sum, l) => sum + l.remainingAmount, 0);
-  const netWorth = totalAssets + totalTransactionFlow - totalLiabilities;
+  const netWorth = totalAssets - totalLiabilities;
 
   // Calculate monthly flow
   const now = new Date();
@@ -374,6 +374,26 @@ export default function WealthOverview({
                 </span>
               </div>
             ))}
+          </div>
+
+          {/* Intelligence Indicators */}
+          <div className="mt-6 pt-6 border-t border-slate-100 dark:border-white/5 grid grid-cols-3 gap-2">
+             <div className="text-center">
+                <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Burn Rate</p>
+                <p className="text-xs font-black text-rose-500">€{(monthlyExpenses / 30).toFixed(0)}/d</p>
+             </div>
+             <div className="text-center border-x border-slate-100 dark:border-white/5">
+                <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Runway</p>
+                <p className="text-xs font-black text-indigo-500">
+                  {monthlyExpenses > 0 ? (totalAssets / monthlyExpenses).toFixed(1) : '∞'} m
+                </p>
+             </div>
+             <div className="text-center">
+                <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Savings</p>
+                <p className="text-xs font-black text-emerald-500">
+                  {monthlyIncome > 0 ? (((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100).toFixed(0) : '0'}%
+                </p>
+             </div>
           </div>
         </section>
 
