@@ -278,19 +278,19 @@ export default function WealthOverview({
             {transactions.slice(0, 4).map(tx => {
               const Icon = CATEGORY_ICONS[tx.category] || Receipt;
               return (
-                <div key={tx.id} className="flex items-center justify-between group/tx">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 bg-slate-50 dark:bg-white/5 rounded-xl flex items-center justify-center text-slate-500 group-hover/tx:text-indigo-500 transition-colors">
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-xs font-black text-slate-800 dark:text-slate-200 truncate italic">{tx.description}</p>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{tx.category}</p>
-                    </div>
+                <div key={tx.id} className="flex items-center gap-4 group/tx">
+                  <div className="w-12 h-12 shrink-0 bg-slate-50 dark:bg-white/5 rounded-2xl flex items-center justify-center text-slate-500 group-hover/tx:text-indigo-500 transition-colors border border-transparent group-hover/tx:border-indigo-500/20 shadow-sm">
+                    <Icon className="w-5 h-5" />
                   </div>
-                  <span className={`text-xs font-black font-mono ${tx.type === 'income' ? 'text-emerald-500' : 'text-slate-500'}`}>
-                    {tx.type === 'income' ? '+' : '-'}€{formatCurrency(Math.abs(tx.amount))}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] font-black text-slate-800 dark:text-slate-100 truncate italic leading-tight mb-0.5">{tx.description}</p>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest leading-none">{tx.category}</p>
+                  </div>
+                  <div className="shrink-0 text-right">
+                    <span className={`text-[11px] font-black font-mono ${tx.type === 'income' ? 'text-emerald-500' : 'text-slate-400 dark:text-slate-500'}`}>
+                      {tx.type === 'income' ? '+' : '-'}€{formatCurrency(Math.abs(tx.amount))}
+                    </span>
+                  </div>
                 </div>
               );
             })}
