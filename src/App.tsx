@@ -53,7 +53,8 @@ import {
   History,
   TrendingUp,
   Settings as SettingsIcon,
-  Link
+  Link,
+  Bot
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Group, UserProfile, Asset, Liability, FinancialGoal, AIInsight, Transaction, BankAccount, Expense } from './types';
