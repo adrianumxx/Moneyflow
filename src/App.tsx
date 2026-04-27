@@ -191,10 +191,15 @@ export default function App() {
   };
 
   useEffect(() => {
+    setLoading(true);
     import('firebase/auth').then(({ getRedirectResult }) => {
-      getRedirectResult(auth).catch((error) => {
+      getRedirectResult(auth).then(() => {
+        // If there was a result, onAuthStateChanged will handle it
+        // If no result (just a fresh load), we still need to let onAuthStateChanged run
+      }).catch((error) => {
         console.error("Error during redirect sign-in:", error);
         setAuthError(error.message);
+        setLoading(false); // Stop loading so user can see error
       });
     });
 
