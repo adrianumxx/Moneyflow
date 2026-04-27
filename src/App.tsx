@@ -131,6 +131,32 @@ export default function App() {
   const [isConnectBankOpen, setIsConnectBankOpen] = useState(false);
   const [isAddTransactionModalOpen, setIsAddTransactionModalOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [advisorState, setAdvisorState] = useState<{ visible: boolean; message: string; actionLabel?: string }>({
+    visible: false,
+    message: ''
+  });
+
+  // Neural Advice Trigger
+  useEffect(() => {
+    if (activeTab === 'dashboard') {
+      const timer = setTimeout(() => {
+        setAdvisorState({
+          visible: true,
+          message: "Neural Analysis: Your savings rate is up by 2% this week. I've optimized your forecast for the next 30 days.",
+          actionLabel: "View Intelligence"
+        });
+      }, 3000);
+      return () => clearTimeout(timer);
+    } else if (activeTab === 'sync') {
+      setAdvisorState({
+        visible: true,
+        message: "Network Security: Neural Sync is active. Connect your primary bank to enable deep liquidity flows.",
+        actionLabel: "Connect Now"
+      });
+    } else {
+      setAdvisorState(prev => ({ ...prev, visible: false }));
+    }
+  }, [activeTab]);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [dataDeletedPopup, setDataDeletedPopup] = useState(false);
   const [showWelcomePopup, setShowWelcomePopup] = useState(false);
@@ -947,6 +973,24 @@ export default function App() {
             </button>
           </div>
         </div>
+        {/* Global Neural Pulse */}
+        <div className="sticky top-0 z-40">
+          <GlobalPulse />
+        </div>
+
+        {/* Neural Advisor Assistant */}
+        <NeuralAdvisor 
+          isVisible={advisorState.visible}
+          message={advisorState.message}
+          actionLabel={advisorState.actionLabel}
+          onClose={() => setAdvisorState(prev => ({ ...prev, visible: false }))}
+          onAction={() => {
+            if (activeTab === 'dashboard') setActiveTab('palantir');
+            if (activeTab === 'sync') setIsConnectBankOpen(true);
+            setAdvisorState(prev => ({ ...prev, visible: false }));
+          }}
+        />
+
         <AnimatePresence mode="wait">
           {selectedGroupId ? (
             <motion.div
