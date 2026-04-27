@@ -95,7 +95,7 @@ service cloud.firestore {
       allow create: if isOwner(userId) && isValidUser(incoming());
       allow update: if isOwner(userId) && isValidUser(incoming()) && 
                     incoming().uid == existing().uid &&
-                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'currency', 'monthlyIncomeTarget', 'updatedAt', 'primaryGoal', 'experienceLevel', 'baseCurrency', 'hasCompletedOnboarding', 'stripeCustomerId', 'subscriptionStatus', 'plan']);
+                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'currency', 'monthlyIncomeTarget', 'updatedAt', 'primaryGoal', 'experienceLevel', 'baseCurrency', 'hasCompletedOnboarding', 'stripeCustomerId', 'subscriptionStatus', 'plan', 'trialStartDate', 'trialDays', 'palantirTrialDays']);
 
       // Private Subcollections (Applying Pillar 8: evaluate resource.data in list)
       match /assets/{assetId} {

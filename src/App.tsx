@@ -195,6 +195,7 @@ export default function App() {
           const profileSnap = await getDoc(profileRef);
           if (!profileSnap.exists()) {
             // FIRST LOGIN: Create the user document so onboarding can trigger
+            // Automatically start a 7-day Palantir trial + 15-day base trial
             await setDoc(profileRef, {
               uid: currentUser.uid,
               displayName: currentUser.displayName || null,
@@ -204,7 +205,12 @@ export default function App() {
               updatedAt: serverTimestamp(),
               hasCompletedOnboarding: false,
               plan: 'free',
+              subscriptionStatus: 'trialing',
+              trialStartDate: new Date().toISOString(),
+              trialDays: 15,
+              palantirTrialDays: 7,
             });
+            console.log('New user profile created with 15-day trial (Palantir: 7 days)');
           }
         } catch (err) {
           console.error('Error ensuring user profile exists:', err);
@@ -561,6 +567,19 @@ export default function App() {
                 } as any;
                 setUser(demoUser);
                 
+                // Set demo user profile with trialing status so Palantir is visible
+                setUserProfile({
+                  uid: 'demo-user',
+                  displayName: 'Demo User',
+                  email: 'guest@moneyflow.ai',
+                  hasCompletedOnboarding: true,
+                  plan: 'free',
+                  subscriptionStatus: 'trialing',
+                  trialStartDate: new Date().toISOString(),
+                  palantirTrialDays: 7,
+                  trialDays: 15,
+                } as any);
+                
                 // Set initial mock data for demo
                 setAssets([
                   { id: '1', name: 'Main Savings', type: 'savings', value: 12500, institution: 'Moneyflow Savings', createdAt: Timestamp.now(), updatedAt: Timestamp.now() },
@@ -584,7 +603,7 @@ export default function App() {
               className="group flex items-center justify-center gap-2 mx-auto text-zinc-500 dark:text-zinc-500 hover:text-indigo-500 transition-colors py-2 px-4 rounded-xl hover:bg-indigo-500/5"
             >
               <Zap className="w-4 h-4 group-hover:fill-indigo-500" />
-              <span className="font-bold text-xs uppercase tracking-widest">Enter in Guest Mode</span>
+              <span className="font-bold text-xs uppercase tracking-widest">Try Free for 7 Days</span>
             </button>
           </div>
         </motion.div>
