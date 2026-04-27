@@ -112,15 +112,30 @@ export default function WealthOverview({
     .filter(tx => tx.type === 'expense')
     .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
 
-  const assetData = assets.reduce((acc: any[], asset) => {
-    const existing = acc.find(item => item.name === asset.type);
-    if (existing) {
-      existing.value += asset.value;
-    } else {
-      acc.push({ name: asset.type, value: asset.value });
+  const assetData = useMemo(() => {
+    const data: Record<string, number> = {};
+    
+    // Add manual assets
+    assets.forEach(asset => {
+      const cat = asset.type || 'Other';
+      data[cat] = (data[cat] || 0) + asset.value;
+    });
+
+    // Add bank balances as 'Liquidity'
+    if (totalBankBalance > 0) {
+      data['Liquidity'] = (data['Liquidity'] || 0) + totalBankBalance;
     }
-    return acc;
-  }, []);
+
+    // Convert to array for Recharts
+    const result = Object.entries(data).map(([name, value]) => ({ name, value }));
+    
+    // If absolutely no data, add a small placeholder for UI consistency
+    if (result.length === 0) {
+      return [{ name: 'Empty Portfolio', value: 0.1 }];
+    }
+    
+    return result;
+  }, [assets, totalBankBalance]);
 
   const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'];
 
