@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
+import { useTranslation } from 'react-i18next';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -59,6 +60,7 @@ export default function WealthOverview({
   onGenerateReport,
   theme 
 }: WealthOverviewProps) {
+  const { t } = useTranslation();
   const [isGenerating, setIsGenerating] = useState(false);
   const { showNotification } = useNotifications();
 
@@ -158,9 +160,9 @@ export default function WealthOverview({
                 <div className="p-2 bg-white/10 rounded-xl backdrop-blur-md">
                   <ShieldCheck className="w-5 h-5 text-indigo-400" />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-300">Total Net Worth</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-300">{t('Total Net Worth')}</span>
               </div>
-              <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-display tracking-tighter leading-none truncate">
+              <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-display tracking-tighter leading-none truncate w-full" title={`€${formatCurrency(netWorth)}`}>
                 €{formatCurrency(netWorth)}
               </h2>
               <div className="flex items-center gap-3 pt-2">
@@ -168,18 +170,18 @@ export default function WealthOverview({
                   <ArrowUpRight className="w-3 h-3" />
                   +2.4% Growth
                 </span>
-                <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest italic">Encrypted Asset Sync</span>
+                <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest italic">{t('Encrypted Asset Sync')}</span>
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4 pt-6 md:pt-8 border-t border-white/10 mt-6 md:mt-auto">
               <div>
-                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Total Assets</p>
-                <p className="text-2xl font-black text-emerald-400 font-display">€{formatCurrency(totalAssets)}</p>
+                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">{t('Total Assets')}</p>
+                <p className="text-2xl font-black text-emerald-400 font-display truncate">€{formatCurrency(totalAssets)}</p>
               </div>
               <div>
-                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">Total Debt</p>
-                <p className="text-2xl font-black text-rose-500 font-display">€{formatCurrency(totalLiabilities)}</p>
+                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-1">{t('Total Debt')}</p>
+                <p className="text-2xl font-black text-rose-500 font-display truncate">€{formatCurrency(totalLiabilities)}</p>
               </div>
             </div>
           </div>

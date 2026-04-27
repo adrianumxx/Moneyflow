@@ -23,7 +23,7 @@ export default function PreferencesSettings() {
       </div>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-        {[{ code: 'en', label: 'English' }, { code: 'it', label: 'Italiano' }, { code: 'es', label: 'Español' }, { code: 'fr', label: 'Français' }, { code: 'de', label: 'Deutsch' }].map((lang) => (
+        {[{ code: 'en', label: 'English' }, { code: 'it', label: 'Italiano' }, { code: 'es', label: 'Español' }, { code: 'fr', label: 'Français' }, { code: 'de', label: 'Deutsch' }, { code: 'ar', label: 'العربية' }, { code: 'zh', label: '中文' }, { code: 'nl', label: 'Nederlands' }, { code: 'pt', label: 'Português' }, { code: 'ru', label: 'Русский' }, { code: 'hi', label: 'हिन्दी' }].map((lang) => (
           <button
             key={lang.code}
             onClick={() => changeLanguage(lang.code)}
