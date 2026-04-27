@@ -64,7 +64,7 @@ export default function SubscriptionSettings({ userProfile, userId, userEmail }:
               <h3 className="text-xl font-bold font-display">Premium Membership</h3>
             </div>
             <p className="text-slate-500 max-w-md">
-              Unlock advanced AI insights, unlimited group sharing, and precise financial forecasting.
+              Unlock professional AI insights, unlimited group sharing, and growth predictions.
             </p>
           </div>
           
@@ -88,7 +88,7 @@ export default function SubscriptionSettings({ userProfile, userId, userEmail }:
             <ul className="space-y-3">
               {[
                 '15-day Free Trial (No risk)',
-                'Advanced CFO AI Reports',
+                'Professional Financial Reports',
                 'Unlimited Household Groups',
                 'Real-time Bank Account Sync',
                 'Custom Spending Alerts'
@@ -125,7 +125,7 @@ export default function SubscriptionSettings({ userProfile, userId, userEmail }:
                   className="w-full py-4 bg-white dark:bg-zinc-800 border-2 border-zinc-100 dark:border-zinc-700 hover:border-indigo-500 dark:hover:border-indigo-500 text-slate-900 dark:text-white rounded-2xl font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <ExternalLink className="w-5 h-5" />}
-                  Manage Billing & Cards
+                  Manage Subscription
                 </button>
                 <p className="text-[10px] text-center text-zinc-400 font-bold uppercase tracking-widest">
                   Securely hosted by Stripe

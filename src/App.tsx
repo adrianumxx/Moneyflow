@@ -73,6 +73,7 @@ import CFOReportModal from './components/CFOReportModal';
 import SubscriptionSettings from './components/SubscriptionSettings';
 import FeedbackModal from './components/FeedbackModal';
 import GlobalPulse from './components/GlobalPulse';
+import NeuralAdvisor from './components/NeuralAdvisor';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -406,7 +407,7 @@ export default function App() {
             Money<span className="text-indigo-600 dark:text-indigo-400">flow</span>
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mb-12 leading-relaxed text-lg font-medium">
-            The next-generation Wealth OS for global citizens. Secure, AI-powered, and beautiful.
+            Your all-in-one personal finance dashboard. Secure, smart, and easy to use.
           </p>
 
           <div className="space-y-6">
@@ -501,6 +502,14 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      <NeuralAdvisor 
+        assets={assets}
+        liabilities={liabilities}
+        goals={goals}
+        transactions={transactions}
+        userDisplayName={user.displayName || 'User'}
+      />
+
       {/* Sidebar */}
       <aside className={`
         fixed lg:static inset-y-0 left-0 w-72 bg-white/70 dark:bg-zinc-950/40 backdrop-blur-3xl border-r border-white/20 dark:border-white/5 flex flex-col z-50 lg:z-10 transition-all duration-300 ease-in-out overflow-y-auto custom-scrollbar
@@ -538,7 +547,7 @@ export default function App() {
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === 'wealth' && !selectedGroupId ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
             >
               <PieChart className="w-5 h-5" />
-              <span className="font-bold">Wealth Overview</span>
+              <span className="font-bold">Wealth</span>
             </button>
             <button 
               onClick={() => {
@@ -560,7 +569,7 @@ export default function App() {
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === 'forecast' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
             >
               <Activity className="w-5 h-5" />
-              <span className="font-bold">Forecast AI</span>
+              <span className="font-bold">Growth Predictions</span>
             </button>
             <button 
               onClick={() => {
@@ -571,7 +580,7 @@ export default function App() {
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === 'pulse' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
             >
               <Zap className={`w-5 h-5 ${activeTab === 'pulse' ? 'fill-white' : ''}`} />
-              <span className="font-bold">Global Pulse</span>
+              <span className="font-bold">Global Markets</span>
               {activeTab !== 'pulse' && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />}
             </button>
             <button 
@@ -583,7 +592,7 @@ export default function App() {
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === 'ledger' ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
             >
               <Receipt className="w-5 h-5" />
-              <span className="font-bold">Global Ledger</span>
+              <span className="font-bold">Transaction History</span>
             </button>
             <button 
               onClick={() => {
@@ -606,13 +615,13 @@ export default function App() {
           </nav>
 
           <div className="pt-4 border-t border-zinc-100 dark:border-white/5 pb-6">
-            <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Smart Sync</p>
+            <p className="px-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">Bank Sync</p>
             <button 
               onClick={() => setIsConnectBankOpen(true)}
               className="w-full flex items-center gap-3 px-4 py-4 rounded-2xl bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
             >
               <Zap className="w-5 h-5 bg-white/20 rounded-lg p-1" />
-              <span className="font-bold">One-Click Connect</span>
+              <span className="font-bold">Connect Bank</span>
             </button>
           </div>
 

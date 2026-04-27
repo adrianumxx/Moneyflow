@@ -35,95 +35,101 @@ function Globe3D() {
   const planetRef = React.useRef<THREE.Mesh>(null);
   const continentsRef = React.useRef<THREE.Group>(null);
   const signalsRef = React.useRef<THREE.Group>(null);
+  const atmosphereRef = React.useRef<THREE.Mesh>(null);
 
   useFrame((state, delta) => {
+    const time = state.clock.getElapsedTime();
     if (planetRef.current) planetRef.current.rotation.y += delta * 0.12;
     if (continentsRef.current) continentsRef.current.rotation.y += delta * 0.12;
-    if (signalsRef.current) signalsRef.current.rotation.y += delta * 0.15;
+    if (signalsRef.current) {
+      signalsRef.current.rotation.y += delta * 0.18;
+      signalsRef.current.position.y = Math.sin(time * 0.5) * 0.1;
+    }
+    if (atmosphereRef.current) {
+      atmosphereRef.current.scale.setScalar(1.06 + Math.sin(time * 2) * 0.01);
+    }
   });
 
   return (
-    <group rotation={[0.4, 0, 0.2]} scale={0.36}>
-      {/* The Planet Sea - Deep Royal Blue */}
+    <group rotation={[0.4, 0, 0.2]} scale={0.38}>
+      {/* The Planet Sea - Deep Royal Blue with Fresnel-like effect */}
       <mesh ref={planetRef as any}>
         <sphereGeometry args={[2.0, 64, 64]} />
         <meshStandardMaterial 
-          color="#1e40af" 
-          roughness={0.4} 
-          metalness={0.6}
-          emissive="#1e3a8a"
+          color="#1e1b4b" 
+          roughness={0.2} 
+          metalness={0.8}
+          emissive="#312e81"
           emissiveIntensity={0.2}
         />
       </mesh>
 
-      {/* Detailed Clay Continents */}
-      <group ref={continentsRef as any}>
-        {/* Americas */}
-        <mesh position={[-1.2, 0.4, 1.4]} scale={[0.45, 1.1, 0.3]}>
-          <sphereGeometry args={[1, 32, 16]} />
-          <meshStandardMaterial color="#059669" roughness={0.3} metalness={0.4} />
-        </mesh>
-        {/* Eurasia */}
-        <mesh position={[1.2, 0.8, 1.2]} scale={[1.3, 0.7, 0.3]}>
-          <sphereGeometry args={[1, 32, 16]} />
-          <meshStandardMaterial color="#10b981" roughness={0.3} metalness={0.4} />
-        </mesh>
-        {/* Africa */}
-        <mesh position={[1.0, -0.6, 1.5]} scale={[0.75, 0.95, 0.3]}>
-          <sphereGeometry args={[1, 32, 16]} />
-          <meshStandardMaterial color="#047857" roughness={0.3} metalness={0.4} />
-        </mesh>
-        {/* Antarctica */}
-        <mesh position={[0, -2.0, 0]} scale={[1.4, 0.15, 1.4]}>
-          <sphereGeometry args={[1, 16, 16]} />
-          <meshStandardMaterial color="#f1f5f9" roughness={0.4} />
-        </mesh>
-        
-        {/* Small Data Spikes */}
-        <group ref={signalsRef as any}>
-          {[...Array(12)].map((_, i) => (
+      {/* Floating Data Particle Field */}
+      <group ref={signalsRef as any}>
+        {[...Array(40)].map((_, i) => {
+          const phi = Math.acos(-1 + (2 * i) / 40);
+          const theta = Math.sqrt(40 * Math.PI) * phi;
+          return (
             <mesh 
               key={i}
               position={[
-                (Math.random() - 0.5) * 4,
-                (Math.random() - 0.5) * 4,
-                (Math.random() - 0.5) * 4
-              ].map(v => v * 1.1) as [number, number, number]}
+                2.4 * Math.sin(phi) * Math.cos(theta),
+                2.4 * Math.cos(phi),
+                2.4 * Math.sin(phi) * Math.sin(theta)
+              ]}
             >
-              <sphereGeometry args={[0.04, 8, 8]} />
-              <meshStandardMaterial color="#6366f1" emissive="#6366f1" emissiveIntensity={4} />
+              <sphereGeometry args={[0.02, 8, 8]} />
+              <meshStandardMaterial 
+                color={i % 3 === 0 ? "#818cf8" : i % 3 === 1 ? "#34d399" : "#fb7185"} 
+                emissive={i % 3 === 0 ? "#818cf8" : i % 3 === 1 ? "#34d399" : "#fb7185"} 
+                emissiveIntensity={4} 
+              />
             </mesh>
-          ))}
-        </group>
+          );
+        })}
       </group>
 
-      {/* Rings */}
-      <mesh rotation={[Math.PI / 2, 0, 0]}>
+      {/* Detailed Clay Continents */}
+      <group ref={continentsRef as any}>
+        {/* Americas */}
+        <mesh position={[-1.2, 0.4, 1.4]} scale={[0.45, 1.1, 0.4]}>
+          <sphereGeometry args={[0.9, 32, 16]} />
+          <meshStandardMaterial color="#4f46e5" roughness={0.3} metalness={0.4} />
+        </mesh>
+        {/* Eurasia */}
+        <mesh position={[1.2, 0.8, 1.2]} scale={[1.3, 0.7, 0.4]}>
+          <sphereGeometry args={[0.9, 32, 16]} />
+          <meshStandardMaterial color="#6366f1" roughness={0.3} metalness={0.4} />
+        </mesh>
+        {/* Africa */}
+        <mesh position={[1.0, -0.6, 1.5]} scale={[0.75, 0.95, 0.4]}>
+          <sphereGeometry args={[0.9, 32, 16]} />
+          <meshStandardMaterial color="#4338ca" roughness={0.3} metalness={0.4} />
+        </mesh>
+        {/* Antarctica */}
+        <mesh position={[0, -2.1, 0]} scale={[1.4, 0.2, 1.4]}>
+          <sphereGeometry args={[0.8, 16, 16]} />
+          <meshStandardMaterial color="#818cf8" roughness={0.4} />
+        </mesh>
+      </group>
+
+      {/* Rings of Data */}
+      <mesh rotation={[Math.PI / 2, 0.2, 0]}>
         <torusGeometry args={[2.8, 0.005, 16, 100]} />
-        <meshStandardMaterial color="#6366f1" transparent opacity={0.3} />
+        <meshStandardMaterial color="#6366f1" transparent opacity={0.4} />
+      </mesh>
+      <mesh rotation={[Math.PI / 2, -0.2, 0.4]}>
+        <torusGeometry args={[3.2, 0.003, 16, 100]} />
+        <meshStandardMaterial color="#818cf8" transparent opacity={0.2} />
       </mesh>
 
-      {/* Floating Puff Clouds */}
-      <Float speed={4} rotationIntensity={1} floatIntensity={2}>
-        <group position={[-2.5, 1.8, 1.2]}>
-          <mesh castShadow>
-            <sphereGeometry args={[0.25, 16, 16]} />
-            <meshStandardMaterial color="white" roughness={0.3} />
-          </mesh>
-          <mesh position={[0.2, -0.05, 0.1]}>
-            <sphereGeometry args={[0.18, 16, 16]} />
-            <meshStandardMaterial color="white" roughness={0.3} />
-          </mesh>
-        </group>
-      </Float>
-
       {/* Atmosphere Ring Glow */}
-      <mesh scale={1.06}>
+      <mesh ref={atmosphereRef as any} scale={1.06}>
         <sphereGeometry args={[2.0, 64, 64]} />
         <meshStandardMaterial 
-          color="#bfdbfe" 
+          color="#6366f1" 
           transparent 
-          opacity={0.06} 
+          opacity={0.12} 
           side={THREE.BackSide}
           blending={THREE.AdditiveBlending}
         />
@@ -166,10 +172,10 @@ export default function GlobalPulse() {
       const result = await getGlobalIntelligence(localTime, timezone);
       setData(result);
       setLastUpdated(new Date());
-      if (!silent) showNotification('Intelligence Synced', 'Global market parameters updated via AI Brain.', 'success', 'Global Pulse');
+      if (!silent) showNotification('Data Updated', 'Market signals refreshed.', 'success', 'Global Pulse');
     } catch (error) {
       console.error(error);
-      showNotification('Sync Failed', 'Unable to reach the intelligence layer.', 'error', 'Global Pulse');
+      showNotification('Update Failed', 'Having trouble connecting to market data.', 'error', 'Global Pulse');
     } finally {
       setIsLoading(false);
     }
@@ -324,8 +330,8 @@ export default function GlobalPulse() {
               <RefreshCw className="w-5 h-5 text-indigo-500 animate-spin" />
             </div>
             <div className="text-left">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Stato Sistema</p>
-              <p className="text-sm font-black text-slate-800 dark:text-white uppercase italic">Verifica Segnali Globali</p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">System Status</p>
+              <p className="text-sm font-black text-slate-800 dark:text-white uppercase italic">Loading Global Data</p>
             </div>
           </div>
         </div>
@@ -392,7 +398,7 @@ export default function GlobalPulse() {
             <div className="absolute -inset-2 bg-indigo-500/20 blur-xl rounded-full" />
           </div>
           <div className="space-y-1">
-            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Intelligence Pulse</h1>
+            <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Market Pulse</h1>
             <div className="flex items-center gap-3">
               <span className="px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20 flex items-center gap-1.5">
                 <div className="w-1 h-1 rounded-full bg-emerald-500 animate-ping" />
@@ -468,9 +474,9 @@ export default function GlobalPulse() {
           <div className="flex items-center justify-between mb-4 px-2">
             <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-[0.25em] flex items-center gap-3">
               <Layers className="w-4 h-4 text-indigo-500" />
-              Intelligence Delta
+              Market Updates
             </h3>
-            <span className="text-[10px] font-bold text-slate-400 italic">Sorted by Alpha Potential</span>
+            <span className="text-[10px] font-bold text-slate-400 italic">Latest global signals</span>
           </div>
 
           <div className="space-y-4">
@@ -547,7 +553,7 @@ export default function GlobalPulse() {
                 <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
                   <Target className="w-5 h-5 text-white" />
                 </div>
-                <h3 className="text-xs font-black uppercase tracking-[0.25em]">Strategic Protocol</h3>
+                <h3 className="text-xs font-black uppercase tracking-[0.25em]">Market Strategy</h3>
               </div>
               <div className="px-4 py-1.5 rounded-full bg-white/20 text-[10px] font-mono font-bold backdrop-blur-md">
                 CONF: {data?.analystConfidence}%
@@ -556,14 +562,14 @@ export default function GlobalPulse() {
 
             <div className="space-y-6">
               <div>
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/60 mb-3 ml-1 italic">Tactical Directive</p>
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/60 mb-3 ml-1 italic">Suggested Action</p>
                 <div className="p-6 bg-white/10 backdrop-blur-xl border border-white/20 rounded-[2rem] font-bold text-sm leading-relaxed tracking-tight italic">
                   "{data?.strategicAdvice}"
                 </div>
               </div>
 
               <div>
-                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/60 mb-3 ml-1 italic">Psychological Synthesis</p>
+                <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/60 mb-3 ml-1 italic">Market Vibe</p>
                 <p className="text-xl font-black tracking-tighter leading-tight italic uppercase pr-10">
                   {data?.marketMood}
                 </p>
@@ -571,12 +577,12 @@ export default function GlobalPulse() {
             </div>
           </section>
 
-          {/* Probabilistic Radar */}
+          {/* Probabilities radar */}
           <section className={`bg-white dark:bg-[#0f172a] border border-slate-200/60 dark:border-white/5 rounded-[3rem] p-8 lg:p-10 space-y-8 shadow-sm ${activeMobileTab !== 'radar' ? 'hidden lg:block' : 'block'}`}>
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-[0.25em] flex items-center gap-3">
                 <Target className="w-4 h-4 text-violet-500" />
-                Probabilistic Radar
+                Market Probabilities
               </h3>
               <Info className="w-4 h-4 text-slate-300" />
             </div>

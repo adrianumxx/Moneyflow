@@ -157,8 +157,19 @@ export async function getGlobalIntelligence(localTime?: string, timezone?: strin
       generationConfig: { responseMimeType: "application/json" }
     });
 
-    let rawText = result.response ? result.response.text() : "";
-    if (rawText.toLowerCase().includes("rate exceeded")) throw new Error("RATE");
+    let rawText = "";
+    try {
+      if (result.response) {
+        rawText = result.response.text();
+      }
+    } catch (e) {
+      console.warn("AI result.response.text() failed, likely safety filter or rate limit.");
+      throw new Error("AI_FAILURE");
+    }
+
+    if (rawText.toLowerCase().includes("rate exceeded") || rawText.toLowerCase().includes("exhausted")) {
+      throw new Error("RATE_LIMIT");
+    }
 
     let cleanText = rawText.trim();
     const startIdx = cleanText.indexOf('{');
