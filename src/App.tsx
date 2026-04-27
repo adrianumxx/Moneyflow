@@ -155,6 +155,18 @@ export default function App() {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   };
 
+  const handleGoogleSignIn = async () => {
+    setAuthError('');
+    setAuthLoading(true);
+    try {
+      await signIn();
+    } catch (err: any) {
+      console.error("Google Sign-In Error:", err);
+      setAuthError(err.message || 'Could not connect to Google. Please check your connection.');
+      setAuthLoading(false);
+    }
+  };
+
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError('');
@@ -179,6 +191,13 @@ export default function App() {
   };
 
   useEffect(() => {
+    import('firebase/auth').then(({ getRedirectResult }) => {
+      getRedirectResult(auth).catch((error) => {
+        console.error("Error during redirect sign-in:", error);
+        setAuthError(error.message);
+      });
+    });
+
     (window as any).openCreateGroupModal = () => setIsCreateModalOpen(true);
     return () => {
       delete (window as any).openCreateGroupModal;
@@ -470,14 +489,20 @@ export default function App() {
           <div className="space-y-6">
             {!isEmailView ? (
               <div className="space-y-3">
+                {authError && !isEmailView && (
+                  <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 text-xs font-bold mb-4 animate-shake">
+                    {authError}
+                  </div>
+                )}
                 <button
-                  onClick={signIn}
-                  className="w-full py-5 addictive-gradient text-white rounded-[2rem] font-black hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4 shadow-2xl shadow-indigo-600/30 text-xl outline-none focus:ring-4 focus:ring-indigo-500/40 group"
+                  onClick={handleGoogleSignIn}
+                  disabled={authLoading}
+                  className="w-full py-5 addictive-gradient text-white rounded-[2rem] font-black hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4 shadow-2xl shadow-indigo-600/30 text-xl outline-none focus:ring-4 focus:ring-indigo-500/40 group disabled:opacity-70"
                 >
                   <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center p-1.5 shadow-sm group-hover:rotate-12 transition-transform">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-full h-full" />
                   </div>
-                  Get Started for Free
+                  {authLoading ? 'Connecting...' : 'Get Started for Free'}
                 </button>
                 
                 <button
@@ -557,54 +582,93 @@ export default function App() {
               <div className="flex-1 h-[1px] bg-slate-200 dark:bg-slate-800" />
             </div>
             
-            <button
-              onClick={() => {
-                const demoUser = {
-                  uid: 'demo-user',
-                  displayName: 'Demo User',
-                  email: 'guest@moneyflow.ai',
-                  photoURL: `https://ui-avatars.com/api/?name=Guest&background=6366f1&color=fff`,
-                } as any;
-                setUser(demoUser);
-                
-                // Set demo user profile with trialing status so Palantir is visible
-                setUserProfile({
-                  uid: 'demo-user',
-                  displayName: 'Demo User',
-                  email: 'guest@moneyflow.ai',
-                  hasCompletedOnboarding: true,
-                  plan: 'free',
-                  subscriptionStatus: 'trialing',
-                  trialStartDate: new Date().toISOString(),
-                  palantirTrialDays: 7,
-                  trialDays: 15,
-                } as any);
-                
-                // Set initial mock data for demo
-                setAssets([
-                  { id: '1', name: 'Main Savings', type: 'savings', value: 12500, institution: 'Moneyflow Savings', createdAt: Timestamp.now(), updatedAt: Timestamp.now() },
-                  { id: '2', name: 'Apple Stock', type: 'investment', value: 4200, institution: 'Trading212', createdAt: Timestamp.now(), updatedAt: Timestamp.now() },
-                  { id: '3', name: 'Bitcoin', type: 'crypto', value: 8750, institution: 'Coinbase', createdAt: Timestamp.now(), updatedAt: Timestamp.now() }
-                ]);
-                setLiabilities([
-                  { id: '1', name: 'Student Loan', type: 'loan', totalAmount: 15000, remainingAmount: 8400, monthlyPayment: 250, interestRate: 3.5, createdAt: Timestamp.now(), updatedAt: Timestamp.now() }
-                ]);
-                setTransactions([
-                  { id: '1', amount: 3500, category: 'income', date: Timestamp.now(), description: 'Monthly Salary', type: 'income', isRecurring: true, createdAt: Timestamp.now() },
-                  { id: '2', amount: -1200, category: 'housing', date: Timestamp.now(), description: 'Apartment Rent', type: 'expense', isRecurring: true, createdAt: Timestamp.now() },
-                  { id: '3', amount: -150, category: 'food', date: Timestamp.now(), description: 'Grocery Store', type: 'expense', isRecurring: false, createdAt: Timestamp.now() }
-                ]);
-                setBankAccounts([
-                  { id: '1', institutionName: 'Moneyflow Bank', accountName: 'Main Checking', balance: 12500, currency: 'EUR', lastSynced: Timestamp.now() }
-                ]);
+            <div className="pt-2">
+              <button
+                onClick={() => {
+                  const archetypes = [
+                    {
+                      name: 'The Executive',
+                      goal: 'Legacy Building',
+                      exp: 'Expert',
+                      assets: [
+                        { id: '1', name: 'Private Equity', type: 'investment', value: 450000, institution: 'JP Morgan', createdAt: Timestamp.now(), updatedAt: Timestamp.now() },
+                        { id: '2', name: 'Swiss Estate', type: 'real_estate', value: 1200000, institution: 'Personal', createdAt: Timestamp.now(), updatedAt: Timestamp.now() }
+                      ],
+                      liabilities: [{ id: '1', name: 'Lombard Loan', type: 'loan', totalAmount: 200000, remainingAmount: 150000, monthlyPayment: 2000, interestRate: 2.1, createdAt: Timestamp.now(), updatedAt: Timestamp.now() }],
+                      income: 25000
+                    },
+                    {
+                      name: 'Crypto Whale',
+                      goal: 'Moon Mission',
+                      exp: 'Intermediate',
+                      assets: [
+                        { id: '1', name: 'Cold Wallet (BTC)', type: 'crypto', value: 850000, institution: 'Ledger', createdAt: Timestamp.now(), updatedAt: Timestamp.now() },
+                        { id: '2', name: 'Solana Ecosystem', type: 'crypto', value: 120000, institution: 'Phantom', createdAt: Timestamp.now(), updatedAt: Timestamp.now() }
+                      ],
+                      liabilities: [],
+                      income: 5000
+                    },
+                    {
+                      name: 'Debt Trapped',
+                      goal: 'Financial Freedom',
+                      exp: 'Beginner',
+                      assets: [{ id: '1', name: 'Savings', type: 'savings', value: 1200, institution: 'Local Bank', createdAt: Timestamp.now(), updatedAt: Timestamp.now() }],
+                      liabilities: [
+                        { id: '1', name: 'Credit Card', type: 'debt', totalAmount: 15000, remainingAmount: 12500, monthlyPayment: 450, interestRate: 19.9, createdAt: Timestamp.now(), updatedAt: Timestamp.now() },
+                        { id: '2', name: 'Car Loan', type: 'loan', totalAmount: 25000, remainingAmount: 22000, monthlyPayment: 350, interestRate: 7.5, createdAt: Timestamp.now(), updatedAt: Timestamp.now() }
+                      ],
+                      income: 2100
+                    },
+                    {
+                      name: 'Family Saver',
+                      goal: 'Retirement',
+                      exp: 'Intermediate',
+                      assets: [
+                        { id: '1', name: 'Index Funds', type: 'investment', value: 85000, institution: 'Vanguard', createdAt: Timestamp.now(), updatedAt: Timestamp.now() },
+                        { id: '2', name: 'Home Equity', type: 'real_estate', value: 350000, institution: 'Main Home', createdAt: Timestamp.now(), updatedAt: Timestamp.now() }
+                      ],
+                      liabilities: [{ id: '1', name: 'Mortgage', type: 'mortgage', totalAmount: 300000, remainingAmount: 245000, monthlyPayment: 1400, interestRate: 3.2, createdAt: Timestamp.now(), updatedAt: Timestamp.now() }],
+                      income: 4800
+                    }
+                  ];
 
-                setLoading(false);
-              }}
-              className="group flex items-center justify-center gap-2 mx-auto text-zinc-500 dark:text-zinc-500 hover:text-indigo-500 transition-colors py-2 px-4 rounded-xl hover:bg-indigo-500/5"
-            >
-              <Zap className="w-4 h-4 group-hover:fill-indigo-500" />
-              <span className="font-bold text-xs uppercase tracking-widest">Try Free for 7 Days</span>
-            </button>
+                  const arc = archetypes[Math.floor(Math.random() * archetypes.length)];
+                  
+                  const demoUser = {
+                    uid: 'demo-' + arc.name.toLowerCase().replace(' ', '-'),
+                    displayName: arc.name,
+                    email: 'guest@moneyflow.ai',
+                    photoURL: `https://ui-avatars.com/api/?name=${arc.name}&background=6366f1&color=fff`,
+                  } as any;
+                  setUser(demoUser);
+                  
+                  setUserProfile({
+                    uid: demoUser.uid,
+                    displayName: arc.name,
+                    primaryGoal: arc.goal,
+                    experienceLevel: arc.exp,
+                    hasCompletedOnboarding: true,
+                    plan: 'free',
+                    subscriptionStatus: 'trialing',
+                    trialStartDate: new Date().toISOString(),
+                    palantirTrialDays: 7,
+                  } as any);
+                  
+                  setAssets(arc.assets as any);
+                  setLiabilities(arc.liabilities as any);
+                  setTransactions([
+                    { id: '1', amount: arc.income, category: 'income', date: Timestamp.now(), description: 'Monthly Income', type: 'income', isRecurring: true, createdAt: Timestamp.now() },
+                    { id: '2', amount: -(arc.income * 0.4), category: 'housing', date: Timestamp.now(), description: 'Living Expenses', type: 'expense', isRecurring: true, createdAt: Timestamp.now() }
+                  ]);
+                  setLoading(false);
+                }}
+                className="w-full py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-[2rem] font-black hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-xl shadow-zinc-200 dark:shadow-black/20 text-sm group"
+              >
+                <Zap className="w-5 h-5 text-indigo-500 group-hover:animate-pulse" />
+                <span>Inject Neural Archetype (7-Day Trial)</span>
+              </button>
+              <p className="mt-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Random Identity Simulation</p>
+            </div>
           </div>
         </motion.div>
       </div>
