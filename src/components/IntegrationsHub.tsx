@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
+  Building2, Wallet, Landmark, Globe, Plus, ShieldCheck, 
   ArrowRight, CheckCircle2, QrCode, Smartphone, ExternalLink,
-  Lock, Zap, Info, Landmark, Building2, Bitcoin, TrendingUp
+  Lock, Zap, Info, Bitcoin, TrendingUp
 } from 'lucide-react';
 
 interface ConnectorProvider {
