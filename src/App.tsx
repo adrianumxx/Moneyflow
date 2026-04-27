@@ -255,7 +255,15 @@ export default function App() {
           if (snap.exists()) {
             setUserProfile({ uid: snap.id, ...snap.data() } as UserProfile);
           }
-        }, (err) => handleFirestoreError(err, OperationType.GET, `users/${currentUser.uid}`));
+          setLoading(false); // SUCCESS: Profile loaded
+        }, (err) => {
+          console.error("Firestore Profile Error:", err);
+          handleFirestoreError(err, OperationType.GET, `users/${currentUser.uid}`);
+          setLoading(false); // ERROR: But stop loading so we can see the app or error
+        });
+
+        // Safety: Stop loading after 5 seconds anyway to prevent infinite loop
+        setTimeout(() => setLoading(false), 5000);
 
         // Only fetch from Firestore if it's a real user (not demo)
         // Fetch Assets
@@ -460,6 +468,12 @@ export default function App() {
 
   const isProfileLoading = user && !user.uid.startsWith('demo-') && !userProfile;
 
+  // Emergency reset if stuck in loading
+  const handleEmergencyLogout = async () => {
+    await logOut();
+    window.location.reload();
+  };
+
   if (loading || isProfileLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-zinc-50 dark:bg-[#020617] transition-colors duration-300">
@@ -471,10 +485,21 @@ export default function App() {
         <motion.p 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-indigo-600 dark:text-indigo-400 font-bold tracking-widest text-xs uppercase"
+          className="text-indigo-600 dark:text-indigo-400 font-bold tracking-widest text-xs uppercase mb-8"
         >
           {isProfileLoading ? 'Syncing Neural Profile...' : 'Initializing Wealth OS...'}
         </motion.p>
+        
+        {/* Emergency Button after 3 seconds */}
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 3 }}
+          onClick={handleEmergencyLogout}
+          className="px-6 py-2 bg-rose-500/10 text-rose-500 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-rose-500/20 transition-all"
+        >
+          Stuck? Click to Reset
+        </motion.button>
       </div>
     );
   }
