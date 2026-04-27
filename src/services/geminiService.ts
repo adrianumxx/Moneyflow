@@ -130,6 +130,71 @@ export interface ProbabilisticScenario {
   catalyst: string;
 }
 
+export interface CFOReportSection {
+  title: string;
+  content: string;
+}
+
+export interface CFOReportData {
+  executiveSummary: string;
+  quickScanAnalysis: CFOReportSection[];
+  strategicRecommendations: CFOReportSection[];
+  riskAssessment: string;
+}
+
+export async function generateCFOReportData(
+  assets: any[],
+  liabilities: any[],
+  insights: any[],
+  language: string = 'en'
+): Promise<CFOReportData> {
+  const ai = new GoogleGenAI({ 
+    apiKey: getEnv('GEMINI_API_KEY') 
+  });
+
+  const languagePrompt = language === 'it' 
+    ? "Rispondi in italiano in modo formale e professionale, come un analista di Deloitte o PwC."
+    : "Reply in a formal, professional English, like an analyst from Deloitte or PwC.";
+
+  const prompt = `You are a high-level CFO and wealth manager. Generate a comprehensive financial report.
+  ${languagePrompt}
+  
+  User Data:
+  Assets: ${JSON.stringify(assets)}
+  Liabilities: ${JSON.stringify(liabilities)}
+  Quick Scan Insights: ${JSON.stringify(insights)}
+
+  Provide a JSON strictly matching this schema, completely empty of markdown blocks (just raw JSON):
+  {
+    "executiveSummary": "A very professional 3-4 sentence overview of their financial situation.",
+    "quickScanAnalysis": [
+      { "title": "...", "content": "Detailed professional analysis expanding on the Quick Scan insights." }
+    ],
+    "strategicRecommendations": [
+      { "title": "...", "content": "Actionable, high-level strategic steps." }
+    ],
+    "riskAssessment": "Overall risk profile and immediate threats."
+  }
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+      }
+    });
+    
+    if (!response.text) throw new Error("No response");
+    
+    return JSON.parse(response.text) as CFOReportData;
+  } catch (err) {
+    console.error("Failed to generate CFO Report:", err);
+    throw err;
+  }
+}
+
 export interface MarketIntelligence {
   news: NewsItem[];
   marketMood: string;

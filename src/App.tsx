@@ -57,6 +57,7 @@ import { handleFirestoreError, OperationType } from './utils/errorHandling';
 import { getEnv, isDev } from './utils/env';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { generateCFOReportData } from './services/geminiService';
 
 // Components
 import Dashboard from './components/Dashboard';
@@ -79,7 +80,7 @@ import NeuralAdvisor from './components/NeuralAdvisor';
 import { useTranslation } from 'react-i18next';
 
 export default function App() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -1153,12 +1154,13 @@ export default function App() {
         isOpen={isCFOReportOpen}
         onClose={() => setIsCFOReportOpen(false)}
         onSend={async (email) => {
-          // Complex report generation simulation
-          await new Promise(resolve => setTimeout(resolve, 2000));
           
           const totalAssets = assets.reduce((sum, a) => sum + a.value, 0);
           const totalLiabilities = liabilities.reduce((sum, l) => sum + l.remainingAmount, 0);
           const netWorth = totalAssets - totalLiabilities;
+
+          // Call Gemini for the CFO Data
+          const cfoData = await generateCFOReportData(assets, liabilities, insights, i18n.language);
 
           const doc = new jsPDF();
           
@@ -1172,60 +1174,101 @@ export default function App() {
           doc.text(`PREPARED FOR: ${email.toUpperCase()}`, 14, 32);
           doc.text(`DATE: ${new Date().toLocaleDateString()}`, 14, 37);
           
-          // Executive Summary
+          // 1. Executive Summary
           doc.setFontSize(14);
           doc.setTextColor(30, 41, 59);
           doc.text('1. EXECUTIVE SUMMARY', 14, 50);
           
           doc.setFontSize(10);
           doc.setTextColor(71, 85, 105);
+          doc.text(doc.splitTextToSize(cfoData.executiveSummary, 180), 14, 60);
+
+          let currentY = 60 + doc.splitTextToSize(cfoData.executiveSummary, 180).length * 5 + 10;
           
-          const summaryText = `Based on a comprehensive analysis of all recorded asset sectors and liability structures, your global net worth is established at €${netWorth.toLocaleString()}. The portfolio maintains a current liquidity ratio that allows for tactical maneuvers in high-volatility sectors.`;
-          doc.text(doc.splitTextToSize(summaryText, 180), 14, 60);
-          
-          // Asset Breakdown
+          // 2. Asset Breakdown
           doc.setFontSize(14);
           doc.setTextColor(30, 41, 59);
-          doc.text('2. ASSET INFRASTRUCTURE', 14, 85);
+          doc.text('2. ASSET INFRASTRUCTURE', 14, currentY);
           
           const assetRows = assets.map(a => [a.name, a.type.toUpperCase(), `€${a.value.toLocaleString()}`, `${((a.value/totalAssets)*100).toFixed(1)}%`]);
           autoTable(doc, {
-            startY: 90,
+            startY: currentY + 5,
             head: [['Asset Name', 'Sector', 'Valuation', 'Weight']],
             body: assetRows,
             theme: 'striped',
             headStyles: { fillColor: [79, 70, 229] }
           });
           
-          // Liabilities
-          const liabilitiesStartY = (doc as any).lastAutoTable.finalY + 15;
+          // 3. Liabilities
+          currentY = (doc as any).lastAutoTable.finalY + 15;
+          if (currentY > 250) { doc.addPage(); currentY = 20; }
+
           doc.setFontSize(14);
           doc.setTextColor(30, 41, 59);
-          doc.text('3. LIABILITY & DEBT STRUCTURE', 14, liabilitiesStartY);
+          doc.text('3. LIABILITY & DEBT STRUCTURE', 14, currentY);
           
           const liabilityRows = liabilities.map(l => [l.name, l.type.toUpperCase(), `€${l.remainingAmount.toLocaleString()}`, `€${l.monthlyPayment.toLocaleString()}/mo`]);
           autoTable(doc, {
-            startY: liabilitiesStartY + 5,
+            startY: currentY + 5,
             head: [['Creditor', 'Structure', 'Remaining', 'Service Cost']],
             body: liabilityRows,
             theme: 'striped',
             headStyles: { fillColor: [244, 63, 94] }
           });
           
-          // CFO Strategic Advice
-          const adviceStartY = (doc as any).lastAutoTable.finalY + 15;
+          // 4. Quick Scan Extended Analysis
+          currentY = (doc as any).lastAutoTable.finalY + 15;
+          if (currentY > 250) { doc.addPage(); currentY = 20; }
+
           doc.setFontSize(14);
           doc.setTextColor(30, 41, 59);
-          doc.text('4. STRATEGIC RECOMMENDATIONS', 14, adviceStartY);
+          doc.text('4. DEEP CONTEXT ANALYSIS (QUICK SCAN EXPANDED)', 14, currentY);
           
+          currentY += 10;
+          cfoData.quickScanAnalysis.forEach(item => {
+             if (currentY > 270) { doc.addPage(); currentY = 20; }
+             doc.setFontSize(11);
+             doc.setTextColor(15, 23, 42);
+             doc.text(`• ${item.title.toUpperCase()}`, 14, currentY);
+             currentY += 6;
+             doc.setFontSize(9);
+             doc.setTextColor(71, 85, 105);
+             const lines = doc.splitTextToSize(item.content, 180);
+             doc.text(lines, 14, currentY);
+             currentY += lines.length * 5 + 5;
+          });
+
+          // 5. Strategic Recommendations
+          if (currentY > 240) { doc.addPage(); currentY = 20; } else { currentY += 5; }
+
+          doc.setFontSize(14);
+          doc.setTextColor(30, 41, 59);
+          doc.text('5. STRATEGIC OUTLOOK & RECOMMENDATIONS', 14, currentY);
+          
+          currentY += 10;
+          cfoData.strategicRecommendations.forEach(item => {
+             if (currentY > 270) { doc.addPage(); currentY = 20; }
+             doc.setFontSize(11);
+             doc.setTextColor(15, 23, 42);
+             doc.text(`• ${item.title.toUpperCase()}`, 14, currentY);
+             currentY += 6;
+             doc.setFontSize(9);
+             doc.setTextColor(71, 85, 105);
+             const lines = doc.splitTextToSize(item.content, 180);
+             doc.text(lines, 14, currentY);
+             currentY += lines.length * 5 + 5;
+          });
+
+          // 6. Risk Assessment
+          if (currentY > 250) { doc.addPage(); currentY = 20; } else { currentY += 5; }
+
+          doc.setFontSize(14);
+          doc.setTextColor(30, 41, 59);
+          doc.text('6. RISK METRICS', 14, currentY);
+          currentY += 8;
           doc.setFontSize(10);
           doc.setTextColor(71, 85, 105);
-          const advice = [
-            '• CAPITAL REALLOCATION: Your current cash reserves exceed the optimal safety threshold. Consider a 15% shift into productive assets.',
-            '• DEBT NEUTRALIZATION: Accelerate payments on high-interest liabilities to optimize overall internal rate of return (IRR).',
-            '• RISK DIVERSIFICATION: Concentration in speculative sectors is noted. Recommend a balanced approach with fixed-income instruments.'
-          ].join('\n\n');
-          doc.text(doc.splitTextToSize(advice, 180), 14, adviceStartY + 10);
+          doc.text(doc.splitTextToSize(cfoData.riskAssessment, 180), 14, currentY);
           
           const blob = doc.output('blob');
           
