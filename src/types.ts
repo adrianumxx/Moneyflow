@@ -51,6 +51,7 @@ export interface Asset {
   type: AssetType;
   value: number;
   institution?: string; // Bank name or "Manual"
+  annualReturn?: number; // Expected yearly growth (%)
   updatedAt: Timestamp;
   createdAt: Timestamp;
   notes?: string;

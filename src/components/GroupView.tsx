@@ -657,34 +657,34 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-14">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-10 sm:mb-14">
         <button 
           onClick={() => setSelectedStatDetails({ title: 'Total Group Spend', amount: totalSpent })}
-          className="text-left w-full glass-card p-10 rounded-[3.5rem] border border-slate-100 dark:border-white/5 shadow-premium relative overflow-hidden group hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+          className="text-left w-full glass-card p-6 sm:p-10 rounded-[2.5rem] sm:rounded-[3.5rem] border border-slate-100 dark:border-white/5 shadow-premium relative overflow-hidden group hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-slate-100 dark:bg-white/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
           <div className="relative">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6 font-display">Aggregate Circle Burn</p>
+            <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4 sm:mb-6 font-display leading-none">Aggregate Circle Burn</p>
             <p 
-              className="text-5xl font-black text-slate-800 dark:text-white font-display tracking-tighter truncate leading-none"
+              className="text-4xl sm:text-5xl font-black text-slate-800 dark:text-white font-display tracking-tighter truncate leading-none"
             >
               €{formatCurrency(totalSpent)}
             </p>
             {group.maxBudget && (
-              <div className="mt-8">
-                <div className="flex justify-between text-[10px] font-black uppercase mb-3 font-display">
+              <div className="mt-6 sm:mt-8">
+                <div className="flex justify-between text-[9px] sm:text-[10px] font-black uppercase mb-3 font-display">
                   <span className="text-slate-400">Efficiency Index ({group.budgetType})</span>
                   <span className={currentBudgetSpent > group.maxBudget ? 'text-rose-500' : 'text-indigo-600 dark:text-indigo-400'}>
                     {((currentBudgetSpent / group.maxBudget) * 100).toFixed(0)}%
                   </span>
                 </div>
-                <div className="h-3 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
+                <div className="h-2.5 sm:h-3 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
                   <div 
                     className={`h-full transition-all duration-1000 ease-out shadow-inner ${currentBudgetSpent > group.maxBudget ? 'bg-rose-500' : 'bg-indigo-500'}`}
                     style={{ width: `${Math.min(100, (currentBudgetSpent / group.maxBudget) * 100)}%` }}
                   />
                 </div>
-                <p className="text-[10px] text-slate-400 mt-3 font-black uppercase tracking-widest leading-none">
+                <p className="text-[9px] sm:text-[10px] text-slate-400 mt-3 font-black uppercase tracking-widest leading-none">
                   €{formatCurrency(currentBudgetSpent)} / €{formatCurrency(group.maxBudget)}
                 </p>
               </div>
@@ -693,21 +693,21 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
         </button>
         <button 
           onClick={() => setSelectedStatDetails({ title: 'Your Share', amount: perPerson, subtitle: `${totalSpent > 0 ? ((userSpent / totalSpent) * 100).toFixed(0) : 0}% of total paid by you` })}
-          className="text-left w-full glass-card p-10 rounded-[3.5rem] border border-slate-100 dark:border-white/5 shadow-premium relative overflow-hidden group hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+          className="text-left w-full glass-card p-6 sm:p-10 rounded-[2.5rem] sm:rounded-[3.5rem] border border-slate-100 dark:border-white/5 shadow-premium relative overflow-hidden group hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-slate-100 dark:bg-white/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
           <div className="relative">
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-6 font-display">Contribution Delta</p>
+            <p className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mb-4 sm:mb-6 font-display leading-none">Contribution Delta</p>
             <p 
-              className="text-5xl font-black text-slate-800 dark:text-white font-display tracking-tighter truncate leading-none"
+              className="text-4xl sm:text-5xl font-black text-slate-800 dark:text-white font-display tracking-tighter truncate leading-none"
             >
               €{formatCurrency(perPerson)}
             </p>
-            <div className="mt-8 flex items-center gap-3">
+            <div className="mt-6 sm:mt-8 flex items-center gap-3">
                <div className="w-12 h-1.5 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
                  <div className="h-full bg-indigo-500" style={{ width: `${totalSpent > 0 ? (userSpent / totalSpent) * 100 : 0}%` }} />
                </div>
-               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+               <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400">
                 {totalSpent > 0 ? ((userSpent / totalSpent) * 100).toFixed(0) : 0}% Engagement
               </p>
             </div>
@@ -715,22 +715,22 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
         </button>
         <button 
           onClick={() => setSelectedStatDetails({ title: balance >= 0 ? 'You are owed' : 'You owe', amount: Math.abs(balance) })}
-          className={`text-left w-full p-10 rounded-[3.5rem] border shadow-premium relative overflow-hidden group hover:scale-[1.02] active:scale-95 transition-all duration-500 cursor-pointer ${
+          className={`text-left w-full p-6 sm:p-10 rounded-[2.5rem] sm:rounded-[3.5rem] border shadow-premium relative overflow-hidden group hover:scale-[1.02] active:scale-95 transition-all duration-500 cursor-pointer sm:col-span-2 lg:col-span-1 ${
             balance >= 0 ? 'bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20' : 'bg-rose-50 border-rose-100 dark:bg-rose-500/10 dark:border-rose-500/20'
           }`}
         >
           <div className={`absolute top-0 right-0 w-40 h-40 rounded-full -mr-20 -mt-20 blur-3xl transition-transform group-hover:scale-110 ${balance >= 0 ? 'bg-emerald-400/20' : 'bg-rose-400/20'}`} />
           <div className="relative">
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-6 font-display text-slate-400">
+            <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] mb-4 sm:mb-6 font-display text-slate-400 leading-none">
               {balance >= 0 ? 'Surplus Balance' : 'Circle Liability'}
             </p>
             <p 
-              className={`text-5xl font-black font-display tracking-tighter truncate leading-none ${balance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'}`}
+              className={`text-4xl sm:text-5xl font-black font-display tracking-tighter truncate leading-none ${balance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'}`}
             >
               €{formatCurrency(Math.abs(balance))}
             </p>
-            <div className="mt-8">
-               <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${balance >= 0 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
+            <div className="mt-6 sm:mt-8">
+               <span className={`px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest ${balance >= 0 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
                 {balance >= 0 ? 'Credit Active' : 'Settlement Required'}
                </span>
             </div>

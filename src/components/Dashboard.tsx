@@ -33,6 +33,7 @@ interface DashboardProps {
   onNavigateToLedger: () => void;
   onUpdateTransaction?: (tx: any) => void;
   onDeleteTransaction?: (id: string) => void;
+  onAddGroup?: () => void;
   theme: 'light' | 'dark';
 }
 
@@ -63,6 +64,7 @@ export default function Dashboard({
   onNavigateToLedger, 
   onUpdateTransaction,
   onDeleteTransaction,
+  onAddGroup,
   theme 
 }: DashboardProps) {
   const [recentExpenses, setRecentExpenses] = useState<DashboardExpense[]>([]);
@@ -352,27 +354,27 @@ export default function Dashboard({
   }, [groups, transactions, user.uid]);
 
   return (
-    <div className="max-w-6xl mx-auto">
-      <header className="mb-14 flex flex-col md:flex-row md:items-end justify-between gap-8">
+    <div className="max-w-6xl mx-auto space-y-8 sm:space-y-14">
+      <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 sm:gap-8">
         <div>
-          <div className="flex items-center gap-2 mb-4">
-             <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-full text-[10px] font-black uppercase tracking-[0.2em]">Financial Intelligence Hub</span>
+          <div className="flex items-center gap-2 mb-3 sm:mb-4">
+             <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">Financial Intelligence Hub</span>
           </div>
-          <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-slate-800 dark:text-white mb-4 font-display leading-none">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-slate-800 dark:text-white mb-2 sm:mb-4 font-display leading-none">
             Welcome, <span className="text-indigo-600 dark:text-indigo-400">{user.displayName?.split(' ')[0]}</span>
           </h1>
-          <p className="text-slate-500 font-medium text-lg tracking-tight">Managing {groups.length} active wealth circles across your global portfolio.</p>
+          <p className="text-slate-500 font-medium text-base sm:text-lg tracking-tight">Managing {groups.length} active wealth circles across your global portfolio.</p>
         </div>
         <button 
-          onClick={() => (window as any).openCreateGroupModal?.()}
-          className="flex items-center gap-3 px-8 py-5 addictive-gradient text-white rounded-[2rem] font-black text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-indigo-600/20"
+          onClick={() => onAddGroup?.()}
+          className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-8 py-4 sm:py-5 addictive-gradient text-white rounded-[1.5rem] sm:rounded-[2rem] font-black text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-indigo-600/20"
         >
           <Plus className="w-5 h-5 bg-white/20 rounded-lg p-1" />
           Establish New Circle
         </button>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-14">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
         <button 
           onClick={() => {
             if (groups.length === 0) return;
@@ -382,15 +384,15 @@ export default function Dashboard({
               setIsGroupsListOpen(true);
             }
           }}
-          className={`text-left bg-slate-950 p-10 rounded-[3.5rem] shadow-glow relative overflow-hidden group transition-all ${groups.length > 0 ? 'hover:scale-[1.02] active:scale-95 cursor-pointer' : 'cursor-default'}`}
+          className={`text-left bg-slate-950 p-6 sm:p-10 rounded-[2.5rem] sm:rounded-[3.5rem] shadow-glow relative overflow-hidden group transition-all ${groups.length > 0 ? 'hover:scale-[1.02] active:scale-95 cursor-pointer' : 'cursor-default'}`}
         >
-          <div className="absolute top-0 right-0 w-40 h-40 bg-indigo-500/20 rounded-full -mr-20 -mt-20 blur-3xl transition-transform group-hover:scale-125" />
+          <div className="absolute top-0 right-0 w-32 sm:w-40 h-32 sm:h-40 bg-indigo-500/20 rounded-full -mr-16 -mt-16 sm:-mr-20 sm:-mt-20 blur-3xl transition-transform group-hover:scale-125" />
           <div className="relative z-10">
-            <div className="w-14 h-14 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center mb-10 border border-white/10">
-              <Users className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/10 backdrop-blur-xl rounded-xl sm:rounded-2xl flex items-center justify-center mb-6 sm:mb-10 border border-white/10">
+              <Users className="w-6 sm:w-7 h-6 sm:h-7 text-white" />
             </div>
-            <p className="text-[10px] font-black text-indigo-300 uppercase tracking-[0.3em] mb-2 leading-none">Strategic Circles</p>
-            <p className="text-5xl font-black text-white font-display tracking-tighter">{groups.length}</p>
+            <p className="text-[9px] sm:text-[10px] font-black text-indigo-300 uppercase tracking-[0.3em] mb-2 leading-none">Strategic Circles</p>
+            <p className="text-4xl sm:text-5xl font-black text-white font-display tracking-tighter">{groups.length}</p>
           </div>
         </button>
 
@@ -399,15 +401,15 @@ export default function Dashboard({
             if (recentExpenses.length === 0) return;
             onSelectGroup(recentExpenses[0].groupId);
           }}
-          className={`text-left addictive-gradient p-10 rounded-[3.5rem] shadow-premium relative overflow-hidden group transition-all ${recentExpenses.length > 0 ? 'hover:scale-[1.02] active:scale-95 cursor-pointer' : 'cursor-default'}`}
+          className={`text-left addictive-gradient p-6 sm:p-10 rounded-[2.5rem] sm:rounded-[3.5rem] shadow-premium relative overflow-hidden group transition-all ${recentExpenses.length > 0 ? 'hover:scale-[1.02] active:scale-95 cursor-pointer' : 'cursor-default'}`}
         >
-          <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl transition-transform group-hover:scale-125" />
+          <div className="absolute top-0 right-0 w-32 sm:w-40 h-32 sm:h-40 bg-white/10 rounded-full -mr-16 -mt-16 sm:-mr-20 sm:-mt-20 blur-3xl transition-transform group-hover:scale-125" />
           <div className="relative z-10">
-            <div className="w-14 h-14 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center mb-10 border border-white/10">
-              <Receipt className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/10 backdrop-blur-xl rounded-xl sm:rounded-2xl flex items-center justify-center mb-6 sm:mb-10 border border-white/10">
+              <Receipt className="w-6 sm:w-7 h-6 sm:h-7 text-white" />
             </div>
-            <p className="text-[10px] font-black text-emerald-100 uppercase tracking-[0.3em] mb-2 leading-none">Recent Flows</p>
-            <p className="text-5xl font-black text-white font-display tracking-tighter">{recentExpenses.length}</p>
+            <p className="text-[9px] sm:text-[10px] font-black text-emerald-100 uppercase tracking-[0.3em] mb-2 leading-none">Recent Flows</p>
+            <p className="text-4xl sm:text-5xl font-black text-white font-display tracking-tighter">{recentExpenses.length}</p>
           </div>
         </button>
 
@@ -416,22 +418,22 @@ export default function Dashboard({
             if (alerts.length === 0) return;
             onSelectGroup(alerts[0].groupId);
           }}
-          className={`text-left bg-rose-600 p-10 rounded-[3.5rem] shadow-xl shadow-rose-500/20 relative overflow-hidden group transition-all ${alerts.length > 0 ? 'hover:scale-[1.02] active:scale-95 cursor-pointer' : 'cursor-default'}`}
+          className={`text-left bg-rose-600 p-6 sm:p-10 rounded-[2.5rem] sm:rounded-[3.5rem] shadow-xl shadow-rose-500/20 relative overflow-hidden group transition-all sm:col-span-2 lg:col-span-1 ${alerts.length > 0 ? 'hover:scale-[1.02] active:scale-95 cursor-pointer' : 'cursor-default'}`}
         >
-          <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full -mr-20 -mt-20 blur-3xl transition-transform group-hover:scale-125" />
+          <div className="absolute top-0 right-0 w-32 sm:w-40 h-32 sm:h-40 bg-white/10 rounded-full -mr-16 -mt-16 sm:-mr-20 sm:-mt-20 blur-3xl transition-transform group-hover:scale-125" />
           <div className="relative z-10">
-            <div className="w-14 h-14 bg-white/10 backdrop-blur-xl rounded-2xl flex items-center justify-center mb-10 border border-white/10">
-              <TrendingUp className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/10 backdrop-blur-xl rounded-xl sm:rounded-2xl flex items-center justify-center mb-6 sm:mb-10 border border-white/10">
+              <TrendingUp className="w-6 sm:w-7 h-6 sm:h-7 text-white" />
             </div>
-            <p className="text-[10px] font-black text-rose-100 uppercase tracking-[0.3em] mb-2 leading-none">Critical Alerts</p>
-            <p className="text-5xl font-black text-white font-display tracking-tighter">{alerts.length}</p>
+            <p className="text-[9px] sm:text-[10px] font-black text-rose-100 uppercase tracking-[0.3em] mb-2 leading-none">Critical Alerts</p>
+            <p className="text-4xl sm:text-5xl font-black text-white font-display tracking-tighter">{alerts.length}</p>
           </div>
         </button>
       </div>
 
       <AnimatePresence>
         {isGroupsListOpen && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -442,12 +444,13 @@ export default function Dashboard({
             <motion.div 
               ref={groupsListModalRef}
               tabIndex={-1}
-              initial={{ opacity: 0, scale: 0.95, y: 30 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-white dark:bg-slate-900 border border-white/20 rounded-[3.5rem] shadow-premium overflow-hidden outline-none p-10"
+              initial={{ opacity: 0, y: 100 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 100 }}
+              className="relative w-full max-w-md bg-white dark:bg-slate-900 border-t sm:border border-white/20 rounded-t-[2.5rem] sm:rounded-[3.5rem] shadow-premium overflow-hidden outline-none p-8 sm:p-10"
             >
-              <h3 className="text-3xl font-black text-slate-800 dark:text-white mb-8 font-display tracking-tighter">Navigate Circle</h3>
+              <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-6 sm:hidden" />
+              <h3 className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white mb-6 sm:mb-8 font-display tracking-tighter">Navigate Circle</h3>
               <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar no-scrollbar">
                 {groups.map(group => (
                   <button
@@ -471,36 +474,36 @@ export default function Dashboard({
         )}
       </AnimatePresence>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        <div className="lg:col-span-2 space-y-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-12">
+        <div className="lg:col-span-2 space-y-8 sm:space-y-10">
           <section>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-black tracking-tight text-slate-800 dark:text-white font-display">Transaction Stream</h2>
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-800 dark:text-white font-display">Transaction Stream</h2>
               <button 
                 onClick={onNavigateToLedger}
-                className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-500 transition-colors"
+                className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-500 transition-colors"
               >
                 Digital Audit
               </button>
             </div>
-            <div className="glass-card rounded-[3rem] border border-slate-100 dark:border-white/5 shadow-premium overflow-hidden">
+            <div className="glass-card rounded-[2rem] sm:rounded-[3rem] border border-slate-100 dark:border-white/5 shadow-premium overflow-hidden">
               {recentExpenses.length === 0 ? (
-                <div className="p-16 text-center">
-                  <div className="w-16 h-16 bg-slate-50 dark:bg-white/5 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 border border-slate-100 dark:border-white/10 shadow-inner">
-                    <Receipt className="w-8 h-8 text-slate-300 dark:text-slate-600" />
+                <div className="p-12 sm:p-16 text-center">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 bg-slate-50 dark:bg-white/5 rounded-xl sm:rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 border border-slate-100 dark:border-white/10 shadow-inner">
+                    <Receipt className="w-7 sm:w-8 h-7 sm:h-8 text-slate-300 dark:text-slate-600" />
                   </div>
                   <p className="text-slate-400 font-bold tracking-tight text-sm">Precision ledger empty. Awaiting first transaction flow.</p>
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100 dark:divide-white/5">
                   {recentExpenses.map(expense => (
-                    <div key={expense.id} className="p-6 flex flex-col sm:flex-row sm:items-center justify-between transition-all group hover:bg-slate-50 dark:hover:bg-white/5 gap-4">
-                      <div className="flex items-center gap-4 min-w-0">
-                        <div className="w-12 h-12 bg-slate-100 dark:bg-white/5 rounded-2xl flex items-center justify-center text-slate-400 dark:text-slate-500 transition-all border border-slate-200 dark:border-white/10 shrink-0 group-hover:scale-110 shadow-sm">
-                          <Receipt className="w-6 h-6" />
+                    <div key={expense.id} className="p-4 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between transition-all group hover:bg-slate-50 dark:hover:bg-white/5 gap-4">
+                      <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-100 dark:bg-white/5 rounded-xl sm:rounded-2xl flex items-center justify-center text-slate-400 dark:text-slate-500 transition-all border border-slate-200 dark:border-white/10 shrink-0 group-hover:scale-110 shadow-sm">
+                          <Receipt className="w-5 sm:w-6 h-5 sm:h-6" />
                         </div>
                         <div className="min-w-0">
-                          <p className="font-black text-slate-800 dark:text-white text-lg truncate tracking-tighter mb-0.5">{expense.description}</p>
+                          <p className="font-black text-slate-800 dark:text-white text-base sm:text-lg truncate tracking-tighter mb-0.5">{expense.description}</p>
                           <div className="flex flex-wrap items-center gap-2">
                              <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg border ${
                                expense.type === 'income' 

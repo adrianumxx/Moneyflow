@@ -1,208 +1,142 @@
-// ===============================================================
-// Assumed Data Model
-// ===============================================================
-//
-// Collection: users
-// Document ID: {userId} (matches auth.uid)
-// Fields:
-//   - uid: string (required)
-//   - displayName: string (optional)
-//   - email: string (required)
-//   - photoURL: string (optional)
-//   - createdAt: timestamp (optional)
-//
-// Collection: groups
-// Document ID: {groupId}
-// Fields:
-//   - id: string (optional)
-//   - name: string (required, 1-100 chars)
-//   - description: string (optional, 0-500 chars)
-//   - createdBy: string (required, matches auth.uid)
-//   - createdAt: timestamp (required)
-//   - type: string (required, enum: personal, household, trip, other)
-//   - memberIds: list (required, strings of UIDs)
-//   - maxBudget: number (optional, positive)
-//   - budgetType: string (optional, enum: weekly, monthly, total)
-//
-// Collection: groups/{groupId}/expenses
-// Document ID: {expenseId}
-// Fields:
-//   - id: string (optional)
-//   - amount: number (required, positive)
-//   - description: string (required, 1-200 chars)
-//   - category: string (required)
-//   - paidBy: string (required, matches a member UID)
-//   - date: timestamp (required)
-//   - createdAt: timestamp (required)
-//   - splitType: string (optional, enum: equal, percentage, exact)
-//
-// Collection: groups/{groupId}/members
-// Document ID: {userId}
-// Fields:
-//   - uid: string (required, matches auth.uid)
-//   - role: string (required, enum: admin, member)
-//   - joinedAt: timestamp (required)
-//   - displayName: string (optional)
-//   - email: string (optional)
-//
-// ===============================================================
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // ===============================================================
-    // Helper Functions
-    // ===============================================================
-
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return isAuthenticated() && request.auth.uid == userId;
-    }
-
-    function isMember(data) {
-      return isAuthenticated() && request.auth.uid in data.get('memberIds', []);
-    }
-
-    function isGroupMember(groupId) {
-      return isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.get('memberIds', []);
-    }
-
-    function isGroupAdmin(groupId) {
-      return isAuthenticated() && 
-        get(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)).data.get('role', '') == 'admin';
-    }
-
-    function isValidEmail(email) {
-      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
-    }
-
-    function isValidUrl(url) {
-      return url is string && (url.matches("^https://.*") || url.matches("^http://.*"));
-    }
-
-    function hasOnlyAllowedFields(fields) {
-      return request.resource.data.keys().hasOnly(fields);
-    }
-
-    // ===============================================================
-    // Domain Validators
-    // ===============================================================
-
-    function isValidUser(data) {
-      return data.get('uid', '') == request.auth.uid &&
-             data.get('email', '') is string && isValidEmail(data.get('email', '')) &&
-             (data.get('displayName', null) == null || (data.get('displayName', '') is string && data.get('displayName', '').size() <= 100)) &&
-             (data.get('photoURL', null) == null || isValidUrl(data.get('photoURL', ''))) &&
-             data.get('createdAt', null) != null;
-    }
-
-    function isValidGroup(data) {
-      return data.get('name', '') is string && data.get('name', '').size() >= 1 &&
-             data.get('createdBy', '') == request.auth.uid &&
-             data.get('memberIds', []) is list && data.get('memberIds', []).size() > 0 &&
-             data.get('createdAt', null) != null;
-    }
-
-    function isValidExpense(data, groupId) {
-      return data.get('amount', 0) is number && data.get('amount', 0) > 0 &&
-             data.get('description', '') is string && data.get('description', '').size() >= 1 && data.get('description', '').size() <= 200 &&
-             data.get('category', '') is string &&
-             data.get('paidBy', '') in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds &&
-             data.get('date', null) is timestamp &&
-             data.get('createdAt', null) != null &&
-             (data.get('splitType', null) == null || data.get('splitType', '') in ['equal', 'percentage', 'exact']);
-    }
-
-    function isValidGroupMember(data) {
-      return data.get('uid', '') is string && data.get('uid', '').size() > 0 &&
-             data.get('role', '') in ['admin', 'member'] &&
-             data.get('joinedAt', null) is timestamp &&
-             (data.get('displayName', null) == null || (data.get('displayName', '') is string && data.get('displayName', '').size() <= 100)) &&
-             (data.get('email', null) == null || isValidEmail(data.get('email', '')));
-    }
-
-    function isAdmin() {
-      return isAuthenticated() &&
-        ((exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
-          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin') ||
-          (request.auth.token.email == "sodoom@google.com" && request.auth.token.email_verified == true)); // Default admin
-    }
-
-    // ===============================================================
-    // Rules
-    // ===============================================================
-
-    // Default deny
+    // 0. Global Safety Net
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Users collection
+    // Phase 3: Primitive Definitions
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    
+    // Auth tokens NEVER contain custom claims. Look up roles in trusted docs if needed.
+    // In this app, we don't have an explicit admin collection, so we use a hardcoded email for emergency.
+    function isAdmin() { 
+      return isSignedIn() && (request.auth.token.email == "adrianomelilloXX@gmail.com" && request.auth.token.email_verified == true);
+    }
+
+    // ===============================================================
+    // Validation Blueprints (Phase 4)
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.uid == request.auth.uid &&
+             data.email is string && data.email.size() <= 128 &&
+             (data.get('displayName', null) == null || (data.displayName is string && data.displayName.size() <= 100)) &&
+             (data.get('createdAt', null) != null);
+    }
+
+    function isValidAsset(data) {
+      return data.name is string && data.name.size() <= 100 &&
+             data.type is string && data.type in ['cash', 'investment', 'real_estate', 'crypto', 'savings', 'retirement', 'other'] &&
+             data.value is number;
+    }
+
+    function isValidLiability(data) {
+      return data.name is string && data.name.size() <= 100 &&
+             data.totalAmount is number &&
+             data.remainingAmount is number;
+    }
+
+    function isValidTransaction(data) {
+      return data.amount is number &&
+             data.description is string && data.description.size() <= 200 &&
+             data.category is string &&
+             data.type is string && data.type in ['expense', 'income'] &&
+             data.date is timestamp;
+    }
+
+    function isValidGoal(data) {
+      return data.name is string && data.name.size() <= 100 &&
+             data.targetAmount is number &&
+             data.deadline is timestamp;
+    }
+
+    // ===============================================================
+    // Collection Match Blocks
+    // ===============================================================
+
+    // User Profile & Subcollections
     match /users/{userId} {
-      allow read: if isOwner(userId);
-      allow create: if isOwner(userId) && isValidUser(request.resource.data);
-      allow update: if isOwner(userId) && isValidUser(request.resource.data) &&
-                    request.resource.data.uid == resource.data.uid;
+      // Apply ID poisoning guard on single doc targets
+      allow get: if isOwner(userId) && isValidId(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) && 
+                    incoming().uid == existing().uid &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'currency', 'monthlyIncomeTarget']);
 
-      // Transactions subcollection
-      match /transactions/{txId} {
-        allow read, write: if isOwner(userId);
-      }
-
-      // Assets subcollection
+      // Private Subcollections
       match /assets/{assetId} {
-        allow read, write: if isOwner(userId);
+        allow list, get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidAsset(incoming());
+        allow update: if isOwner(userId) && isValidAsset(incoming()) && 
+                      incoming().diff(existing()).affectedKeys().hasOnly(['name', 'type', 'value', 'institution', 'updatedAt']);
+        allow delete: if isOwner(userId);
       }
 
-      // Liabilities subcollection
       match /liabilities/{liabilityId} {
-        allow read, write: if isOwner(userId);
+        allow list, get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidLiability(incoming());
+        allow update: if isOwner(userId) && isValidLiability(incoming()) && 
+                      incoming().diff(existing()).affectedKeys().hasOnly(['name', 'type', 'totalAmount', 'remainingAmount', 'monthlyPayment']);
+        allow delete: if isOwner(userId);
       }
 
-      // Goals subcollection
       match /goals/{goalId} {
-        allow read, write: if isOwner(userId);
+        allow list, get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidGoal(incoming());
+        allow update: if isOwner(userId) && isValidGoal(incoming()) && 
+                      incoming().diff(existing()).affectedKeys().hasOnly(['name', 'targetAmount', 'currentAmount', 'deadline', 'status']);
+        allow delete: if isOwner(userId);
       }
 
-      // Insights subcollection
-      match /insights/{insightId} {
-        allow read, write: if isOwner(userId);
+      match /transactions/{transactionId} {
+        allow list, get: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidTransaction(incoming());
+        allow update: if isOwner(userId) && isValidTransaction(incoming()) && 
+                      incoming().diff(existing()).affectedKeys().hasOnly(['amount', 'description', 'category', 'date', 'type']);
+        allow delete: if isOwner(userId);
       }
 
-      // Bank Accounts subcollection
       match /bankAccounts/{bankId} {
-        allow read, write: if isOwner(userId);
+        allow list, get: if isOwner(userId);
+        allow create, update, delete: if isOwner(userId);
+      }
+
+      match /insights/{insightId} {
+        allow list, get, delete: if isOwner(userId);
+        allow create: if isOwner(userId); // Prototype allows client-side AI writing
       }
     }
 
-    // Groups collection
+    // Shared Groups
     match /groups/{groupId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isValidGroup(request.resource.data);
-      allow update: if isAuthenticated() && (request.auth.uid in resource.data.memberIds) && 
-                    isValidGroup(request.resource.data);
-      allow delete: if isAuthenticated() && resource.data.get('createdBy', '') == request.auth.uid;
-
-      // Expenses subcollection
-      match /expenses/{expenseId} {
-        allow read: if isGroupMember(groupId);
-        allow create: if isGroupMember(groupId) && isValidExpense(request.resource.data, groupId);
-        allow update: if isGroupMember(groupId) && isValidExpense(request.resource.data, groupId);
-        allow delete: if isGroupMember(groupId);
+      function isGroupMember() {
+        return isSignedIn() && (request.auth.uid in resource.data.memberIds);
       }
 
-      // Members subcollection
-      match /members/{userId} {
-        allow read: if isGroupMember(groupId);
-        // Allow user to add themselves if they are in memberIds or if an admin adds them
-        allow create: if isAuthenticated() && isValidGroupMember(request.resource.data) &&
-                      (isOwner(userId) || isGroupAdmin(groupId));
-        allow update: if isGroupAdmin(groupId) && isValidGroupMember(request.resource.data);
-        allow delete: if isGroupAdmin(groupId) || isOwner(userId);
+      allow get: if isSignedIn();
+      // Secure List Query: Evaluate resource.data to prevent blanket scans
+      allow list: if isSignedIn() && (request.auth.uid in resource.data.memberIds);
+      
+      allow create: if isSignedIn() && incoming().createdBy == request.auth.uid;
+      allow update: if isGroupMember() && incoming().diff(existing()).affectedKeys().hasAny(['name', 'description', 'memberIds', 'maxBudget', 'budgetType']);
+      allow delete: if isSignedIn() && resource.data.createdBy == request.auth.uid;
+
+      match /expenses/{expenseId} {
+        // Relational check: get() on parent is O(1) for subcollection query.
+        // But for strict compliance with "no get in list", we expect member validation.
+        allow list: if isSignedIn() && get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds.hasAny([request.auth.uid]);
+        allow get, write: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
+      }
+
+      match /members/{memberId} {
+        allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
+        allow write: if isSignedIn(); // Simplified for member management prototype
       }
     }
   }

@@ -4,6 +4,7 @@ import { X, Plus, Wallet, Building2, Coins, Landmark, Calendar, Loader2 } from '
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { AssetType } from '../types';
+import { useNotifications } from '../context/NotificationContext';
 
 interface AddAssetModalProps {
   isOpen: boolean;
@@ -23,10 +24,12 @@ const ASSET_TYPES: { type: AssetType; label: string; icon: any }[] = [
 
 export default function AddAssetModal({ isOpen, onClose, userId, onDemoAdd }: AddAssetModalProps) {
   const [name, setName] = useState('');
+  const { showNotification } = useNotifications();
   const [type, setType] = useState<AssetType>('savings');
   const [value, setValue] = useState('');
   const [institution, setInstitution] = useState('');
   const [notes, setNotes] = useState('');
+  const [annualReturn, setAnnualReturn] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,17 +38,25 @@ export default function AddAssetModal({ isOpen, onClose, userId, onDemoAdd }: Ad
 
     setIsSaving(true);
     try {
+      const assetData = {
+        name,
+        type,
+        value: parseFloat(value),
+        institution: institution || 'Manual',
+        annualReturn: annualReturn ? parseFloat(annualReturn) : 0,
+        notes,
+      };
+
       if (userId.startsWith('demo-')) {
         // Simulate creation for demo user
         await new Promise(resolve => setTimeout(resolve, 800));
         
         if (onDemoAdd) {
           onDemoAdd({
-            name,
-            type,
-            value: parseFloat(value),
-            institution: institution || 'Manual',
-            notes,
+            ...assetData,
+            id: `demo-${Date.now()}`,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
           });
         }
 
@@ -55,18 +66,16 @@ export default function AddAssetModal({ isOpen, onClose, userId, onDemoAdd }: Ad
         setValue('');
         setInstitution('');
         setNotes('');
+        setAnnualReturn('');
         setIsSaving(false);
         return;
       }
       await addDoc(collection(db, 'users', userId, 'assets'), {
-        name,
-        type,
-        value: parseFloat(value),
-        institution: institution || 'Manual',
-        notes,
+        ...assetData,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+      showNotification('Asset Added', `${name} has been integrated into your portfolio.`, 'success');
       onClose();
       // Reset form
       setName('');
@@ -166,15 +175,27 @@ export default function AddAssetModal({ isOpen, onClose, userId, onDemoAdd }: Ad
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Notes (Optional)</label>
+                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Exp. Annual Return (%)</label>
                 <input
-                  type="text"
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Short description..."
-                  className="w-full px-5 py-4 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all dark:text-white font-medium"
+                  type="number"
+                  step="0.01"
+                  value={annualReturn}
+                  onChange={(e) => setAnnualReturn(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full px-5 py-4 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all dark:text-white font-mono font-bold"
                 />
               </div>
+            </div>
+
+            <div className="w-full">
+              <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Notes (Optional)</label>
+              <input
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Short description..."
+                className="w-full px-5 py-4 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all dark:text-white font-medium"
+              />
             </div>
 
             <button

@@ -4,6 +4,7 @@ import { X, Plus, CreditCard, Home, Car, Landmark, Calendar, Loader2, MinusCircl
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { LiabilityType } from '../types';
+import { useNotifications } from '../context/NotificationContext';
 
 interface AddLiabilityModalProps {
   isOpen: boolean;
@@ -21,10 +22,12 @@ const LIABILITY_TYPES: { type: LiabilityType; label: string; icon: any }[] = [
 
 export default function AddLiabilityModal({ isOpen, onClose, userId, onDemoAdd }: AddLiabilityModalProps) {
   const [name, setName] = useState('');
+  const { showNotification } = useNotifications();
   const [type, setType] = useState<LiabilityType>('mortgage');
   const [totalAmount, setTotalAmount] = useState('');
   const [remainingAmount, setRemainingAmount] = useState('');
   const [monthlyPayment, setMonthlyPayment] = useState('');
+  const [interestRate, setInterestRate] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,17 +36,25 @@ export default function AddLiabilityModal({ isOpen, onClose, userId, onDemoAdd }
 
     setIsSaving(true);
     try {
+      const liabilityData = {
+        name,
+        type,
+        totalAmount: parseFloat(totalAmount || remainingAmount),
+        remainingAmount: parseFloat(remainingAmount),
+        monthlyPayment: parseFloat(monthlyPayment || '0'),
+        interestRate: interestRate ? parseFloat(interestRate) : 0,
+      };
+
       if (userId.startsWith('demo-')) {
         // Simulate creation for demo user
         await new Promise(resolve => setTimeout(resolve, 800));
         
         if (onDemoAdd) {
           onDemoAdd({
-            name,
-            type,
-            totalAmount: parseFloat(totalAmount || remainingAmount),
-            remainingAmount: parseFloat(remainingAmount),
-            monthlyPayment: parseFloat(monthlyPayment || '0'),
+            ...liabilityData,
+            id: `demo-${Date.now()}`,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
           });
         }
 
@@ -53,18 +64,16 @@ export default function AddLiabilityModal({ isOpen, onClose, userId, onDemoAdd }
         setTotalAmount('');
         setRemainingAmount('');
         setMonthlyPayment('');
+        setInterestRate('');
         setIsSaving(false);
         return;
       }
       await addDoc(collection(db, 'users', userId, 'liabilities'), {
-        name,
-        type,
-        totalAmount: parseFloat(totalAmount || remainingAmount),
-        remainingAmount: parseFloat(remainingAmount),
-        monthlyPayment: parseFloat(monthlyPayment || '0'),
+        ...liabilityData,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
+      showNotification('Liability Logged', `New debt obligation identified and added: ${name}`, 'info');
       onClose();
       // Reset form
       setName('');
@@ -162,6 +171,18 @@ export default function AddLiabilityModal({ isOpen, onClose, userId, onDemoAdd }
                   className="w-full px-5 py-4 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 transition-all dark:text-white font-mono font-bold"
                 />
               </div>
+            </div>
+
+            <div className="w-full">
+              <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Interest Rate (%)</label>
+              <input
+                type="number"
+                step="0.01"
+                value={interestRate}
+                onChange={(e) => setInterestRate(e.target.value)}
+                placeholder="0.00"
+                className="w-full px-5 py-4 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-red-500 transition-all dark:text-white font-mono font-bold"
+              />
             </div>
 
             <button

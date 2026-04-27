@@ -44,7 +44,16 @@ export default function FinancialForecast({
 }: FinancialForecastProps) {
   const [projectionYears, setProjectionYears] = useState(5);
   const [simulatedMonthlyIncome, setSimulatedMonthlyIncome] = useState<number | null>(null);
-  const [growthRate, setGrowthRate] = useState(5); // Annual growth rate in %
+  
+  // Calculate default growth rate from assets
+  const defaultGrowthRate = useMemo(() => {
+    const totalVal = assets.reduce((sum, a) => sum + a.value, 0);
+    if (totalVal <= 0) return 7;
+    return assets.reduce((sum, a) => sum + (a.value * (a.annualReturn || 0)), 0) / totalVal;
+  }, [assets]);
+
+  const [simulatedGrowthRate, setSimulatedGrowthRate] = useState<number | null>(null);
+  const growthRate = simulatedGrowthRate !== null ? simulatedGrowthRate : defaultGrowthRate;
 
   // Calculate base monthly variables
   const analysis = useMemo(() => {
@@ -174,11 +183,20 @@ export default function FinancialForecast({
               <TrendingUp className="w-4 h-4 text-emerald-500" />
               <input 
                 type="number" 
-                value={growthRate}
-                onChange={(e) => setGrowthRate(Number(e.target.value))}
+                step="0.1"
+                value={growthRate.toFixed(1)}
+                onChange={(e) => setSimulatedGrowthRate(Number(e.target.value))}
                 className="w-12 bg-transparent border-none text-sm font-black focus:ring-0 text-slate-900 dark:text-white"
               />
               <span className="text-[10px] font-black text-slate-400 uppercase">% APR</span>
+              {simulatedGrowthRate !== null && (
+                <button 
+                  onClick={() => setSimulatedGrowthRate(null)}
+                  className="text-[9px] font-bold text-rose-500 hover:underline"
+                >
+                  RESET
+                </button>
+              )}
             </div>
           </div>
         </div>
