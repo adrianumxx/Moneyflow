@@ -27,7 +27,7 @@ export default function Palantir({ assets, liabilities, goals, userProfile }: Pa
   const [loginStreak, setLoginStreak] = useState(0);
   const { showNotification } = useNotifications();
 
-  const isPremium = userProfile?.plan === 'premium' || userProfile?.subscriptionStatus === 'active' || userProfile?.subscriptionStatus === 'trialing';
+  const isPremium = true; // TEMPORARY BYPASS: userProfile?.plan === 'premium' || userProfile?.subscriptionStatus === 'active' || userProfile?.subscriptionStatus === 'trialing';
 
   const clusters = [
     'All Clusters',
