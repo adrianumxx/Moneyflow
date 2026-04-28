@@ -180,7 +180,7 @@ La lingua di risposta DEVE essere rigorosamente: ${language === 'it' ? 'Italiano
       ],
     });
 
-    const aiResponse = result.response?.text() || "Mi scuso, non sono riuscito a processare questa richiesta.";
+    const aiResponse = result.text || "Mi scuso, il Neural Core è temporaneamente sovraccarico. Riprova tra poco.";
     res.json({ response: aiResponse });
   } catch (error: any) {
     console.error("Gemini Chat Error:", error);
