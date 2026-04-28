@@ -2,12 +2,12 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Globe, Zap, ShieldAlert, Lock, RefreshCw, AlertTriangle, 
-  TrendingUp, TrendingDown, Minus, BookOpen, AlertCircle, CheckCircle2, Info
+  TrendingUp, TrendingDown, Minus, BookOpen, AlertCircle, CheckCircle2, Info, ArrowRight, Bot
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getPalantirIntelligence, PalantirIntelligence, PalantirNewsItem } from '../services/geminiService';
 import { useNotifications } from '../context/NotificationContext';
-import { Asset, Liability, Goal, UserProfile } from '../types';
+import { Asset, Liability, FinancialGoal as Goal, UserProfile } from '../types';
 
 interface PalantirProps {
   assets?: Asset[];
@@ -140,7 +140,7 @@ export default function Palantir({ assets, liabilities, goals, userProfile, onAs
 
   const handleUpgrade = async () => {
     if (!userProfile?.email) {
-      showNotification('Profile Required', 'Please complete your profile to continue.', 'warning');
+      showNotification('Profile Required', 'Please complete your profile to continue.', 'info');
       return;
     }
 

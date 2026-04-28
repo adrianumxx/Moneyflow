@@ -67,9 +67,6 @@ import { generateCFOReportData } from './services/geminiService';
 // Components
 import Dashboard from './components/Dashboard';
 import MagicOnboarding from './components/MagicOnboarding';
-import Sidebar from './components/Sidebar';
-import Ledger from './components/Ledger';
-import SettingsView from './components/Settings';
 import Palantir from './components/Palantir';
 import GroupView from './components/GroupView';
 import CreateGroupModal from './components/CreateGroupModal';
@@ -773,14 +770,6 @@ export default function App() {
           />
         )}
       </AnimatePresence>
-
-      <NeuralAdvisor 
-        assets={assets}
-        liabilities={liabilities}
-        goals={goals}
-        transactions={transactions}
-        userDisplayName={user.displayName || 'User'}
-      />
 
       {/* Sidebar */}
       <aside className={`

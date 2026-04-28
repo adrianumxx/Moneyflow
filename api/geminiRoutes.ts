@@ -205,7 +205,7 @@ La lingua di risposta DEVE essere rigorosamente: ${language === 'it' ? 'Italiano
       contents: finalPrompt,
     });
 
-    const aiResponse = result.text || "Mi scuso, il Neural Core è temporaneamente sovraccarico. Riprova tra poco.";
+    const aiResponse = result?.text || "Mi scuso, il Neural Core è temporaneamente sovraccarico. Riprova tra poco.";
     res.json({ response: aiResponse });
   } catch (error: any) {
     console.error("Gemini Chat Error:", error);
@@ -232,7 +232,7 @@ router.post('/insights', async (req, res) => {
     `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
@@ -319,7 +319,7 @@ router.post('/cfo-report', async (req, res) => {
     }`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",

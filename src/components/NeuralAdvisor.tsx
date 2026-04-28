@@ -131,7 +131,7 @@ export default function NeuralAdvisor({ isVisible, onClose, context, language = 
                   className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl pl-5 pr-12 py-3 text-xs focus:border-indigo-500 outline-none transition-all dark:text-white"
                 />
                 <button
-                  onClick={handleSend}
+                  onClick={() => handleSend()}
                   disabled={!input.trim() || isLoading}
                   className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50"
                 >
@@ -139,7 +139,7 @@ export default function NeuralAdvisor({ isVisible, onClose, context, language = 
                 </button>
               </div>
               <p className="text-[8px] text-center text-slate-400 mt-2 uppercase tracking-[0.2em] font-black">
-                Powering by Neural Core Gemini 3.0
+                Powering by Neural Core Gemini 1.5 Pro
               </p>
             </div>
           </div>
