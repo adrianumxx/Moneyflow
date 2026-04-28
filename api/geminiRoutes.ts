@@ -170,14 +170,11 @@ La lingua di risposta DEVE essere rigorosamente: ${language === 'it' ? 'Italiano
 **Ogni risposta deve far pensare all'utente: "Cavolo, finalmente qualcuno che mi parla chiaro dei miei soldi."**
     `;
 
+    const finalPrompt = `${systemPrompt}\n\nDOMANDA UTENTE: ${query}`;
+
     const result = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: [
-        { 
-          role: 'user', 
-          parts: [{ text: `${systemPrompt}\n\nUSER QUESTION: ${query}` }] 
-        }
-      ],
+      contents: finalPrompt,
     });
 
     const aiResponse = result.text || "Mi scuso, il Neural Core è temporaneamente sovraccarico. Riprova tra poco.";
