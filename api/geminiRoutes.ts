@@ -173,12 +173,15 @@ La lingua di risposta DEVE essere rigorosamente: ${language === 'it' ? 'Italiano
     const result = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: [
-        { role: 'user', parts: [{ text: systemPrompt }] },
-        { role: 'user', parts: [{ text: query }] }
+        { 
+          role: 'user', 
+          parts: [{ text: `${systemPrompt}\n\nUSER QUESTION: ${query}` }] 
+        }
       ],
     });
 
-    res.json({ response: result.text || "Mi scuso, non sono riuscito a processare questa richiesta." });
+    const aiResponse = result.response?.text() || "Mi scuso, non sono riuscito a processare questa richiesta.";
+    res.json({ response: aiResponse });
   } catch (error: any) {
     console.error("Gemini Chat Error:", error);
     res.status(500).json({ error: error.message });
