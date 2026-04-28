@@ -14,9 +14,10 @@ interface PalantirProps {
   liabilities?: Liability[];
   goals?: Goal[];
   userProfile?: UserProfile | null;
+  onAskAI?: (prompt: string) => void;
 }
 
-export default function Palantir({ assets, liabilities, goals, userProfile }: PalantirProps) {
+export default function Palantir({ assets, liabilities, goals, userProfile, onAskAI }: PalantirProps) {
   const { t, i18n } = useTranslation();
   const [data, setData] = useState<PalantirIntelligence | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -458,8 +459,11 @@ export default function Palantir({ assets, liabilities, goals, userProfile }: Pa
                             <p className="text-4xl sm:text-5xl font-black text-emerald-400 tracking-tight">
                               +${data.yieldOptimizer.estimatedAnnualAlpha.toLocaleString()}
                             </p>
-                            <button className="mt-4 w-full py-3 bg-emerald-500 text-emerald-950 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-emerald-400 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/20">
-                              Execute Strategy
+                            <button 
+                              onClick={() => onAskAI?.(`Come posso eseguire concretamente questa strategia: "${data.yieldOptimizer?.actionableStrategy}"?`)}
+                              className="mt-4 w-full py-3 bg-emerald-500 text-emerald-950 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-emerald-400 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+                            >
+                              <Bot className="w-4 h-4" /> Ask Neural Core
                             </button>
                           </div>
                         </div>
@@ -521,8 +525,11 @@ export default function Palantir({ assets, liabilities, goals, userProfile }: Pa
                             <p className="text-4xl sm:text-5xl font-black text-sky-400 tracking-tight">
                               +${data.negotiator.potentialSavings.toLocaleString()}
                             </p>
-                            <button className="mt-4 w-full py-3 bg-sky-500 text-sky-950 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-sky-400 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-sky-500/20">
-                              Auto-Negotiate
+                            <button 
+                              onClick={() => onAskAI?.(`Come posso negoziare per abbassare la mia bolletta/spesa di ${data.negotiator?.targetExpense}? Dammi uno script.`)}
+                              className="mt-4 w-full py-3 bg-sky-500 text-sky-950 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-sky-400 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-sky-500/20 flex items-center justify-center gap-2"
+                            >
+                              <Bot className="w-4 h-4" /> Ask Neural Core
                             </button>
                           </div>
                         </div>
@@ -594,8 +601,11 @@ export default function Palantir({ assets, liabilities, goals, userProfile }: Pa
                             <p className="text-4xl sm:text-5xl font-black text-fuchsia-400 tracking-tight">
                               +{data.arbitrageFinder.arbitrageSpread}%
                             </p>
-                            <button className="mt-4 w-full py-3 bg-fuchsia-500 text-fuchsia-950 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-fuchsia-400 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-fuchsia-500/20">
-                              Execute Rebalance
+                            <button 
+                              onClick={() => onAskAI?.(`Come eseguo l'arbitraggio tra ${data.arbitrageFinder?.inefficientDebt} e ${data.arbitrageFinder?.idleAsset}? Spiegami passo per passo.`)}
+                              className="mt-4 w-full py-3 bg-fuchsia-500 text-fuchsia-950 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-fuchsia-400 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-fuchsia-500/20 flex items-center justify-center gap-2"
+                            >
+                              <Bot className="w-4 h-4" /> Ask Neural Core
                             </button>
                           </div>
                         </div>

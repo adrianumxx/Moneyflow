@@ -998,7 +998,8 @@ export default function App() {
             bankAccounts
           }}
           language={i18n.language}
-          onClose={() => setAdvisorState(prev => ({ ...prev, visible: false }))}
+          initialMessage={advisorState.message}
+          onClose={() => setAdvisorState(prev => ({ ...prev, visible: false, message: '' }))}
         />
 
         <AnimatePresence mode="wait">
@@ -1103,7 +1104,7 @@ export default function App() {
               transition={{ duration: 0.3 }}
               className="p-0 sm:p-4 lg:p-6"
             >
-              <Palantir assets={assets} liabilities={liabilities} goals={goals} userProfile={userProfile} />
+              <Palantir assets={assets} liabilities={liabilities} goals={goals} userProfile={userProfile} onAskAI={(prompt) => setAdvisorState({ visible: true, message: prompt })} />
             </motion.div>
           ) : activeTab === 'sync' ? (
             <motion.div

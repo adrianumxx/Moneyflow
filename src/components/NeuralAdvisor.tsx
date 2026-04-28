@@ -19,9 +19,10 @@ interface NeuralAdvisorProps {
     bankAccounts: any[];
   };
   language?: string;
+  initialMessage?: string;
 }
 
-export default function NeuralAdvisor({ isVisible, onClose, context, language = 'it' }: NeuralAdvisorProps) {
+export default function NeuralAdvisor({ isVisible, onClose, context, language = 'it', initialMessage }: NeuralAdvisorProps) {
   const [messages, setMessages] = useState<Message[]>([
     { role: 'assistant', content: 'Benvenuto nel Neural Core. Sono il tuo Socio Esperto. Come posso aiutarti a ottimizzare il tuo patrimonio oggi?' }
   ]);
@@ -37,11 +38,12 @@ export default function NeuralAdvisor({ isVisible, onClose, context, language = 
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = async () => {
-    if (!input.trim() || isLoading) return;
+  const handleSend = async (messageOverride?: string) => {
+    const textToSend = messageOverride || input;
+    if (!textToSend.trim() || isLoading) return;
 
-    const userMessage = input.trim();
-    setInput('');
+    const userMessage = textToSend.trim();
+    if (!messageOverride) setInput('');
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setIsLoading(true);
 
@@ -49,11 +51,18 @@ export default function NeuralAdvisor({ isVisible, onClose, context, language = 
       const response = await chatWithNeuralPartner(userMessage, context, language);
       setMessages(prev => [...prev, { role: 'assistant', content: response }]);
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Errore di sincronizzazione. Riprova.' }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Errore di connessione. Riprova.' }]);
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Auto-send initial message if provided when opening
+  useEffect(() => {
+    if (isVisible && initialMessage && !isLoading) {
+      handleSend(initialMessage);
+    }
+  }, [isVisible, initialMessage]);
 
   return (
     <AnimatePresence>
