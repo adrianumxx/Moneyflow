@@ -173,7 +173,7 @@ La lingua di risposta DEVE essere rigorosamente: ${language === 'it' ? 'Italiano
     const finalPrompt = `${systemPrompt}\n\nDOMANDA UTENTE: ${query}`;
 
     const result = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash",
       contents: finalPrompt,
     });
 
@@ -248,7 +248,7 @@ router.post('/categorize', async (req, res) => {
     `;
 
     const result = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-1.5-flash",
       contents: prompt,
     });
     
