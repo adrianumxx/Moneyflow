@@ -225,6 +225,14 @@ export interface PalantirArbitrageFinder {
   action: string;
 }
 
+export interface PalantirConcentricGeopolitics {
+  state: { level: string; impact: string; strategy: string };
+  neighborhood: { level: string; impact: string; strategy: string };
+  continent: { level: string; impact: string; strategy: string };
+  superpowers: { level: string; impact: string; strategy: string };
+  world: { level: string; impact: string; strategy: string };
+}
+
 export interface PalantirIntelligence {
   orb: PalantirOrb;
   narrative: string;
@@ -240,6 +248,7 @@ export interface PalantirIntelligence {
   negotiator?: PalantirNegotiator;
   blackSwan?: PalantirBlackSwan;
   arbitrageFinder?: PalantirArbitrageFinder;
+  concentricGeopolitics?: PalantirConcentricGeopolitics;
 }
 
 export async function getPalantirIntelligence(

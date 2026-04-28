@@ -344,11 +344,12 @@ router.post('/global-pulse', async (req, res) => {
     let userArchetypeString = '';
     if (userProfile && userProfile.primaryGoal) {
       userArchetypeString = `
-      USER STRATEGIC ARCHETYPE:
+      USER STRATEGIC ARCHETYPE & LOCATION:
       - Primary Goal: ${userProfile.primaryGoal}
       - Financial Experience: ${userProfile.experienceLevel}
+      - Base Country (State): ${userProfile.country || 'Global'}
       - Preferred Currency: ${userProfile.baseCurrency || 'EUR'}
-      TAILOR YOUR ENTIRE TONE AND RECOMMENDATIONS TO THIS ARCHETYPE.
+      TAILOR YOUR ENTIRE TONE AND RECOMMENDATIONS TO THIS ARCHETYPE AND GEOGRAPHIC LOCATION.
       `;
     }
 
@@ -393,6 +394,7 @@ CRITICAL RULES:
 9. CALCULATE NEGOTIATOR: Identify fixed cost optimizations (utilities, subscriptions) and suggest switches.
 10. CALCULATE BLACK SWAN: Determine how many months the user's liquid cash can cover their expenses/liabilities if income goes to 0.
 11. CALCULATE ARBITRAGE: Compare debt interest rates vs savings yield to find a guaranteed arbitrage spread.
+12. GEOPOLITICAL CONCENTRIC RINGS: Analyze the user's specific Country, their surrounding Neighborhood, their Continent, the impact of Superpowers (USA/China/Russia), and Global macro. Be extremely specific to their country.
 
 Return JSON EXACTLY matching this schema:
 {
@@ -453,7 +455,14 @@ Return JSON EXACTLY matching this schema:
   },
   "newsFeed": [
     { "id": string, "category": "MACRO" | "ENERGY" | "CRYPTO" | "GEOPOLITICS" | "TECH" | "MARKETS", "source": string, "headline": string, "impactScore": number (1-10), "meaning": string, "escalationProbability": number, "affects": string, "trend": "up" | "down" | "neutral", "aiSummary": string, "url": string }
-  ]
+  ],
+  "concentricGeopolitics": {
+    "state": { "level": string (e.g. "Italy"), "impact": string (2 sentences), "strategy": string (1 sentence actionable) },
+    "neighborhood": { "level": string (e.g. "Mediterranean / South EU"), "impact": string (2 sentences), "strategy": string },
+    "continent": { "level": string (e.g. "European Union"), "impact": string (2 sentences), "strategy": string },
+    "superpowers": { "level": "USA / CHINA / RUSSIA", "impact": string (2 sentences), "strategy": string },
+    "world": { "level": "Global Macro", "impact": string (2 sentences), "strategy": string }
+  }
 }`;
 
     const result = await ai.models.generateContent({

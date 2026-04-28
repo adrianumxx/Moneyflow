@@ -426,6 +426,37 @@ export default function Palantir({ assets, liabilities, goals, userProfile, onAs
 
                 <div className={`space-y-10 ${!isPremium ? 'opacity-30 select-none pointer-events-none' : ''}`}>
                   
+                  {/* GEOPOLITICAL CONCENTRIC RINGS */}
+                  {data.concentricGeopolitics && (
+                    <section>
+                      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-indigo-400" /> Geopolitical Architecture
+                      </p>
+                      <div className="grid grid-cols-1 gap-3">
+                        {[
+                          { key: 'world', data: data.concentricGeopolitics.world, color: 'text-slate-400', bg: 'bg-slate-900/50' },
+                          { key: 'superpowers', data: data.concentricGeopolitics.superpowers, color: 'text-rose-400', bg: 'bg-rose-950/10 border-rose-900/20' },
+                          { key: 'continent', data: data.concentricGeopolitics.continent, color: 'text-sky-400', bg: 'bg-sky-950/10 border-sky-900/20' },
+                          { key: 'neighborhood', data: data.concentricGeopolitics.neighborhood, color: 'text-amber-400', bg: 'bg-amber-950/10 border-amber-900/20' },
+                          { key: 'state', data: data.concentricGeopolitics.state, color: 'text-emerald-400', bg: 'bg-emerald-950/20 border-emerald-900/30' },
+                        ].map((ring, idx) => (
+                          <div key={ring.key} className={`border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-start md:items-center ${ring.bg}`}>
+                            <div className="w-32 shrink-0">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-1">Layer {5 - idx}</span>
+                              <span className={`text-sm font-black uppercase tracking-widest ${ring.color}`}>{ring.data?.level}</span>
+                            </div>
+                            <div className="flex-grow">
+                              <p className="text-xs text-slate-300 font-medium leading-relaxed mb-2">{ring.data?.impact}</p>
+                              <p className="text-[11px] font-bold text-slate-400 flex items-center gap-2">
+                                <ArrowRight className="w-3 h-3" /> {ring.data?.strategy}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
                   {/* YIELD OPTIMIZER (L'Alpha Generator) */}
                   {data.yieldOptimizer && (
                     <section>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Target, TrendingUp, ShieldCheck, Zap, ArrowRight, CheckCircle2, Home, Activity } from 'lucide-react';
-import { doc, setDoc } from 'firebase/firestore';
+import { Target, TrendingUp, ShieldCheck, Zap, ArrowRight, CheckCircle2, Home, Activity, Globe, Landmark } from 'lucide-react';
+import { doc, setDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 
 interface MagicOnboardingProps {
@@ -11,21 +11,50 @@ interface MagicOnboardingProps {
 
 export default function MagicOnboarding({ userId, onComplete }: MagicOnboardingProps) {
   const [step, setStep] = useState(1);
+  const [country, setCountry] = useState<string>('Italy');
   const [goal, setGoal] = useState<string | null>(null);
   const [experience, setExperience] = useState<string | null>(null);
   const [currency, setCurrency] = useState<string>('EUR');
+  const [initialAssetValue, setInitialAssetValue] = useState<string>('5000');
   const [isSaving, setIsSaving] = useState(false);
+
+  const countries = [
+    { id: 'Italy', currency: 'EUR', symbol: '€' },
+    { id: 'United States', currency: 'USD', symbol: '$' },
+    { id: 'United Kingdom', currency: 'GBP', symbol: '£' },
+    { id: 'Global (Other)', currency: 'USD', symbol: '$' }
+  ];
+
+  const handleCountrySelect = (c: { id: string, currency: string }) => {
+    setCountry(c.id);
+    setCurrency(c.currency);
+    setTimeout(nextStep, 300);
+  };
 
   const handleComplete = async () => {
     setIsSaving(true);
     try {
       const userRef = doc(db, 'users', userId);
       await setDoc(userRef, {
+        country: country,
         primaryGoal: goal,
         experienceLevel: experience,
         baseCurrency: currency,
         hasCompletedOnboarding: true
       }, { merge: true });
+
+      // Inject initial asset
+      const val = parseFloat(initialAssetValue);
+      if (!isNaN(val) && val > 0) {
+        await addDoc(collection(db, 'users', userId, 'assets'), {
+          name: 'Primary Liquidity',
+          type: 'cash',
+          value: val,
+          institution: 'Main Bank',
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      }
       onComplete();
     } catch (error) {
       console.error('Error saving onboarding data', error);
@@ -37,7 +66,7 @@ export default function MagicOnboarding({ userId, onComplete }: MagicOnboardingP
   };
 
   const nextStep = () => {
-    if (step < 3) setStep(step + 1);
+    if (step < 4) setStep(step + 1);
     else handleComplete();
   };
 
@@ -68,7 +97,7 @@ export default function MagicOnboarding({ userId, onComplete }: MagicOnboardingP
         <div className="relative z-10">
           {/* Progress Indicator */}
           <div className="flex items-center gap-2 mb-10">
-            {[1, 2, 3].map(i => (
+            {[1, 2, 3, 4].map(i => (
               <div key={i} className={`h-1.5 flex-1 rounded-full ${step >= i ? 'bg-indigo-500' : 'bg-slate-800'}`} />
             ))}
           </div>
@@ -77,6 +106,40 @@ export default function MagicOnboarding({ userId, onComplete }: MagicOnboardingP
             {step === 1 && (
               <motion.div 
                 key="step1"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6"
+              >
+                <div className="space-y-2">
+                  <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">Select Base Operations</h2>
+                  <p className="text-slate-400 text-sm font-medium">This centers the Palantir AI on your geopolitical zone.</p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  {countries.map(c => {
+                    const isSelected = country === c.id;
+                    return (
+                      <button 
+                        key={c.id}
+                        onClick={() => handleCountrySelect(c)}
+                        className={`flex flex-col items-center justify-center gap-4 p-6 rounded-3xl border-2 transition-all ${isSelected ? 'border-indigo-500 bg-indigo-500/10' : 'border-slate-800 hover:border-slate-700 bg-slate-800/50'}`}
+                      >
+                        <div className={`p-4 rounded-2xl ${isSelected ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-700 text-slate-400'}`}>
+                          <Globe className="w-8 h-8" />
+                        </div>
+                        <span className="text-sm font-black uppercase tracking-widest text-slate-200">{c.id}</span>
+                        <span className="text-[10px] text-slate-500 uppercase tracking-widest">{c.currency}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            )}
+
+            {step === 2 && (
+              <motion.div 
+                key="step2"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -108,9 +171,9 @@ export default function MagicOnboarding({ userId, onComplete }: MagicOnboardingP
               </motion.div>
             )}
 
-            {step === 2 && (
+            {step === 3 && (
               <motion.div 
-                key="step2"
+                key="step3"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
@@ -145,29 +208,35 @@ export default function MagicOnboarding({ userId, onComplete }: MagicOnboardingP
               </motion.div>
             )}
 
-            {step === 3 && (
+            {step === 4 && (
               <motion.div 
-                key="step3"
+                key="step4"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-6 flex flex-col h-full"
               >
                 <div className="space-y-2">
-                  <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">Final Setup</h2>
-                  <p className="text-slate-400 text-sm font-medium">Choose your base currency. The Brain is initializing.</p>
+                  <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">Inject Initial Liquidity</h2>
+                  <p className="text-slate-400 text-sm font-medium">To activate the Neural Core, enter your primary bank or asset balance.</p>
                 </div>
                 
-                <div className="flex gap-4">
-                  {['EUR', 'USD'].map(curr => (
-                    <button 
-                      key={curr}
-                      onClick={() => setCurrency(curr)}
-                      className={`flex-1 py-4 rounded-2xl font-black text-xl transition-all border-2 ${currency === curr ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400' : 'border-slate-800 text-slate-500 hover:border-slate-700'}`}
-                    >
-                      {curr === 'EUR' ? '€' : '$'} {curr}
-                    </button>
-                  ))}
+                <div className="bg-slate-800/50 border border-slate-700 rounded-3xl p-6 mt-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 block flex items-center gap-2">
+                    <Landmark className="w-4 h-4 text-emerald-500" /> Primary Account Balance ({currency})
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-6 top-1/2 -translate-y-1/2 text-2xl text-slate-500 font-black">
+                      {countries.find(c => c.currency === currency)?.symbol || currency}
+                    </span>
+                    <input 
+                      type="number" 
+                      value={initialAssetValue}
+                      onChange={(e) => setInitialAssetValue(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-2xl pl-16 pr-6 py-5 text-3xl font-black text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/50 transition-all"
+                      placeholder="0.00"
+                    />
+                  </div>
                 </div>
 
                 <div className="mt-8 pt-8 border-t border-slate-800">

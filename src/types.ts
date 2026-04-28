@@ -26,6 +26,7 @@ export interface UserProfile {
   primaryGoal?: string;
   experienceLevel?: string;
   baseCurrency?: string;
+  country?: string;
 }
 
 export interface Transaction {
