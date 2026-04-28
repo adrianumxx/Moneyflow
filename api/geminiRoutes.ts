@@ -5,9 +5,37 @@ import admin from 'firebase-admin';
 const router = express.Router();
 
 function getGenAI() {
-  return new GoogleGenAI({ 
-    apiKey: process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || ''
-  });
+  const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '';
+  
+  if (!apiKey) {
+    console.warn("⚠️ GEMINI_API_KEY IS MISSING! Returning Mock AI.");
+    return {
+      models: {
+        generateContent: async ({ contents, config }: any) => {
+          if (config?.responseSchema) {
+            return {
+              text: JSON.stringify([
+                {
+                  id: "mock-1",
+                  title: "⚠️ Neural Core Offline",
+                  description: "Per abilitare le analisi reali, crea un file .env e inserisci VITE_GEMINI_API_KEY.",
+                  type: "warning"
+                }
+              ])
+            };
+          }
+          if (typeof contents === 'string' && contents.includes('Categorize')) {
+             return { text: "other" };
+          }
+          return {
+            text: `⚠️ **MODALITÀ DEMO - SISTEMA OFFLINE**\n\nNon posso elaborare la tua richiesta perché manca la mia connessione cerebrale (**Chiave API di Gemini**).\n\nPer risvegliare il Neural Core e attivare il *Master Prompt*:\n\n1. Crea un file \`.env\` nella cartella del progetto.\n2. Aggiungi la riga: \`VITE_GEMINI_API_KEY=la_tua_chiave\`\n3. Riavvia il server.\n\nAppena lo farai, sarò pronto ad analizzare i tuoi dati.`
+          };
+        }
+      }
+    } as unknown as GoogleGenAI;
+  }
+
+  return new GoogleGenAI({ apiKey });
 }
 
 router.post('/chat', async (req, res) => {
