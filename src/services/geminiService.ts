@@ -333,7 +333,11 @@ export async function getPalantirIntelligence(
       body: JSON.stringify({ localTime, timezone, language, userContext, pastMemory, userProfile })
     });
     
-    if (!response.ok) throw new Error('Failed to fetch global intelligence');
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => 'No error body');
+      console.error(`[geminiService] API Error ${response.status}: ${errorText}`);
+      throw new Error(`Failed to fetch global intelligence: ${response.status}`);
+    }
     
     const parsed = await response.json();
     
