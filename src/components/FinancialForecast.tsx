@@ -25,7 +25,14 @@ import {
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Asset, Liability, Transaction, BankAccount, UserProfile } from '../types';
-import { formatCurrency } from '../utils/format';
+import { formatMoney, formatCompactMoney } from '../utils/format';
+import { 
+  calculateTotalAssets, 
+  calculateTotalLiabilities, 
+  calculateNetWorth, 
+  calculateMonthlyIncome, 
+  calculateMonthlyExpenses 
+} from '../utils/financialCalculations';
 
 interface FinancialForecastProps {
   assets: Asset[];
@@ -58,33 +65,24 @@ export default function FinancialForecast({
   // Calculate base monthly variables
   const analysis = useMemo(() => {
     // 1. Current Liquidity (Cash & Bank)
-    const totalCash = bankAccounts.reduce((sum, b) => sum + b.balance, 0) +
-                     assets.filter(a => a.type === 'cash' || a.type === 'savings').reduce((sum, a) => sum + a.value, 0);
+    const bankBalancesSum = bankAccounts.reduce((sum, b) => sum + (b.balance || 0), 0);
+    const manualCashSum = assets.filter(a => a.type === 'cash' || a.type === 'savings').reduce((sum, a) => sum + (a.value || 0), 0);
+    const totalCash = bankBalancesSum + manualCashSum;
 
-    // 2. Net Worth
-    const totalAssets = assets.reduce((sum, a) => sum + a.value, 0);
-    const totalLiabs = liabilities.reduce((sum, l) => sum + l.remainingAmount, 0);
-    const currentNetWorth = totalAssets - totalLiabs;
+    // 2. Net Worth & Assets
+    const totalAssets = calculateTotalAssets(assets, bankAccounts);
+    const totalLiabs = calculateTotalLiabilities(liabilities);
+    const currentNetWorth = calculateNetWorth(assets, bankAccounts, liabilities);
 
     // 3. Monthly Income (Real vs Manual)
-    // Filter transactions from the last 30 days to estimate income/expense
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-    const recentIncomeTxs = transactions.filter(t => t.type === 'income' && t.date.toDate() > thirtyDaysAgo);
-    const realMonthlyIncome = recentIncomeTxs.reduce((sum, t) => sum + t.amount, 0);
-
+    const realMonthlyIncome = calculateMonthlyIncome(transactions);
     const effectiveIncome = simulatedMonthlyIncome !== null ? simulatedMonthlyIncome : (realMonthlyIncome || userProfile?.monthlyIncomeTarget || 0);
 
     // 4. Monthly Expenses
-    const recentExpenseTxs = transactions.filter(t => t.type === 'expense' && t.date.toDate() > thirtyDaysAgo);
-    const realMonthlyExpenses = recentExpenseTxs.reduce((sum, t) => sum + Math.abs(t.amount), 0);
-    
-    // Add monthly liability payments
-    const monthlyDebtPayments = liabilities.reduce((sum, l) => sum + (l.monthlyPayment || 0), 0);
-    const totalMonthlyExpenses = realMonthlyExpenses + monthlyDebtPayments;
-
+    const totalMonthlyExpenses = calculateMonthlyExpenses(transactions, liabilities);
     const monthlySurplus = effectiveIncome - totalMonthlyExpenses;
+
+    const monthlyDebtPayments = liabilities.reduce((sum, l) => sum + (l.monthlyPayment || 0), 0);
 
     return {
       totalCash,
@@ -215,7 +213,7 @@ export default function FinancialForecast({
         <AnalysisCard 
           title="Burn Rate" 
           value={analysis.totalMonthlyExpenses} 
-          subtitle={`${formatCurrency(analysis.monthlyDebtPayments)} recurring debt`}
+          subtitle={`${formatMoney(analysis.monthlyDebtPayments, userProfile?.baseCurrency)} recurring debt`}
           icon={<TrendingDown className="w-5 h-5 text-rose-500" />}
           color="rose"
         />
@@ -281,7 +279,7 @@ export default function FinancialForecast({
                 axisLine={false}
                 tickLine={false}
                 tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
-                tickFormatter={(val) => `€${val > 999 ? (val/1000).toFixed(0) + 'k' : val}`}
+                tickFormatter={(val) => formatCompactMoney(val, userProfile?.baseCurrency)}
               />
               <Tooltip 
                 contentStyle={{ 
@@ -294,7 +292,7 @@ export default function FinancialForecast({
                 }}
                 itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 800 }}
                 labelStyle={{ color: '#6366f1', fontSize: '10px', textTransform: 'uppercase', fontWeight: 900, letterSpacing: '0.1em', marginBottom: '8px' }}
-                formatter={(val: number) => [`€${formatCurrency(val)}`, 'Position']}
+                formatter={(val: number) => [formatMoney(val, userProfile?.baseCurrency), 'Position']}
               />
               <Area 
                 type="monotone" 
@@ -332,7 +330,7 @@ export default function FinancialForecast({
           <div className="text-sm">
             <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Algorithmic Forecast Summary</p>
             <p className="font-medium text-lg tracking-tight leading-relaxed">
-              Based on your momentum, your net worth is trajectorying towards <span className="font-black text-white underline decoration-white/30 underline-offset-4">{formatCurrency(projectionData[projectionData.length-1].netWorth)}</span> by the end of this period.
+              Based on your momentum, your net worth is trajectorying towards <span className="font-black text-white underline decoration-white/30 underline-offset-4">{formatMoney(projectionData[projectionData.length-1].netWorth, userProfile?.baseCurrency)}</span> by the end of this period.
             </p>
           </div>
         </motion.div>
@@ -360,7 +358,7 @@ function AnalysisCard({ title, value, subtitle, icon, color }: { title: string, 
       <div>
         <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</p>
         <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">
-          {formatCurrency(value)}
+          {formatMoney(value, undefined)}
         </p>
         <p className="text-xs text-slate-500 mt-1">{subtitle}</p>
       </div>
@@ -425,11 +423,11 @@ function SimulationCard({ title, value, isEditable, onSimulate, originalValue, i
             className="text-xl font-bold text-slate-900 dark:text-white mt-1 cursor-pointer hover:text-indigo-500 transition-colors"
             onClick={() => setIsEditing(true)}
           >
-            {formatCurrency(value)}
+            {formatMoney(value, undefined)}
           </p>
         )}
         
-        <p className="text-xs text-slate-500 mt-1">Real: {formatCurrency(originalValue)}</p>
+        <p className="text-xs text-slate-500 mt-1">Real: {formatMoney(originalValue, undefined)}</p>
       </div>
     </div>
   );

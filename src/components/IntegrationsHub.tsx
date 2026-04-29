@@ -3,39 +3,66 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Building2, Wallet, Landmark, Globe, Plus, ShieldCheck, 
   ArrowRight, CheckCircle2, QrCode, Smartphone, ExternalLink,
-  Lock, Zap, Info, Bitcoin, TrendingUp, Code2, Terminal
+  Lock, Zap, Info, Bitcoin, TrendingUp, Code2, Terminal, RefreshCw
 } from 'lucide-react';
+import CryptoConnector from './CryptoConnector';
+import { UserProfile } from '../types';
 
-interface ConnectorProvider {
-  id: string;
-  name: string;
-  type: 'bank' | 'crypto' | 'broker';
-  logo: string;
-  color: string;
-  description: string;
+import { PROVIDER_REGISTRY, Provider } from '../utils/connectors';
+import { createSyncSession } from '../services/syncService';
+import { useNotifications } from '../context/NotificationContext';
+
+const FALLBACK_ICONS: Record<string, any> = {
+  bank: Building2,
+  crypto_wallet: Bitcoin,
+  broker: TrendingUp,
+  investment: Landmark,
+  custom_api: Code2
+};
+
+const PROVIDER_LOGOS: Record<string, string> = {
+  revolut_demo: 'https://logo.clearbit.com/revolut.com',
+  n26_demo: 'https://logo.clearbit.com/n26.com',
+  binance_demo: 'https://logo.clearbit.com/binance.com',
+  coinbase_wallet: 'https://logo.clearbit.com/coinbase.com',
+};
+
+const PROVIDER_COLORS: Record<string, string> = {
+  revolut_demo: 'bg-zinc-800',
+  n26_demo: 'bg-emerald-600',
+  binance_demo: 'bg-amber-400',
+  coinbase_wallet: 'bg-blue-600',
+  bank_sandbox: 'bg-slate-700',
+  custom_api: 'bg-indigo-600'
+};
+
+interface IntegrationsHubProps {
+  userId: string;
+  userProfile?: UserProfile;
 }
 
-const PROVIDERS: (ConnectorProvider & { fallbackIcon: any })[] = [
-  { id: 'revolut', name: 'Revolut', type: 'bank', logo: 'https://logo.clearbit.com/revolut.com', color: 'bg-zinc-800', description: 'Instant multi-currency sync', fallbackIcon: Building2 },
-  { id: 'n26', name: 'N26', type: 'bank', logo: 'https://logo.clearbit.com/n26.com', color: 'bg-emerald-600', description: 'European digital banking', fallbackIcon: Landmark },
-  { id: 'etoro', name: 'eToro', type: 'broker', logo: 'https://logo.clearbit.com/etoro.com', color: 'bg-green-600', description: 'Stock & Copy Trading', fallbackIcon: TrendingUp },
-  { id: 'binance', name: 'Binance', type: 'crypto', logo: 'https://logo.clearbit.com/binance.com', color: 'bg-amber-400', description: 'Global crypto exchange', fallbackIcon: Bitcoin },
-  { id: 'coinbase', name: 'Coinbase', type: 'crypto', logo: 'https://logo.clearbit.com/coinbase.com', color: 'bg-blue-600', description: 'Institutional crypto vault', fallbackIcon: Bitcoin },
-  { id: 'custom-api', name: 'Custom API', type: 'broker', logo: '', color: 'bg-indigo-600', description: 'Developer Mode: Direct Neural Bridge', fallbackIcon: Code2 },
-];
-
-export default function IntegrationsHub() {
+export default function IntegrationsHub({ userId, userProfile }: IntegrationsHubProps) {
   const [activeTab, setActiveTab] = useState<'all' | 'banks' | 'crypto' | 'brokers'>('all');
   const [connectingProvider, setConnectingProvider] = useState<any | null>(null);
   const [connectionStep, setConnectionStep] = useState<'intro' | 'qr' | 'custom' | 'success'>('intro');
   const [customConfig, setCustomConfig] = useState({ endpoint: '', apiKey: '' });
+  const { showNotification } = useNotifications();
 
-  const tabToType: Record<string, string> = { banks: 'bank', crypto: 'crypto', brokers: 'broker' };
-  const filteredProviders = PROVIDERS.filter(p => activeTab === 'all' || p.type === tabToType[activeTab]);
+  const tabToType: Record<string, string> = { banks: 'bank', crypto: 'crypto_wallet', brokers: 'broker' };
+  const filteredProviders = PROVIDER_REGISTRY.filter(p => activeTab === 'all' || p.providerType === tabToType[activeTab]);
 
-  const handleConnect = (provider: ConnectorProvider) => {
+  const handleConnect = async (provider: Provider) => {
+    // 1. Initialize session with backend foundation
+    const response = await createSyncSession(provider.providerId);
+    
+    if (!response.success) {
+      showNotification('Handshake Error', response.error || 'Neural Core could not verify this provider.', 'error');
+      return;
+    }
+
+    // 2. Proceed with UI flow if session created successfully
     setConnectingProvider(provider);
-    if (provider.id === 'custom-api') {
+    if (provider.providerId === 'custom_api') {
       setConnectionStep('custom');
     } else {
       setConnectionStep('intro');
@@ -81,45 +108,54 @@ export default function IntegrationsHub() {
 
       {/* PROVIDER GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProviders.map((provider) => (
-          <motion.div
-            layoutId={provider.id}
-            key={provider.id}
-            onClick={() => handleConnect(provider)}
-            className="group relative bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-8 cursor-pointer hover:shadow-premium dark:hover:bg-white/[0.08] transition-all overflow-hidden"
-          >
-            <div className={`absolute top-0 right-0 w-32 h-32 ${provider.color} opacity-0 group-hover:opacity-10 rounded-full -mr-16 -mt-16 blur-3xl transition-opacity`} />
-            
-            <div className="flex justify-between items-start mb-6">
-              <div className="w-16 h-16 rounded-[1.5rem] bg-white dark:bg-white/10 p-2 border border-slate-200 dark:border-white/20 shadow-sm overflow-hidden flex items-center justify-center">
-                <img 
-                  src={provider.logo} 
-                  alt={provider.name} 
-                  className="w-full h-full object-contain"
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    target.style.display = 'none';
-                    const parent = target.parentElement;
-                    if (parent) {
-                      parent.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-indigo-500/10 text-indigo-500"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-building-2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg></div>`;
-                    }
-                  }}
-                />
-              </div>
-              <div className="p-2 bg-slate-50 dark:bg-white/5 rounded-full text-slate-400 group-hover:text-indigo-500 transition-colors">
-                <Plus className="w-5 h-5" />
-              </div>
-            </div>
+        {filteredProviders.map((provider) => {
+          const FallbackIcon = FALLBACK_ICONS[provider.providerType] || Building2;
+          const logo = PROVIDER_LOGOS[provider.providerId] || '';
+          const color = PROVIDER_COLORS[provider.providerId] || 'bg-slate-700';
 
-            <h3 className="text-xl font-black text-slate-900 dark:text-white mb-1 group-hover:translate-x-1 transition-transform">{provider.name}</h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{provider.description}</p>
-            
-            <div className="mt-8 pt-6 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
-              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Direct Connect</span>
-              <ArrowRight className="w-4 h-4 text-slate-300 group-hover:translate-x-1 transition-all" />
-            </div>
-          </motion.div>
-        ))}
+          return (
+            <motion.div
+              layoutId={provider.providerId}
+              key={provider.providerId}
+              onClick={() => handleConnect(provider)}
+              className="group relative bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-[2.5rem] p-8 cursor-pointer hover:shadow-premium dark:hover:bg-white/[0.08] transition-all overflow-hidden"
+            >
+              <div className={`absolute top-0 right-0 w-32 h-32 ${color} opacity-0 group-hover:opacity-10 rounded-full -mr-16 -mt-16 blur-3xl transition-opacity`} />
+              
+              <div className="flex justify-between items-start mb-6">
+                <div className="w-16 h-16 rounded-[1.5rem] bg-white dark:bg-white/10 p-2 border border-slate-200 dark:border-white/20 shadow-sm overflow-hidden flex items-center justify-center">
+                  {logo ? (
+                    <img 
+                      src={logo} 
+                      alt={provider.providerName} 
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-indigo-500/10 text-indigo-500">
+                      <FallbackIcon className="w-8 h-8" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <div className="p-2 bg-slate-50 dark:bg-white/5 rounded-full text-slate-400 group-hover:text-indigo-500 transition-colors">
+                    <Plus className="w-5 h-5" />
+                  </div>
+                  {provider.isDemo && (
+                    <span className="px-2 py-0.5 bg-amber-500/10 text-amber-500 text-[8px] font-black uppercase tracking-widest rounded-lg border border-amber-500/20">Demo</span>
+                  )}
+                </div>
+              </div>
+
+              <h3 className="text-xl font-black text-slate-900 dark:text-white mb-1 group-hover:translate-x-1 transition-transform">{provider.providerName}</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{provider.description}</p>
+              
+              <div className="mt-8 pt-6 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">{provider.providerType.replace('_', ' ')}</span>
+                <ArrowRight className="w-4 h-4 text-slate-300 group-hover:translate-x-1 transition-all" />
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
 
       {/* CONNECTION MODAL OVERLAY */}
@@ -135,11 +171,27 @@ export default function IntegrationsHub() {
             />
             
             <motion.div
-              layoutId={connectingProvider.id}
+              layoutId={connectingProvider.providerId}
               className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[3rem] p-8 sm:p-12 shadow-2xl overflow-hidden border border-white/20"
             >
               <div className="flex flex-col items-center text-center">
-                {connectionStep === 'intro' && (
+                {connectionStep === 'intro' && connectingProvider.providerType === 'crypto_wallet' && (
+                  <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full">
+                    <div className="mb-6">
+                      <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Web3 Pulse Sync</h2>
+                      <p className="text-slate-500 text-sm font-medium">Scan any public address to index its value into your Wealth OS.</p>
+                    </div>
+                    <CryptoConnector userId={userId} />
+                    <button 
+                      onClick={() => setConnectingProvider(null)}
+                      className="mt-6 text-xs font-black uppercase tracking-widest text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </motion.div>
+                )}
+
+                {connectionStep === 'intro' && connectingProvider.providerType !== 'crypto_wallet' && (
                   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full space-y-8">
                     <div className="flex items-center justify-center gap-6 mb-4">
                       <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-fuchsia-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
@@ -147,12 +199,12 @@ export default function IntegrationsHub() {
                       </div>
                       <Zap className="w-6 h-6 text-indigo-400 animate-pulse" />
                       <div className="w-16 h-16 bg-white rounded-2xl p-2 border border-slate-200 shadow-sm flex items-center justify-center overflow-hidden">
-                        <img src={connectingProvider.logo} alt={connectingProvider.name} className="w-full h-full object-contain" />
+                        <img src={PROVIDER_LOGOS[connectingProvider.providerId] || ''} alt={connectingProvider.providerName} className="w-full h-full object-contain" />
                       </div>
                     </div>
                     
                     <div className="space-y-2">
-                      <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Connect {connectingProvider.name}</h2>
+                      <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Connect {connectingProvider.providerName}</h2>
                       <p className="text-slate-500 text-sm font-medium">To synchronize your assets, we recommend using our <span className="text-indigo-600 dark:text-indigo-400">Magic Link</span> for mobile handover.</p>
                     </div>
 
@@ -230,7 +282,7 @@ export default function IntegrationsHub() {
                     
                     <div className="space-y-2">
                       <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight">Scan for Magic Handover</h3>
-                      <p className="text-slate-500 text-xs font-medium px-4">Open your phone camera to securely authorize {connectingProvider.name} within our mobile encrypted sandbox.</p>
+                      <p className="text-slate-500 text-xs font-medium px-4">Open your phone camera to securely authorize {connectingProvider.providerName} within our mobile encrypted sandbox.</p>
                     </div>
 
                     <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3 text-left">
@@ -257,7 +309,7 @@ export default function IntegrationsHub() {
                     
                     <div className="space-y-2">
                       <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase italic">Connection Verified</h2>
-                      <p className="text-slate-500 text-sm font-medium">Your {connectingProvider.name} assets are now streaming to the Neural Core.</p>
+                      <p className="text-slate-500 text-sm font-medium">Your {connectingProvider.providerName} assets are now streaming to the Neural Core.</p>
                     </div>
 
                     <button 

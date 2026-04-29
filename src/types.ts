@@ -10,6 +10,9 @@ export type LiabilityType = 'mortgage' | 'loan' | 'credit_card' | 'other';
 export type GoalStatus = 'active' | 'completed' | 'on_hold';
 export type TransactionCategory = 'housing' | 'food' | 'transport' | 'entertainment' | 'health' | 'shopping' | 'income' | 'other';
 
+export type ConnectionStatus = 'demo' | 'sandbox' | 'connecting' | 'connected' | 'syncing' | 'failed' | 'needs_reauth' | 'disconnected';
+export type DataSourceType = 'manual' | 'demo' | 'bank' | 'crypto_wallet' | 'broker' | 'investment' | 'custom_api' | 'import';
+
 export interface UserProfile {
   uid: string;
   displayName: string | null;
@@ -27,6 +30,17 @@ export interface UserProfile {
   experienceLevel?: string;
   baseCurrency?: string;
   country?: string;
+  taxResidence?: string;
+  currencyExposure?: string[];
+  financialMode?: 'defensive' | 'balanced' | 'growth' | 'aggressive';
+  incomeType?: 'fixed_salary' | 'freelance' | 'business' | 'passive' | 'mixed' | 'unknown';
+  employmentStatus?: 'employee' | 'self_employed' | 'business_owner' | 'student' | 'unemployed' | 'retired' | 'unknown';
+  riskTolerance?: number; // 1-10
+  investmentExperience?: 'beginner' | 'intermediate' | 'advanced' | 'professional' | 'unknown';
+  liquidityNeed?: 'low' | 'medium' | 'high' | 'unknown';
+  monthlyFixedCostsEstimate?: number;
+  onboardingCompletedAt?: Timestamp;
+  language?: string;
 }
 
 export interface Transaction {
@@ -38,6 +52,7 @@ export interface Transaction {
   bankAccountId?: string;
   isRecurring: boolean;
   type: 'expense' | 'income';
+  currency?: string;
   createdAt: Timestamp;
 }
 
@@ -48,6 +63,83 @@ export interface BankAccount {
   balance: number;
   currency: string;
   lastSynced: Timestamp;
+  // Production extension fields
+  ownerId?: string;
+  institutionId?: string;
+  providerId?: string;
+  providerAccountId?: string;
+  status?: ConnectionStatus;
+  source?: DataSourceType;
+  isManual?: boolean;
+  isDemo?: boolean;
+  lastSyncedAt?: Timestamp;
+}
+
+export interface ConnectedInstitution {
+  id: string;
+  ownerId: string;
+  providerId: string;
+  providerName: string;
+  providerType: DataSourceType;
+  status: ConnectionStatus;
+  country?: string;
+  baseCurrency?: string;
+  lastSyncedAt?: Timestamp;
+  consentExpiresAt?: Timestamp;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+  isDemo?: boolean;
+  errorMessage?: string;
+}
+
+export interface ConnectedAccount {
+  id: string;
+  ownerId: string;
+  institutionId: string;
+  providerId: string;
+  providerAccountId?: string;
+  name: string;
+  type: string;
+  balance: number;
+  currency: string;
+  status: ConnectionStatus;
+  lastSyncedAt?: Timestamp;
+  isManual?: boolean;
+  isDemo?: boolean;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface CryptoWallet {
+  id: string;
+  ownerId: string;
+  address: string;
+  chain: string;
+  label?: string;
+  nativeBalance?: number;
+  fiatValue?: number;
+  currency?: string;
+  lastSyncedAt?: Timestamp;
+  status: ConnectionStatus;
+  isDemo?: boolean;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
+}
+
+export interface InvestmentAccount {
+  id: string;
+  ownerId: string;
+  institutionId?: string;
+  providerId?: string;
+  name: string;
+  type: string;
+  balance: number;
+  currency: string;
+  status: ConnectionStatus;
+  lastSyncedAt?: Timestamp;
+  isDemo?: boolean;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 export interface Asset {
@@ -59,6 +151,7 @@ export interface Asset {
   annualReturn?: number; // Expected yearly growth (%)
   updatedAt: Timestamp;
   createdAt: Timestamp;
+  currency?: string;
   notes?: string;
   color?: string; // For UI visualization
 }
@@ -71,6 +164,7 @@ export interface Liability {
   remainingAmount: number;
   interestRate?: number;
   monthlyPayment?: number;
+  currency?: string;
   dueDate?: Timestamp;
   updatedAt: Timestamp;
   createdAt: Timestamp;

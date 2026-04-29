@@ -17,14 +17,16 @@ interface NeuralAdvisorProps {
     goals: any[];
     transactions: any[];
     bankAccounts: any[];
+    userDisplayName?: string;
+    baseCurrency?: string;
   };
   language?: string;
   initialMessage?: string;
 }
 
-export default function NeuralAdvisor({ isVisible, onClose, context, language = 'it', initialMessage }: NeuralAdvisorProps) {
+export default function NeuralAdvisor({ isVisible, onClose, context, language = 'en', initialMessage }: NeuralAdvisorProps) {
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Benvenuto nel Neural Core. Sono il tuo Socio Esperto. Come posso aiutarti a ottimizzare il tuo patrimonio oggi?' }
+    { role: 'assistant', content: `Welcome to the Neural Core. I am your Strategic Partner. How can I help you optimize your wealth today, ${context.userDisplayName || 'User'}?` }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);

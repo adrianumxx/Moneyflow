@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { Crown, CreditCard, ExternalLink, Loader2, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { UserProfile } from '../types';
+import { authenticatedFetch } from '../utils/api';
 
 interface SubscriptionSettingsProps {
   userProfile: UserProfile | null;
@@ -15,7 +16,7 @@ export default function SubscriptionSettings({ userProfile, userId, userEmail }:
   const handleSubscribe = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/create-checkout-session', {
+      const response = await authenticatedFetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, userEmail }),
@@ -34,7 +35,7 @@ export default function SubscriptionSettings({ userProfile, userId, userEmail }:
   const handleManageBilling = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/create-portal-session', {
+      const response = await authenticatedFetch('/api/create-portal-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId }),

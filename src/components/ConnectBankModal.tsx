@@ -4,6 +4,8 @@ import { X, Landmark, ShieldCheck, Zap, ArrowRight, Loader2, Search, Cpu, Globe,
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp, setDoc, doc } from 'firebase/firestore';
 import { useNotifications } from '../context/NotificationContext';
+import { buildDemoInstitution, buildDemoAccount } from '../utils/connectors';
+import { handleSyncCallback } from '../services/syncService';
 
 interface ConnectBankModalProps {
   isOpen: boolean;
@@ -74,16 +76,48 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     try {
+      // 1. Backend Handshake Bridge (Foundation)
+      const handshake = await handleSyncCallback(selectedBank.id, 'auth_stub_' + Date.now());
+      if (!handshake.success) {
+        showNotification('Connection Refused', handshake.error || 'Neural Core could not verify the provider handshake.', 'error');
+        setIsLoading(false);
+        return;
+      }
+
       const mockAccounts = [
         { id: 'checking', name: 'Premium Checking', balance: 12450.00, category: 'bank' },
         { id: 'savings', name: 'Global Savings', balance: 5000.00, category: 'savings' },
         { id: 'trading', name: 'Active Trading', balance: 24500.00, category: 'investment' }
       ];
 
+      // 1. Create ConnectedInstitution record
+      const instRef = doc(collection(db, 'users', userId, 'connectedInstitutions'));
+      const demoInstitution = buildDemoInstitution(userId, selectedBank.id.includes('_demo') ? selectedBank.id : `${selectedBank.id}_demo`);
+      await setDoc(instRef, {
+        ...demoInstitution,
+        id: instRef.id,
+        updatedAt: serverTimestamp(),
+        createdAt: serverTimestamp()
+      });
+
       for (const accountId of selectedAccounts) {
         const accountInfo = mockAccounts.find(a => a.id === accountId);
         if (!accountInfo) continue;
 
+        // 2. Create ConnectedAccount record
+        const accRef = doc(collection(db, 'users', userId, 'connectedAccounts'));
+        const demoAccount = buildDemoAccount(userId, instRef.id, selectedBank.id, 'EUR');
+        await setDoc(accRef, {
+          ...demoAccount,
+          id: accRef.id,
+          name: accountInfo.name,
+          balance: accountInfo.balance,
+          type: accountInfo.category,
+          updatedAt: serverTimestamp(),
+          createdAt: serverTimestamp()
+        });
+
+        // 3. Backward Compatibility: Create legacy bankAccounts record
         const bankRef = doc(collection(db, 'users', userId, 'bankAccounts'));
         await setDoc(bankRef, {
           institutionName: selectedBank.name,
@@ -92,10 +126,13 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
           currency: 'EUR',
           ownerId: userId,
           lastSynced: serverTimestamp(),
-          category: accountInfo.category || selectedBank.category.toLowerCase()
+          category: accountInfo.category || selectedBank.category.toLowerCase(),
+          institutionId: instRef.id,
+          providerId: selectedBank.id,
+          isDemo: true
         });
 
-        // Add specific transactions for each account to make it look active
+        // 4. Create initial synchronization transactions
         const txs = [
           { amount: -250.00, description: `Provision: ${accountInfo.name} Sync`, category: 'system', type: 'expense', date: serverTimestamp() },
           { amount: accountInfo.balance * 0.1, description: 'Initial Capital Injection', category: 'income', type: 'income', date: serverTimestamp() },
@@ -106,6 +143,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
             ...tx,
             ownerId: userId,
             bankAccountId: bankRef.id,
+            providerId: selectedBank.id,
             updatedAt: serverTimestamp(),
           });
         }
@@ -150,10 +188,11 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                 <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Institutional Access</span>
               </div>
               <div className="space-y-1">
-                <h3 className="text-4xl font-black tracking-tight text-white font-display">
+                <h3 className="text-4xl font-black tracking-tight text-white font-display flex items-center gap-3">
                   Moneyflow <span className="text-zinc-500">Connect</span>
+                  <span className="text-[10px] bg-white/10 text-zinc-400 px-2 py-1 rounded-md tracking-widest uppercase">Sandbox</span>
                 </h3>
-                <p className="text-zinc-500 text-sm font-medium">Sync your financial DNA across 15,000+ institutions.</p>
+                <p className="text-zinc-500 text-sm font-medium">Simulate sync with major institutions.</p>
               </div>
             </div>
             <button onClick={onClose} className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all group">
@@ -243,7 +282,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                       </div>
                       <div>
                         <h4 className="text-sm font-black text-white uppercase tracking-wider">Security Core Verified</h4>
-                        <p className="text-[10px] text-zinc-500 font-medium mt-1">Your actual credentials are never stored. Zero-Knowledge Proof protocol.</p>
+                        <p className="text-[10px] text-zinc-500 font-medium mt-1">Your actual credentials are never stored. Demo Sandbox Verification.</p>
                       </div>
                     </div>
                     <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-zinc-400 group-hover:text-white group-hover:translate-x-1 transition-all">
@@ -357,7 +396,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
 
                 <div className="space-y-4 max-w-sm mx-auto">
                   <h4 className="text-2xl font-black text-white tracking-tight">Authenticating Handshake</h4>
-                  <p className="text-zinc-500 font-medium">We're opening a secure encrypted bridge (AES-256) to your institution. Please wait while we establish a Zero-Knowledge connection.</p>
+                  <p className="text-zinc-500 font-medium">We're opening a demo connection flow to your institution. Please wait while we establish a sandbox connection.</p>
                 </div>
 
                 <div className="flex flex-col gap-4 max-w-sm mx-auto">

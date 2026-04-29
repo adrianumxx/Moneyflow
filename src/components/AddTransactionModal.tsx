@@ -3,7 +3,8 @@ import { motion } from 'motion/react';
 import { X, Plus, Receipt, Landmark, Calendar, Loader2, Pencil } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp, Timestamp, doc, setDoc } from 'firebase/firestore';
-import { Transaction, TransactionCategory } from '../types';
+import { Transaction, TransactionCategory, UserProfile } from '../types';
+import { getCurrencySymbol } from '../utils/format';
 import { categorizeTransaction } from '../services/geminiService';
 import { handleFirestoreError, OperationType } from '../utils/errorHandling';
 
@@ -13,6 +14,7 @@ interface AddTransactionModalProps {
   userId: string;
   onDemoAdd?: (transaction: any) => void;
   initialTransaction?: Transaction | null;
+  userProfile?: UserProfile;
 }
 
 const CATEGORIES: { value: TransactionCategory; label: string }[] = [
@@ -26,7 +28,7 @@ const CATEGORIES: { value: TransactionCategory; label: string }[] = [
   { value: 'other', label: 'Other' },
 ];
 
-export default function AddTransactionModal({ isOpen, onClose, userId, onDemoAdd, initialTransaction }: AddTransactionModalProps) {
+export default function AddTransactionModal({ isOpen, onClose, userId, onDemoAdd, initialTransaction, userProfile }: AddTransactionModalProps) {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState<TransactionCategory>('other');
@@ -83,6 +85,7 @@ export default function AddTransactionModal({ isOpen, onClose, userId, onDemoAdd
             type,
             date: new Date(date),
             isRecurring: false,
+            currency: userProfile?.baseCurrency || 'EUR',
             createdAt: initialTransaction?.createdAt || new Date(),
           });
         }
@@ -99,6 +102,7 @@ export default function AddTransactionModal({ isOpen, onClose, userId, onDemoAdd
         type,
         date: Timestamp.fromDate(new Date(date)),
         isRecurring: false,
+        currency: userProfile?.baseCurrency || 'EUR',
         ownerId: userId,
         createdAt: initialTransaction?.createdAt || serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -186,7 +190,7 @@ export default function AddTransactionModal({ isOpen, onClose, userId, onDemoAdd
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="md:col-span-1">
-                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Amount (€)</label>
+                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Amount ({getCurrencySymbol(userProfile?.baseCurrency)})</label>
                 <input
                   type="number"
                   step="0.01"

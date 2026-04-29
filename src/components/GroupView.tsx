@@ -55,7 +55,7 @@ import {
 import { User } from 'firebase/auth';
 import { Group, Expense, GroupMember, CATEGORIES, BudgetType, SplitType, SplitDetail } from '../types';
 import { getEnv } from '../utils/env';
-import { formatCurrency } from '../utils/format';
+import { formatMoney } from '../utils/format';
 import { handleFirestoreError, OperationType } from '../utils/errorHandling';
 
 interface GroupViewProps {
@@ -674,7 +674,7 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
             <p 
               className="text-4xl sm:text-5xl font-black text-slate-800 dark:text-white font-display tracking-tighter truncate leading-none"
             >
-              €{formatCurrency(totalSpent)}
+              {formatMoney(totalSpent)}
             </p>
             {group.maxBudget && (
               <div className="mt-6 sm:mt-8">
@@ -691,7 +691,7 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
                   />
                 </div>
                 <p className="text-[9px] sm:text-[10px] text-slate-400 mt-3 font-black uppercase tracking-widest leading-none">
-                  €{formatCurrency(currentBudgetSpent)} / €{formatCurrency(group.maxBudget)}
+                  {formatMoney(currentBudgetSpent)} / {formatMoney(group.maxBudget)}
                 </p>
               </div>
             )}
@@ -707,7 +707,7 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
             <p 
               className="text-4xl sm:text-5xl font-black text-slate-800 dark:text-white font-display tracking-tighter truncate leading-none"
             >
-              €{formatCurrency(perPerson)}
+              {formatMoney(perPerson)}
             </p>
             <div className="mt-6 sm:mt-8 flex items-center gap-3">
                <div className="w-12 h-1.5 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
@@ -733,7 +733,7 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
             <p 
               className={`text-4xl sm:text-5xl font-black font-display tracking-tighter truncate leading-none ${balance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600'}`}
             >
-              €{formatCurrency(Math.abs(balance))}
+              {formatMoney(Math.abs(balance))}
             </p>
             <div className="mt-6 sm:mt-8">
                <span className={`px-4 py-1.5 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-widest ${balance >= 0 ? 'bg-emerald-500/10 text-emerald-600' : 'bg-rose-500/10 text-rose-600'}`}>
@@ -779,7 +779,7 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
                     cursor={{ stroke: '#6366f1', strokeWidth: 2 }}
                     itemStyle={{ fontSize: '14px', fontWeight: 900, color: theme === 'dark' ? '#ffffff' : '#0f172a' }}
                     labelStyle={{ fontSize: '10px', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 900, letterSpacing: '0.1em' }}
-                    formatter={(value: number) => [`€${formatCurrency(value)}`, 'Flow']}
+                    formatter={(value: number) => [formatMoney(value), 'Flow']}
                   />
                   <Line 
                     type="monotone" 
@@ -817,7 +817,7 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
                     ))}
                   </Pie>
                   <Tooltip 
-                    formatter={(value: number) => [`€${formatCurrency(value)}`, 'Allocation']}
+                    formatter={(value: number) => [formatMoney(value), 'Allocation']}
                     contentStyle={{ 
                       borderRadius: '24px', 
                       border: 'none', 
@@ -881,9 +881,9 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
                       <div className="text-left sm:text-right min-w-0">
                         <p 
                           className="text-lg sm:text-xl font-bold text-zinc-900 dark:text-white font-mono tracking-tight truncate"
-                          title={`$${formatCurrency(expense.amount)}`}
+                          title={formatMoney(expense.amount)}
                         >
-                          ${formatCurrency(expense.amount)}
+                          {formatMoney(expense.amount)}
                         </p>
                         <p className="text-[9px] sm:text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Amount</p>
                       </div>
@@ -1451,7 +1451,7 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
             >
               <p id="stat-title" className="text-xs font-bold text-zinc-500 uppercase tracking-[0.2em] mb-4 font-display">{selectedStatDetails.title}</p>
               <p className="text-5xl sm:text-6xl font-bold text-zinc-900 dark:text-white font-display tracking-tight mb-2 break-all">
-                ${formatCurrency(selectedStatDetails.amount)}
+                {formatMoney(selectedStatDetails.amount)}
               </p>
               {selectedStatDetails.subtitle && (
                 <p className="text-sm font-medium text-zinc-500 mt-4">

@@ -17,11 +17,11 @@ import {
   ChevronRight,
   PieChart as PieChartIcon
 } from 'lucide-react';
-import { Group, Expense, BudgetType, CATEGORIES, Transaction } from '../types';
+import { Group, Expense, BudgetType, CATEGORIES, Transaction, UserProfile } from '../types';
 import { db } from '../firebase';
 import { collection, query, onSnapshot, orderBy, limit, doc, updateDoc, deleteDoc, Timestamp, where, serverTimestamp } from 'firebase/firestore';
 import { User } from 'firebase/auth';
-import { formatCurrency } from '../utils/format';
+import { formatMoney, getCurrencySymbol } from '../utils/format';
 import { handleFirestoreError, OperationType } from '../utils/errorHandling';
 
 interface DashboardProps {
@@ -34,6 +34,7 @@ interface DashboardProps {
   onUpdateTransaction?: (tx: any) => void;
   onDeleteTransaction?: (id: string) => void;
   onAddGroup?: () => void;
+  userProfile?: UserProfile;
   theme: 'light' | 'dark';
 }
 
@@ -65,6 +66,7 @@ export default function Dashboard({
   onUpdateTransaction,
   onDeleteTransaction,
   onAddGroup,
+  userProfile,
   theme 
 }: DashboardProps) {
   const [recentExpenses, setRecentExpenses] = useState<DashboardExpense[]>([]);
@@ -317,7 +319,7 @@ export default function Dashboard({
         if (totalSpent > g.maxBudget) {
           newAlerts.push({
             id: `over-budget-${g.id}`,
-            message: `Circle "${g.name}" limit exceeded (€${totalSpent.toFixed(0)}/€${g.maxBudget})`,
+            message: `Circle "${g.name}" limit exceeded (${formatMoney(totalSpent, userProfile?.baseCurrency)}/${formatMoney(g.maxBudget, userProfile?.baseCurrency)})`,
             type: 'warning',
             groupId: g.id
           });
@@ -526,7 +528,7 @@ export default function Dashboard({
                           <p 
                             className={`text-xl font-black font-display truncate ${expense.type === 'income' ? 'text-emerald-500' : 'text-slate-800 dark:text-white'}`}
                           >
-                            {expense.type === 'income' ? '+' : '-'}€{formatCurrency(Math.abs(expense.amount))}
+                            {expense.type === 'income' ? '+' : '-'}{formatMoney(Math.abs(expense.amount), expense.type === 'income' ? undefined : userProfile?.baseCurrency)}
                           </p>
                         </div>
                         {(user.uid.startsWith('demo-') || expense.paidBy === user.uid) && (
@@ -660,7 +662,9 @@ export default function Dashboard({
                 <div>
                   <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Amount</label>
                   <div className="relative">
-                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 font-mono font-bold">$</span>
+                    <span className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 font-mono font-bold">
+                      {getCurrencySymbol(editingExpense?.type === 'income' ? undefined : userProfile?.baseCurrency)}
+                    </span>
                     <input
                       type="number"
                       step="0.01"

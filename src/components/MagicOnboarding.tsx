@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Target, TrendingUp, ShieldCheck, Zap, ArrowRight, CheckCircle2, Home, Activity, Globe, Landmark } from 'lucide-react';
 import { doc, setDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
+import { buildOnboardingProfileUpdate } from '../utils/profileDefaults';
 
 interface MagicOnboardingProps {
   userId: string;
@@ -35,13 +36,8 @@ export default function MagicOnboarding({ userId, onComplete }: MagicOnboardingP
     setIsSaving(true);
     try {
       const userRef = doc(db, 'users', userId);
-      await setDoc(userRef, {
-        country: country,
-        primaryGoal: goal,
-        experienceLevel: experience,
-        baseCurrency: currency,
-        hasCompletedOnboarding: true
-      }, { merge: true });
+      const profileUpdate = buildOnboardingProfileUpdate(country, currency, goal || 'grow_wealth', experience || 'beginner');
+      await setDoc(userRef, profileUpdate, { merge: true });
 
       // Inject initial asset
       const val = parseFloat(initialAssetValue);
@@ -51,6 +47,7 @@ export default function MagicOnboarding({ userId, onComplete }: MagicOnboardingP
           type: 'cash',
           value: val,
           institution: 'Main Bank',
+          ownerId: userId,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });

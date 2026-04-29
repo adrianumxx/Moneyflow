@@ -7,17 +7,39 @@ import {
 import { useTranslation } from 'react-i18next';
 import { getPalantirIntelligence, PalantirIntelligence, PalantirNewsItem } from '../services/geminiService';
 import { useNotifications } from '../context/NotificationContext';
-import { Asset, Liability, FinancialGoal as Goal, UserProfile } from '../types';
+import { Asset, Liability, FinancialGoal as Goal, UserProfile, Transaction, BankAccount, ConnectedInstitution, ConnectedAccount, CryptoWallet, InvestmentAccount, Income } from '../types';
+import { authenticatedFetch } from '../utils/api';
+import { formatMoney } from '../utils/format';
 
 interface PalantirProps {
   assets?: Asset[];
   liabilities?: Liability[];
   goals?: Goal[];
+  transactions?: Transaction[];
+  bankAccounts?: BankAccount[];
+  connectedInstitutions?: ConnectedInstitution[];
+  connectedAccounts?: ConnectedAccount[];
+  cryptoWallets?: CryptoWallet[];
+  investmentAccounts?: InvestmentAccount[];
+  income?: Income[];
   userProfile?: UserProfile | null;
   onAskAI?: (prompt: string) => void;
 }
 
-export default function Palantir({ assets, liabilities, goals, userProfile, onAskAI }: PalantirProps) {
+export default function Palantir({ 
+  assets, 
+  liabilities, 
+  goals, 
+  transactions,
+  bankAccounts,
+  connectedInstitutions,
+  connectedAccounts,
+  cryptoWallets,
+  investmentAccounts,
+  income,
+  userProfile, 
+  onAskAI 
+}: PalantirProps) {
   const { t, i18n } = useTranslation();
   const [data, setData] = useState<PalantirIntelligence | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -49,7 +71,18 @@ export default function Palantir({ assets, liabilities, goals, userProfile, onAs
         new Date().toISOString(),
         Intl.DateTimeFormat().resolvedOptions().timeZone,
         language,
-        { assets: assets || [], liabilities: liabilities || [], goals: goals || [] },
+        { 
+          assets: assets || [], 
+          liabilities: liabilities || [], 
+          goals: goals || [],
+          transactions,
+          bankAccounts,
+          connectedInstitutions,
+          connectedAccounts,
+          cryptoWallets,
+          investmentAccounts,
+          income
+        },
         userProfile
       );
       setData(intel);
@@ -146,7 +179,7 @@ export default function Palantir({ assets, liabilities, goals, userProfile, onAs
 
     try {
       setIsLoading(true);
-      const response = await fetch('/api/create-checkout-session', {
+      const response = await authenticatedFetch('/api/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -178,6 +211,7 @@ export default function Palantir({ assets, liabilities, goals, userProfile, onAs
           <div className="flex items-center gap-3 mb-1">
             <Globe className="w-6 h-6 text-amber-500" />
             <h1 className="text-2xl font-black tracking-tight text-white uppercase">Palantir</h1>
+            <span className="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/20 font-bold uppercase tracking-wider">AI Simulation</span>
           </div>
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
             <span className="relative flex h-2 w-2">
@@ -333,6 +367,42 @@ export default function Palantir({ assets, liabilities, goals, userProfile, onAs
                     Palantir noticed your discipline. The markets reward those who stay vigilant.
                   </p>
                 )}
+
+                {/* DATA QUALITY METADATA */}
+                {(data.confidenceScore !== undefined || data.dataQuality || data.sourceStatus) && (
+                  <div className="mt-6 pt-4 border-t border-slate-800/50 flex flex-wrap gap-3">
+                    {data.confidenceScore !== undefined && (
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800">
+                        <CheckCircle2 className={`w-3 h-3 ${data.confidenceScore > 80 ? 'text-emerald-500' : data.confidenceScore > 50 ? 'text-amber-500' : 'text-rose-500'}`} />
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Trust: {data.confidenceScore}%</span>
+                      </div>
+                    )}
+                    {data.dataQuality && (
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800">
+                        <Zap className="w-3 h-3 text-indigo-400" />
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{data.dataQuality.replace('_', ' ')}</span>
+                      </div>
+                    )}
+                    {data.sourceStatus && (
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800">
+                        <Globe className="w-3 h-3 text-sky-400" />
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{data.sourceStatus.replace('_', ' ')}</span>
+                      </div>
+                    )}
+                    {data.missingData && data.missingData.length > 0 && (
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 group relative cursor-help">
+                        <AlertCircle className="w-3 h-3 text-rose-400" />
+                        <span className="text-[10px] font-bold text-rose-400 uppercase tracking-tight">Data Gaps</span>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                          <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-1">Missing Context</p>
+                          <ul className="text-[10px] text-slate-400 list-disc list-inside">
+                            {data.missingData.map((item, idx) => <li key={idx}>{item.replace('_', ' ')}</li>)}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* SEMAPHORE */}
@@ -361,6 +431,169 @@ export default function Palantir({ assets, liabilities, goals, userProfile, onAs
                 {data.metrics?.map(metric => <MetricCard key={metric.id} metric={metric} />)}
               </div>
 
+              {/* SCENARIO ENGINE */}
+              {data.scenarios && data.scenarios.length > 0 && (
+                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-sm">
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-5">Scenario Engine</p>
+                  <div className="space-y-4">
+                    {data.scenarios.map((s, i) => {
+                      const signal = s.actionSignal;
+                      const signalColor = signal === 'act' ? 'text-rose-400 border-rose-500/30 bg-rose-500/10'
+                        : signal === 'prepare' ? 'text-amber-400 border-amber-500/30 bg-amber-500/10'
+                        : 'text-slate-400 border-slate-700 bg-slate-900';
+                      return (
+                        <div key={i} className="border border-slate-800 rounded-2xl p-4 bg-slate-950/50">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <p className="text-sm font-bold text-white leading-snug">{s.title}</p>
+                            <span className={`shrink-0 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${signalColor}`}>
+                              {signal ?? 'observe'}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-2 mb-3">
+                            {s.probability !== undefined && (
+                              <span className="text-[10px] font-bold text-slate-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-full">
+                                ~{s.probability}% likely
+                              </span>
+                            )}
+                            {s.timeHorizon && (
+                              <span className="text-[10px] font-bold text-slate-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-full">
+                                {s.timeHorizon}
+                              </span>
+                            )}
+                            {s.impactScore !== undefined && (
+                              <span className="text-[10px] font-bold text-slate-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-full">
+                                Impact {s.impactScore}/10
+                              </span>
+                            )}
+                          </div>
+                          {s.rationale && <p className="text-xs text-slate-400 leading-relaxed">{s.rationale}</p>}
+                          {s.affectedAreas && s.affectedAreas.length > 0 && (
+                            <p className="text-[10px] text-slate-600 mt-2 uppercase tracking-widest">
+                              Affects: {s.affectedAreas.join(' · ')}
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* GEOPOLITICAL RINGS */}
+              {data.geopoliticalRings && (
+                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-sm mt-8">
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-5">Geopolitical Rings</p>
+                  <div className="space-y-4">
+                    {(['state', 'neighborhood', 'continent', 'superpowers', 'world'] as const).map((key) => {
+                      const ring = data.geopoliticalRings?.[key];
+                      if (!ring) return null;
+                      const signal = ring.actionSignal;
+                      const signalColor = signal === 'act' ? 'text-rose-400 border-rose-500/30 bg-rose-500/10'
+                        : signal === 'prepare' ? 'text-amber-400 border-amber-500/30 bg-amber-500/10'
+                        : 'text-slate-400 border-slate-700 bg-slate-900';
+                      return (
+                        <div key={key} className="border border-slate-800 rounded-2xl p-4 bg-slate-950/50 transition-colors hover:bg-slate-900/50">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-0.5">{key.replace('_', ' ')}</p>
+                                <p className="text-sm font-bold text-white leading-snug">{ring.title}</p>
+                            </div>
+                            <span className={`shrink-0 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${signalColor}`}>
+                              {signal ?? 'observe'}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 leading-relaxed mb-3">{ring.summary}</p>
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                            {ring.riskScore !== undefined && (
+                                <div className="space-y-1">
+                                    <div className="flex justify-between text-[9px] font-bold uppercase tracking-widest">
+                                        <span className="text-slate-500">Risk</span>
+                                        <span className="text-rose-400">{ring.riskScore}%</span>
+                                    </div>
+                                    <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                                      <div className="h-full bg-rose-500" style={{ width: `${ring.riskScore}%` }} />
+                                    </div>
+                                </div>
+                            )}
+                            {ring.opportunityScore !== undefined && (
+                                <div className="space-y-1">
+                                    <div className="flex justify-between text-[9px] font-bold uppercase tracking-widest">
+                                        <span className="text-slate-500">Opportunity</span>
+                                        <span className="text-emerald-400">{ring.opportunityScore}%</span>
+                                    </div>
+                                    <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                                      <div className="h-full bg-emerald-500" style={{ width: `${ring.opportunityScore}%` }} />
+                                    </div>
+                                </div>
+                            )}
+                          </div>
+                          {ring.affectedAreas && ring.affectedAreas.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                              {ring.affectedAreas.map((area, idx) => (
+                                <span key={idx} className="text-[9px] font-bold text-slate-500 border border-slate-800/50 rounded px-1.5 py-0.5">
+                                  {area}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* ACTION QUEUE */}
+              {data.actionQueue && data.actionQueue.length > 0 && (
+                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-sm mt-8">
+                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-5">Action Queue</p>
+                  <div className="space-y-4">
+                    {[...data.actionQueue]
+                      .sort((a, b) => {
+                        const order = { critical: 0, high: 1, medium: 2, low: 3 };
+                        return (order[a.priority || 'low'] ?? 4) - (order[b.priority || 'low'] ?? 4);
+                      })
+                      .map((action, idx) => {
+                        const priorityColor = 
+                          action.priority === 'critical' ? 'text-rose-400 border-rose-500/30 bg-rose-500/10' :
+                          action.priority === 'high' ? 'text-amber-400 border-amber-500/30 bg-amber-500/10' :
+                          'text-slate-400 border-slate-700 bg-slate-900';
+                        
+                        return (
+                          <div key={idx} className="border border-slate-800 rounded-2xl p-4 bg-slate-950/50 transition-colors hover:bg-slate-900/50">
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <div className="flex flex-col gap-1">
+                                <span className={`w-fit text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border ${priorityColor}`}>
+                                  {action.priority || 'low'}
+                                </span>
+                                <p className="text-sm font-bold text-white leading-snug">{action.title}</p>
+                              </div>
+                              {action.actionSignal && (
+                                <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                  {action.actionSignal}
+                                </span>
+                              )}
+                            </div>
+                            {action.reason && <p className="text-xs text-slate-400 leading-relaxed mb-3">{action.reason}</p>}
+                            <div className="flex flex-wrap gap-2">
+                              {action.timeHorizon && (
+                                <span className="text-[9px] font-bold text-slate-500 bg-slate-900/50 px-2 py-0.5 rounded border border-slate-800/30">
+                                  {action.timeHorizon}
+                                </span>
+                              )}
+                              {action.affectedAreas?.map((area, aidx) => (
+                                <span key={aidx} className="text-[9px] font-bold text-indigo-400/70 bg-indigo-500/5 px-2 py-0.5 rounded border border-indigo-500/10">
+                                  {area}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })
+                    }
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* RIGHT COLUMN (Tabs, Vectors, Signals, Risks) */}
@@ -425,34 +658,88 @@ export default function Palantir({ assets, liabilities, goals, userProfile, onAs
                 )}
 
                 <div className={`space-y-10 ${!isPremium ? 'opacity-30 select-none pointer-events-none' : ''}`}>
-                  
-                  {/* GEOPOLITICAL CONCENTRIC RINGS */}
-                  {data.concentricGeopolitics && (
+                                  {/* GEOPOLITICAL ARCHITECTURE RINGS */}
+                  {data.geopoliticalRings && (
                     <section>
-                      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
+                      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-6 flex items-center gap-2">
                         <Globe className="w-4 h-4 text-indigo-400" /> Geopolitical Architecture
                       </p>
-                      <div className="grid grid-cols-1 gap-3">
+                      <div className="grid grid-cols-1 gap-4">
                         {[
-                          { key: 'world', data: data.concentricGeopolitics.world, color: 'text-slate-400', bg: 'bg-slate-900/50' },
-                          { key: 'superpowers', data: data.concentricGeopolitics.superpowers, color: 'text-rose-400', bg: 'bg-rose-950/10 border-rose-900/20' },
-                          { key: 'continent', data: data.concentricGeopolitics.continent, color: 'text-sky-400', bg: 'bg-sky-950/10 border-sky-900/20' },
-                          { key: 'neighborhood', data: data.concentricGeopolitics.neighborhood, color: 'text-amber-400', bg: 'bg-amber-950/10 border-amber-900/20' },
-                          { key: 'state', data: data.concentricGeopolitics.state, color: 'text-emerald-400', bg: 'bg-emerald-950/20 border-emerald-900/30' },
-                        ].map((ring, idx) => (
-                          <div key={ring.key} className={`border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-start md:items-center ${ring.bg}`}>
-                            <div className="w-32 shrink-0">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 block mb-1">Layer {5 - idx}</span>
-                              <span className={`text-sm font-black uppercase tracking-widest ${ring.color}`}>{ring.data?.level}</span>
+                          { key: 'world', ring: data.geopoliticalRings.world, color: 'text-slate-400', border: 'border-slate-800' },
+                          { key: 'superpowers', ring: data.geopoliticalRings.superpowers, color: 'text-rose-400', border: 'border-rose-900/30' },
+                          { key: 'continent', ring: data.geopoliticalRings.continent, color: 'text-sky-400', border: 'border-sky-900/30' },
+                          { key: 'neighborhood', ring: data.geopoliticalRings.neighborhood, color: 'text-amber-400', border: 'border-amber-900/30' },
+                          { key: 'state', ring: data.geopoliticalRings.state, color: 'text-emerald-400', border: 'border-emerald-900/30' },
+                        ].filter(r => r.ring).map((item, idx) => {
+                          const r = item.ring!;
+                          const signal = r.actionSignal;
+                          const signalColor = signal === 'act' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                            : signal === 'prepare' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                            : 'bg-slate-800 text-slate-400 border-slate-700';
+
+                          return (
+                            <div key={item.key} className={`relative overflow-hidden border ${item.border} rounded-2xl p-5 bg-slate-900/40 backdrop-blur-sm group hover:bg-slate-900/60 transition-all`}>
+                              <div className="flex flex-col md:flex-row gap-5">
+                                <div className="w-full md:w-40 shrink-0">
+                                  <div className="flex items-center justify-between md:flex-col md:items-start gap-2">
+                                    <div>
+                                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-0.5">Ring {5 - idx}</span>
+                                      <span className={`text-sm font-black uppercase tracking-widest ${item.color}`}>{r.title || item.key}</span>
+                                    </div>
+                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${signalColor}`}>
+                                      {signal || 'observe'}
+                                    </span>
+                                  </div>
+                                </div>
+                                
+                                <div className="flex-grow">
+                                  <p className="text-xs text-slate-200 font-medium leading-relaxed mb-4">{r.summary}</p>
+                                  
+                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                    <div className="space-y-1">
+                                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Risk</span>
+                                      <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                                        <div className="h-full bg-rose-500" style={{ width: `${r.riskScore || 0}%` }} />
+                                      </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Opportunity</span>
+                                      <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                                        <div className="h-full bg-emerald-500" style={{ width: `${r.opportunityScore || 0}%` }} />
+                                      </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Impact</span>
+                                      <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                                        <div className="h-full bg-sky-500" style={{ width: `${r.impactScore || 0}%` }} />
+                                      </div>
+                                    </div>
+                                    <div className="space-y-1">
+                                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Confidence</span>
+                                      <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                                        <div className="h-full bg-indigo-500" style={{ width: `${r.confidenceScore || 0}%` }} />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {r.affectedAreas && r.affectedAreas.length > 0 && (
+                                <div className="mt-4 pt-3 border-t border-slate-800/50 flex items-center gap-2">
+                                  <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Scope:</span>
+                                  <div className="flex flex-wrap gap-2">
+                                    {r.affectedAreas.map((area, ai) => (
+                                      <span key={ai} className="text-[9px] font-bold text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
+                                        {area}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                            <div className="flex-grow">
-                              <p className="text-xs text-slate-300 font-medium leading-relaxed mb-2">{ring.data?.impact}</p>
-                              <p className="text-[11px] font-bold text-slate-400 flex items-center gap-2">
-                                <ArrowRight className="w-3 h-3" /> {ring.data?.strategy}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     </section>
                   )}
@@ -488,7 +775,7 @@ export default function Palantir({ assets, liabilities, goals, userProfile, onAs
                           <div className="shrink-0 text-left md:text-right w-full md:w-auto border-t md:border-t-0 border-slate-800 pt-6 md:pt-0">
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Estimated Annual Alpha</p>
                             <p className="text-4xl sm:text-5xl font-black text-emerald-400 tracking-tight">
-                              +${data.yieldOptimizer.estimatedAnnualAlpha.toLocaleString()}
+                              +{formatMoney(data.yieldOptimizer.estimatedAnnualAlpha, userProfile?.baseCurrency)}
                             </p>
                             <button 
                               onClick={() => onAskAI?.(`Come posso eseguire concretamente questa strategia: "${data.yieldOptimizer?.actionableStrategy}"?`)}
@@ -523,8 +810,8 @@ export default function Palantir({ assets, liabilities, goals, userProfile, onAs
                               {data.taxShield.description}
                             </p>
                             <div className="bg-[#020617]/50 border border-slate-800 rounded-xl p-4">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-2">Loophole Strategy</p>
-                              <p className="text-sm font-bold text-white">{data.taxShield.loopholeAction}</p>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-2">Legal Tax Optimization</p>
+                              <p className="text-sm font-bold text-white">{data.taxShield.taxOptimizationAction}</p>
                             </div>
                           </div>
                         </div>
@@ -554,7 +841,7 @@ export default function Palantir({ assets, liabilities, goals, userProfile, onAs
                           <div className="shrink-0 text-left md:text-right w-full md:w-auto border-t md:border-t-0 border-slate-800 pt-6 md:pt-0">
                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Potential Annual Savings</p>
                             <p className="text-4xl sm:text-5xl font-black text-sky-400 tracking-tight">
-                              +${data.negotiator.potentialSavings.toLocaleString()}
+                              +{formatMoney(data.negotiator.potentialSavings, userProfile?.baseCurrency)}
                             </p>
                             <button 
                               onClick={() => onAskAI?.(`Come posso negoziare per abbassare la mia bolletta/spesa di ${data.negotiator?.targetExpense}? Dammi uno script.`)}
@@ -628,7 +915,7 @@ export default function Palantir({ assets, liabilities, goals, userProfile, onAs
                             </div>
                           </div>
                           <div className="shrink-0 text-left md:text-right w-full md:w-auto border-t md:border-t-0 border-slate-800 pt-6 md:pt-0">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Guaranteed Spread</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Potential Efficiency Gap</p>
                             <p className="text-4xl sm:text-5xl font-black text-fuchsia-400 tracking-tight">
                               +{data.arbitrageFinder.arbitrageSpread}%
                             </p>

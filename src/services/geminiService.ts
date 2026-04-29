@@ -1,6 +1,7 @@
 import { Asset, Liability, FinancialGoal, AIInsight, Income, TransactionCategory } from "../types";
 import { Timestamp, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp } from "firebase/firestore";
 import { db } from "../firebase";
+import { authenticatedFetch } from "../utils/api";
 
 export async function chatWithNeuralPartner(
   query: string,
@@ -10,11 +11,13 @@ export async function chatWithNeuralPartner(
     goals: any[];
     transactions: any[];
     bankAccounts: any[];
+    userDisplayName?: string;
+    baseCurrency?: string;
   },
   language: string = 'it'
 ): Promise<string> {
   try {
-    const response = await fetch('/api/gemini/chat', {
+    const response = await authenticatedFetch('/api/gemini/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query, context, language })
@@ -63,7 +66,7 @@ export async function generateFinancialInsights(
   incomes: Income[]
 ): Promise<AIInsight[]> {
   try {
-    const response = await fetch('/api/gemini/insights', {
+    const response = await authenticatedFetch('/api/gemini/insights', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ assets, liabilities, goals, incomes })
@@ -82,7 +85,7 @@ export async function generateFinancialInsights(
 
 export async function categorizeTransaction(description: string, amount: number): Promise<TransactionCategory> {
   try {
-    const response = await fetch('/api/gemini/categorize', {
+    const response = await authenticatedFetch('/api/gemini/categorize', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ description, amount })
@@ -115,7 +118,7 @@ export async function generateCFOReportData(
   language: string = 'en'
 ): Promise<CFOReportData> {
   try {
-    const response = await fetch('/api/gemini/cfo-report', {
+    const response = await authenticatedFetch('/api/gemini/cfo-report', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ assets, liabilities, insights, language })
@@ -204,7 +207,7 @@ export interface PalantirYieldOptimizer {
 export interface PalantirTaxShield {
   riskLevel: 'SAFE' | 'WARNING' | 'CRITICAL';
   description: string;
-  loopholeAction: string;
+  taxOptimizationAction: string;
 }
 
 export interface PalantirNegotiator {
@@ -225,12 +228,24 @@ export interface PalantirArbitrageFinder {
   action: string;
 }
 
-export interface PalantirConcentricGeopolitics {
-  state: { level: string; impact: string; strategy: string };
-  neighborhood: { level: string; impact: string; strategy: string };
-  continent: { level: string; impact: string; strategy: string };
-  superpowers: { level: string; impact: string; strategy: string };
-  world: { level: string; impact: string; strategy: string };
+export interface GeoRing {
+  title?: string;
+  summary?: string;
+  riskScore?: number;
+  opportunityScore?: number;
+  impactScore?: number;
+  confidenceScore?: number;
+  actionSignal?: 'observe' | 'prepare' | 'act';
+  affectedAreas?: string[];
+  missingData?: string[];
+}
+
+export interface PalantirGeopoliticalRings {
+  state?: GeoRing;
+  neighborhood?: GeoRing;
+  continent?: GeoRing;
+  superpowers?: GeoRing;
+  world?: GeoRing;
 }
 
 export interface PalantirIntelligence {
@@ -248,7 +263,33 @@ export interface PalantirIntelligence {
   negotiator?: PalantirNegotiator;
   blackSwan?: PalantirBlackSwan;
   arbitrageFinder?: PalantirArbitrageFinder;
-  concentricGeopolitics?: PalantirConcentricGeopolitics;
+  // Scenario Engine
+  scenarios?: Array<{
+    title: string;
+    probability?: number;
+    confidenceScore?: number;
+    impactScore?: number;
+    timeHorizon?: '0-30d' | '1-6m' | '6m+';
+    actionSignal?: 'observe' | 'prepare' | 'act';
+    affectedAreas?: string[];
+    rationale?: string;
+  }>;
+  geopoliticalRings?: PalantirGeopoliticalRings;
+  // Metadata & Data Quality
+  confidenceScore?: number;
+  dataQuality?: 'connected_data' | 'user_data' | 'estimated_data' | 'sandbox_data' | 'fallback_data' | 'insufficient_data';
+  sourceStatus?: 'live_search' | 'user_data' | 'connected_data' | 'cached' | 'fallback' | 'model_inference';
+  missingData?: string[];
+  actionQueue?: Array<{
+    title: string;
+    priority?: 'low' | 'medium' | 'high' | 'critical';
+    actionSignal?: 'observe' | 'prepare' | 'act';
+    reason?: string;
+    affectedAreas?: string[];
+    timeHorizon?: '0-30d' | '1-6m' | '6m+';
+    confidenceScore?: number;
+    missingData?: string[];
+  }>;
 }
 
 export async function getPalantirIntelligence(
@@ -256,10 +297,23 @@ export async function getPalantirIntelligence(
   localTime?: string, 
   timezone?: string, 
   language: string = 'en',
-  userContext?: { assets: any[], liabilities: any[], goals: any[] },
+  userContext?: { 
+    assets: any[], 
+    liabilities: any[], 
+    goals: any[],
+    transactions?: any[],
+    bankAccounts?: any[],
+    connectedInstitutions?: any[],
+    connectedAccounts?: any[],
+    cryptoWallets?: any[],
+    investmentAccounts?: any[],
+    income?: any[]
+  },
   userProfile?: any
 ): Promise<PalantirIntelligence> {
-  const contextLengths = userContext ? `${userContext.assets.length}_${userContext.liabilities.length}` : '0_0';
+  const contextLengths = userContext ? 
+    `${userContext.assets.length}_${userContext.liabilities.length}_${userContext.bankAccounts?.length || 0}_${userContext.transactions?.length || 0}` : 
+    '0_0_0_0';
   const cacheKey = `palantir_intel_v1_${new Date().toISOString().split('T')[0]}_${language}_${contextLengths}`;
   
   try {
@@ -273,7 +327,7 @@ export async function getPalantirIntelligence(
   try {
     const pastMemory = await getRecentPalantirMemory(userId);
 
-    const response = await fetch('/api/gemini/global-pulse', {
+    const response = await authenticatedFetch('/api/gemini/global-pulse', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ localTime, timezone, language, userContext, pastMemory, userProfile })
@@ -338,7 +392,7 @@ export async function getPalantirIntelligence(
       taxShield: {
         riskLevel: 'WARNING',
         description: 'You are $800 away from the 43% tax bracket.',
-        loopholeAction: 'Contribute $800 to a registered pension fund to deduct it from taxable income.'
+        taxOptimizationAction: 'Contribute $800 to a registered pension fund to deduct it from taxable income.'
       },
       negotiator: {
         targetExpense: 'Energy Bill',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { 
@@ -6,24 +6,28 @@ import {
   TrendingDown, 
   ShieldCheck, 
   Target, 
-  Plus, 
   Wallet,
-  Building2,
-  Coins,
   ArrowUpRight,
   Sparkles,
-  PieChart as PieChartIcon,
   Link2,
   FileText,
   Radio,
   Pencil
 } from 'lucide-react';
-import { Asset, Liability, FinancialGoal, AIInsight, Transaction, BankAccount } from '../types';
-import { formatCurrency } from '../utils/format';
-import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
+import { Asset, Liability, FinancialGoal, AIInsight, Transaction, BankAccount, UserProfile } from '../types';
+import { formatMoney } from '../utils/format';
+import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { generateFinancialInsights } from '../services/geminiService';
-import { Loader2, Landmark, Receipt, CreditCard, ShoppingBag, Coffee, Utensils, Home as HomeIcon, Zap, Activity, Bot } from 'lucide-react';
+import { Loader2, Landmark, Receipt, Zap, Bot } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
+import { 
+  calculateTotalAssets, 
+  calculateTotalLiabilities, 
+  calculateNetWorth, 
+  calculateMonthlyIncome, 
+  calculateMonthlyExpenses,
+  calculateCashFlow
+} from '../utils/financialCalculations';
 
 interface WealthOverviewProps {
   assets: Asset[];
@@ -36,19 +40,23 @@ interface WealthOverviewProps {
   onConnectBank: () => void;
   onAddGoal: () => void;
   onGenerateReport: () => void;
+  userProfile?: UserProfile;
   theme: 'light' | 'dark';
 }
 
 const CATEGORY_ICONS: Record<string, any> = {
-  food: Utensils,
-  housing: HomeIcon,
+  food: Receipt,
+  housing: Landmark,
   transport: Zap,
   entertainment: Activity,
-  shopping: ShoppingBag,
+  shopping: Receipt,
   health: ShieldCheck,
   income: TrendingUp,
   other: Receipt
 };
+
+// Placeholder for missing icons
+function Activity(props: any) { return <Zap {...props} /> }
 
 export default function WealthOverview({ 
   assets, 
@@ -61,6 +69,7 @@ export default function WealthOverview({
   onConnectBank,
   onAddGoal,
   onGenerateReport,
+  userProfile,
   theme 
 }: WealthOverviewProps) {
   const { t } = useTranslation();
@@ -86,39 +95,24 @@ export default function WealthOverview({
     onGenerateReport();
   };
 
-  const totalBankBalance = bankAccounts ? bankAccounts.reduce((sum, b) => sum + b.balance, 0) : 0;
+  // Core Financial Logic (V2 - Corrected)
+  const totalAssets = calculateTotalAssets(assets, bankAccounts);
+  const totalLiabilities = calculateTotalLiabilities(liabilities);
+  const netWorth = calculateNetWorth(assets, bankAccounts, liabilities);
   
-  // Calculate lifetime transaction flow to adjust net worth dynamically
-  const totalTransactionFlow = transactions.reduce((sum, tx) => {
-    return tx.type === 'income' ? sum + Math.abs(tx.amount) : sum - Math.abs(tx.amount);
-  }, 0);
-
-  const totalAssets = assets.reduce((sum, a) => sum + a.value, 0) + totalBankBalance + totalTransactionFlow;
-  const totalLiabilities = liabilities.reduce((sum, l) => sum + l.remainingAmount, 0);
-  const netWorth = totalAssets - totalLiabilities;
-
-  // Calculate monthly flow
-  const now = new Date();
-  const currentMonthTransactions = transactions.filter(tx => {
-    const d = tx.date.toDate();
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  });
-
-  const monthlyIncome = currentMonthTransactions
-    .filter(tx => tx.type === 'income')
-    .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
-  
-  const monthlyExpenses = currentMonthTransactions
-    .filter(tx => tx.type === 'expense')
-    .reduce((sum, tx) => sum + Math.abs(tx.amount), 0);
+  // Cash Flow (Separate from Net Worth)
+  const totalCashFlow = calculateCashFlow(transactions);
+  const monthlyIncome = calculateMonthlyIncome(transactions);
+  const monthlyExpenses = calculateMonthlyExpenses(transactions, liabilities);
+  const monthlySurplus = monthlyIncome - monthlyExpenses;
 
   const assetData = useMemo(() => {
     const data: Record<string, number> = {};
     
-    // 1. Adjusted Liquidity (Bank Balance + All Transactions)
-    const adjustedLiquidity = totalBankBalance + totalTransactionFlow;
-    if (adjustedLiquidity > 0) {
-      data['Liquidity'] = adjustedLiquidity;
+    // 1. Liquidity (Bank Balances only)
+    const bankBalancesSum = bankAccounts.reduce((sum, account) => sum + (account.balance || 0), 0);
+    if (bankBalancesSum > 0) {
+      data['Cash & Bank'] = bankBalancesSum;
     }
 
     // 2. Manual Assets
@@ -127,21 +121,15 @@ export default function WealthOverview({
       data[cat] = (data[cat] || 0) + asset.value;
     });
 
-    // 3. Liabilities (as a debt sector for sincerity)
-    if (totalLiabilities > 0) {
-      data['Debt/Liabilities'] = totalLiabilities;
-    }
-
     // Convert to array for Recharts
     const result = Object.entries(data).map(([name, value]) => ({ name, value }));
     
-    // Fallback for empty state
     if (result.length === 0) {
       return [{ name: 'Neutral', value: 0.1 }];
     }
     
     return result;
-  }, [assets, totalBankBalance, totalTransactionFlow, totalLiabilities]);
+  }, [assets, bankAccounts]);
 
   const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'];
 
@@ -174,27 +162,38 @@ export default function WealthOverview({
         <motion.section 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="md:col-span-2 md:row-span-2 relative p-10 rounded-[3rem] bg-brand-dark text-white overflow-hidden shadow-glow group"
+          className="md:col-span-2 md:row-span-2 relative p-10 rounded-[3rem] bg-zinc-950 text-white overflow-hidden shadow-glow group"
         >
-          {/* Animated Background Gradients */}
           <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none">
-            <div className="absolute top-0 right-0 w-[80%] h-[80%] bg-brand-primary/20 rounded-full -mr-20 -mt-20 blur-[120px] animate-pulse" />
-            <div className="absolute bottom-0 left-0 w-[60%] h-[60%] bg-brand-secondary/10 rounded-full -ml-20 -mb-20 blur-[100px]" />
+            <div className="absolute top-0 right-0 w-[80%] h-[80%] bg-indigo-500/20 rounded-full -mr-20 -mt-20 blur-[120px] animate-pulse" />
+            <div className="absolute bottom-0 left-0 w-[60%] h-[60%] bg-fuchsia-500/10 rounded-full -ml-20 -mb-20 blur-[100px]" />
           </div>
           
           <div className="relative z-10 flex flex-col h-full justify-between">
             <div className="space-y-2">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10 group-hover:rotate-12 transition-transform duration-500">
-                  <ShieldCheck className="w-6 h-6 text-brand-secondary" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10 group-hover:rotate-12 transition-transform duration-500">
+                    <ShieldCheck className="w-6 h-6 text-indigo-400" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-300">{t('Total Net Worth')}</span>
+                    <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest italic leading-none">Verified Assets Hub</span>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-300">{t('Total Net Worth')}</span>
-                  <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest italic leading-none">Verified Assets Hub</span>
+                <div className="flex gap-2">
+                  <div className="p-4 bg-emerald-500/10 rounded-2xl">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">Monthly Surplus</p>
+                    <p className="text-xl font-black text-white">{formatMoney(monthlySurplus, userProfile?.baseCurrency)}</p>
+                  </div>
+                  <div className="p-4 bg-indigo-500/10 rounded-2xl">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Net Flow</p>
+                    <p className="text-xl font-black text-white">{formatMoney(totalCashFlow, userProfile?.baseCurrency)}</p>
+                  </div>
                 </div>
               </div>
-              <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-display tracking-tighter leading-none truncate w-full drop-shadow-2xl" title={`€${formatCurrency(netWorth)}`}>
-                €{formatCurrency(netWorth)}
+              <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-display tracking-tighter leading-none truncate w-full drop-shadow-2xl" title={formatMoney(netWorth, userProfile?.baseCurrency)}>
+                {formatMoney(netWorth, userProfile?.baseCurrency)}
               </h2>
               <div className="flex items-center gap-3 pt-6">
                 <span className="flex items-center gap-2 text-emerald-400 font-black bg-emerald-400/10 px-4 py-2 rounded-2xl text-xs border border-emerald-400/20 shadow-success">
@@ -212,14 +211,14 @@ export default function WealthOverview({
             <div className="grid grid-cols-2 gap-8 pt-8 border-t border-white/10 mt-12 md:mt-auto">
               <div className="space-y-1">
                 <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{t('Total Assets')}</p>
-                <p className="text-3xl font-black text-emerald-400 font-display truncate">€{formatCurrency(totalAssets)}</p>
+                <p className="text-3xl font-black text-emerald-400 font-display truncate">{formatMoney(totalAssets, userProfile?.baseCurrency)}</p>
                 <div className="h-1 w-full bg-emerald-500/10 rounded-full overflow-hidden">
                   <div className="h-full bg-emerald-500 w-[75%] rounded-full shadow-success" />
                 </div>
               </div>
               <div className="space-y-1">
-                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{t('Total Debt')}</p>
-                <p className="text-3xl font-black text-rose-500 font-display truncate">€{formatCurrency(totalLiabilities)}</p>
+                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{t('Burn Rate (30d)')}</p>
+                <p className="text-3xl font-black text-rose-500 font-display truncate">{formatMoney(monthlyExpenses, userProfile?.baseCurrency)}</p>
                 <div className="h-1 w-full bg-rose-500/10 rounded-full overflow-hidden">
                   <div className="h-full bg-rose-500 w-[25%] rounded-full shadow-[0_0_15px_rgba(244,63,94,0.3)]" />
                 </div>
@@ -228,7 +227,7 @@ export default function WealthOverview({
           </div>
         </motion.section>
 
-        {/* Portfolio Analysis Section (Replaces AI Insight Sidebar) */}
+        {/* Portfolio Analysis Section */}
         <section className="lg:col-span-2 lg:row-span-2 addictive-gradient rounded-[3rem] p-8 text-white shadow-glow relative overflow-hidden group flex flex-col justify-center cursor-pointer hover:bg-opacity-90 transition-all"
          onClick={() => {
            if (!insights.length && !isGenerating) {
@@ -309,7 +308,7 @@ export default function WealthOverview({
                   </div>
                   <div className="shrink-0 text-right">
                     <span className={`text-[11px] font-black font-mono ${tx.type === 'income' ? 'text-emerald-500' : 'text-slate-400 dark:text-slate-500'}`}>
-                      {tx.type === 'income' ? '+' : '-'}€{formatCurrency(Math.abs(tx.amount))}
+                      {tx.type === 'income' ? '+' : '-'}{formatMoney(Math.abs(tx.amount), tx.currency || userProfile?.baseCurrency)}
                     </span>
                   </div>
                 </div>
@@ -351,7 +350,7 @@ export default function WealthOverview({
                   dataKey="value"
                   stroke="none"
                 >
-                  {assetData.map((entry: any, index: number) => (
+                  {assetData.map((_entry: any, index: number) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -370,7 +369,7 @@ export default function WealthOverview({
                   <span className="text-[10px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-tight truncate max-w-[80px]">{item.name}</span>
                 </div>
                 <span className="font-mono text-[10px] font-black text-slate-900 dark:text-white">
-                  {((item.value / totalAssets) * 100).toFixed(0)}%
+                  {((item.value / (totalAssets || 1)) * 100).toFixed(0)}%
                 </span>
               </div>
             ))}
@@ -380,7 +379,7 @@ export default function WealthOverview({
           <div className="mt-6 pt-6 border-t border-slate-100 dark:border-white/5 grid grid-cols-3 gap-2">
              <div className="text-center">
                 <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Burn Rate</p>
-                <p className="text-xs font-black text-rose-500">€{(monthlyExpenses / 30).toFixed(0)}/d</p>
+                <p className="text-xs font-black text-rose-500">{formatMoney(monthlyExpenses / 30, userProfile?.baseCurrency)}/d</p>
              </div>
              <div className="text-center border-x border-slate-100 dark:border-white/5">
                 <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Runway</p>
@@ -447,12 +446,12 @@ export default function WealthOverview({
                  <>
                    <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">Monthly Acceleration</p>
                    <p className={`text-3xl font-black font-display tracking-tighter ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
-                     {isPositive ? '+' : ''}€{formatCurrency(velocity)}<span className="text-sm">/mo</span>
+                     {isPositive ? '+' : ''}{formatMoney(velocity, userProfile?.baseCurrency)}<span className="text-sm">/mo</span>
                    </p>
                    {yearsToMillion ? (
                       <div className="mt-4 p-3 bg-white/5 rounded-xl border border-white/10">
                         <p className="text-[10px] font-bold text-white/60">
-                          At this speed: <strong className="text-white text-xs">{yearsToMillion} years</strong> to €1M.
+                          At this speed: <strong className="text-white text-xs">{yearsToMillion} years</strong> to {formatMoney(1000000, userProfile?.baseCurrency)}.
                         </p>
                       </div>
                    ) : isPositive && netWorth >= 1000000 ? (

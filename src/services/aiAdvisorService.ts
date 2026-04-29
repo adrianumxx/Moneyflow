@@ -16,6 +16,7 @@ export async function chatWithFinancialAdvisor(
     goals: FinancialGoal[];
     transactions: Transaction[];
     userDisplayName: string;
+    baseCurrency?: string;
     language?: string;
   }
 ): Promise<string> {
@@ -30,10 +31,10 @@ export async function chatWithFinancialAdvisor(
     
     USER CONTEXT:
     - Name: ${context.userDisplayName}
-    - Total Asset Base: €${context.assets.reduce((sum, a) => sum + (a.value || 0), 0)} (Details: ${JSON.stringify(context.assets.map(a => `${a.name}: €${a.value}`))})
-    - Liability Structure: €${context.liabilities.reduce((sum, l) => sum + (l.remainingAmount || 0), 0)} (Details: ${JSON.stringify(context.liabilities.map(l => `${l.name}: €${l.remainingAmount}`))})
+    - Total Asset Base: ${context.baseCurrency || 'EUR'} ${context.assets.reduce((sum, a) => sum + (a.value || 0), 0)} (Details: ${JSON.stringify(context.assets.map(a => `${a.name}: ${a.value}`))})
+    - Liability Structure: ${context.baseCurrency || 'EUR'} ${context.liabilities.reduce((sum, l) => sum + (l.remainingAmount || 0), 0)} (Details: ${JSON.stringify(context.liabilities.map(l => `${l.name}: ${l.remainingAmount}`))})
     - Strategic Objectives: ${JSON.stringify(context.goals.map(g => `${g.name} (${Math.round((g.currentAmount / (g.targetAmount || 1)) * 100)}% complete)`))}
-    - Recent Capital Flow: ${JSON.stringify(context.transactions.slice(0, 5).map(t => `${t.description}: €${t.amount}`))}
+    - Recent Capital Flow: ${JSON.stringify(context.transactions.slice(0, 5).map(t => `${t.description}: ${t.amount}`)) }
     
     CRITICAL RULES:
     1. Maintain an elite, ruthlessly objective, institutional tone. Use advanced financial terminology appropriately (e.g., liquidity, beta, correlation, structural deficits).

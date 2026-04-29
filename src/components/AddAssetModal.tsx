@@ -3,14 +3,16 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Plus, Wallet, Building2, Coins, Landmark, Calendar, Loader2 } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { AssetType } from '../types';
+import { AssetType, UserProfile } from '../types';
 import { useNotifications } from '../context/NotificationContext';
+import { getCurrencySymbol } from '../utils/format';
 
 interface AddAssetModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
   onDemoAdd?: (asset: any) => void;
+  userProfile?: UserProfile;
 }
 
 const ASSET_TYPES: { type: AssetType; label: string; icon: any }[] = [
@@ -22,7 +24,7 @@ const ASSET_TYPES: { type: AssetType; label: string; icon: any }[] = [
   { type: 'other', label: 'Other Asset', icon: Plus },
 ];
 
-export default function AddAssetModal({ isOpen, onClose, userId, onDemoAdd }: AddAssetModalProps) {
+export default function AddAssetModal({ isOpen, onClose, userId, onDemoAdd, userProfile }: AddAssetModalProps) {
   const [name, setName] = useState('');
   const { showNotification } = useNotifications();
   const [type, setType] = useState<AssetType>('savings');
@@ -45,6 +47,7 @@ export default function AddAssetModal({ isOpen, onClose, userId, onDemoAdd }: Ad
         institution: institution || 'Manual',
         annualReturn: annualReturn ? parseFloat(annualReturn) : 0,
         notes,
+        currency: userProfile?.baseCurrency || 'EUR',
       };
 
       if (userId.startsWith('demo-')) {
@@ -151,7 +154,7 @@ export default function AddAssetModal({ isOpen, onClose, userId, onDemoAdd }: Ad
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Current Value (€)</label>
+                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Current Value ({getCurrencySymbol(userProfile?.baseCurrency)})</label>
                 <input
                   type="number"
                   step="0.01"

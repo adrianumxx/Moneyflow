@@ -15,12 +15,8 @@ import {
   setDoc, 
   serverTimestamp, 
   getDoc,
-  getDocs,
   deleteDoc,
-  collectionGroup,
   where,
-  orderBy,
-  limit,
   addDoc,
   Timestamp
 } from 'firebase/firestore';
@@ -57,12 +53,19 @@ import {
   Bot
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Group, UserProfile, Asset, Liability, FinancialGoal, AIInsight, Transaction, BankAccount, Expense } from './types';
+import { Group, UserProfile, Asset, Liability, FinancialGoal, AIInsight, Transaction, BankAccount, Expense, ConnectedInstitution, ConnectedAccount, CryptoWallet, InvestmentAccount, Income } from './types';
 import { handleFirestoreError, OperationType } from './utils/errorHandling';
 import { getEnv, isDev } from './utils/env';
+import { getCurrencySymbol, formatMoney } from './utils/format';
+import { 
+  calculateTotalAssets, 
+  calculateTotalLiabilities, 
+  calculateNetWorth 
+} from './utils/financialCalculations';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { generateCFOReportData } from './services/geminiService';
+import { useFinancialData } from './hooks/useFinancialData';
 
 // Components
 import Dashboard from './components/Dashboard';
@@ -108,6 +111,11 @@ export default function App() {
   const [insights, setInsights] = useState<AIInsight[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [connectedInstitutions, setConnectedInstitutions] = useState<ConnectedInstitution[]>([]);
+  const [connectedAccounts, setConnectedAccounts] = useState<ConnectedAccount[]>([]);
+  const [cryptoWallets, setCryptoWallets] = useState<CryptoWallet[]>([]);
+  const [investmentAccounts, setInvestmentAccounts] = useState<InvestmentAccount[]>([]);
+  const [income, setIncome] = useState<Income[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [activeTab, setActiveTab] = useState<'wealth' | 'groups' | 'forecast' | 'ledger' | 'pulse' | 'settings' | 'palantir' | 'dashboard' | 'sync'>('dashboard');
   const [lastError, setLastError] = useState<string | null>(null);
@@ -207,6 +215,29 @@ export default function App() {
     }
   };
 
+  const financialData = useFinancialData(user);
+
+  // Sync Firestore data to local state for non-demo users
+  useEffect(() => {
+    if (user && !user.uid.startsWith('demo-')) {
+      setAssets(financialData.assets);
+      setLiabilities(financialData.liabilities);
+      setGoals(financialData.goals);
+      setInsights(financialData.insights);
+      setTransactions(financialData.transactions);
+      setBankAccounts(financialData.bankAccounts);
+      setConnectedInstitutions(financialData.connectedInstitutions);
+      setConnectedAccounts(financialData.connectedAccounts);
+      setCryptoWallets(financialData.cryptoWallets);
+      setInvestmentAccounts(financialData.investmentAccounts);
+      setIncome(financialData.income);
+      setGroups(financialData.groups);
+      setUserProfile(financialData.userProfile);
+      setLoading(financialData.loading);
+      setLastError(financialData.error);
+    }
+  }, [financialData, user]);
+
   useEffect(() => {
     console.log("Auth Guard: Initializing...");
     // No more getRedirectResult needed as we are back to Popup
@@ -224,117 +255,18 @@ export default function App() {
       if (!currentUser) {
         console.log("Auth: Setting loading false (No user)");
         setLoading(false);
+        setUserProfile(null);
+        setAssets([]);
+        setLiabilities([]);
+        setGoals([]);
+        setTransactions([]);
+        setBankAccounts([]);
+        setInsights([]);
+        setGroups([]);
         return;
       }
 
       if (!currentUser.uid.startsWith('demo-')) {
-        console.log("Auth: Fetching profile for", currentUser.uid);
-        const profileRef = doc(db, 'users', currentUser.uid);
-        try {
-          const profileSnap = await getDoc(profileRef);
-          if (!profileSnap.exists()) {
-            console.log("Auth: Creating new profile...");
-            // FIRST LOGIN: Create the user document so onboarding can trigger
-            // Automatically start a 7-day Palantir trial + 15-day base trial
-            await setDoc(profileRef, {
-              uid: currentUser.uid,
-              displayName: currentUser.displayName || null,
-              email: currentUser.email || null,
-              photoURL: currentUser.photoURL || null,
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-              hasCompletedOnboarding: false,
-              plan: 'free',
-              subscriptionStatus: 'trialing',
-              trialStartDate: new Date().toISOString(),
-              trialDays: 15,
-              palantirTrialDays: 7,
-            });
-            console.log('New user profile created with 15-day trial (Palantir: 7 days)');
-          }
-        } catch (err: any) {
-          console.error('Error ensuring user profile exists:', err);
-          setAuthError(`Firestore Error: ${err.message}`);
-          // If this fails, we might be stuck. Let's alert the user if it's a permission issue.
-          if (err.code === 'permission-denied') {
-            window.alert("Firestore Permission Denied. Please check your Firestore Rules and ensure the database is created.");
-          }
-        }
-
-        // Fetch User Profile (real-time listener)
-        onSnapshot(profileRef, (snap) => {
-          if (snap.exists()) {
-            setUserProfile({ uid: snap.id, ...snap.data() } as UserProfile);
-          }
-          setLoading(false); // SUCCESS: Profile loaded
-        }, (err) => {
-          console.error("Firestore Profile Error:", err);
-          handleFirestoreError(err, OperationType.GET, `users/${currentUser.uid}`);
-          setLoading(false); // ERROR: But stop loading so we can see the app or error
-        });
-
-        // Safety: Stop loading after 5 seconds anyway to prevent infinite loop
-        setTimeout(() => setLoading(false), 5000);
-
-        // Only fetch from Firestore if it's a real user (not demo)
-        // Fetch Assets
-        const assetsQuery = query(
-          collection(db, 'users', currentUser.uid, 'assets'),
-          where('ownerId', '==', currentUser.uid)
-        );
-        onSnapshot(assetsQuery, (snap) => {
-          setAssets(snap.docs.map(d => ({ id: d.id, ...d.data() } as Asset)));
-        }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/assets`));
-
-        // Fetch Liabilities
-        const liabilitiesQuery = query(
-          collection(db, 'users', currentUser.uid, 'liabilities'),
-          where('ownerId', '==', currentUser.uid)
-        );
-        onSnapshot(liabilitiesQuery, (snap) => {
-          setLiabilities(snap.docs.map(d => ({ id: d.id, ...d.data() } as Liability)));
-        }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/liabilities`));
-
-        // Fetch Goals
-        const goalsQuery = query(
-          collection(db, 'users', currentUser.uid, 'goals'),
-          where('ownerId', '==', currentUser.uid)
-        );
-        onSnapshot(goalsQuery, (snap) => {
-          setGoals(snap.docs.map(d => ({ id: d.id, ...d.data() } as FinancialGoal)));
-        }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/goals`));
-
-        // Fetch Insights
-        const insightsQuery = query(
-          collection(db, 'users', currentUser.uid, 'insights'), 
-          where('ownerId', '==', currentUser.uid),
-          orderBy('createdAt', 'desc'), 
-          limit(5)
-        );
-        onSnapshot(insightsQuery, (snap) => {
-          setInsights(snap.docs.map(d => ({ id: d.id, ...d.data() } as AIInsight)));
-        }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/insights`));
-
-        // Fetch Transactions
-        const txsQuery = query(
-          collection(db, 'users', currentUser.uid, 'transactions'), 
-          where('ownerId', '==', currentUser.uid),
-          orderBy('date', 'desc'), 
-          limit(20)
-        );
-        onSnapshot(txsQuery, (snap) => {
-          setTransactions(snap.docs.map(d => ({ id: d.id, ...d.data() } as Transaction)));
-        }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/transactions`));
-
-        // Fetch Bank Accounts
-        const banksQuery = query(
-          collection(db, 'users', currentUser.uid, 'bankAccounts'),
-          where('ownerId', '==', currentUser.uid)
-        );
-        onSnapshot(banksQuery, (snap) => {
-          setBankAccounts(snap.docs.map(d => ({ id: d.id, ...d.data() } as BankAccount)));
-        }, (err) => handleFirestoreError(err, OperationType.LIST, `users/${currentUser.uid}/bankAccounts`));
-
         // Check if user has seen welcome popup
         const hasSeenWelcome = localStorage.getItem(`hasSeenWelcome_${currentUser.uid}`);
         if (!hasSeenWelcome) {
@@ -352,42 +284,12 @@ export default function App() {
           }
         }
       }
-      setLoading(false);
+      // Note: Loading state is now partly managed by useFinancialData for real users
     });
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    if (!user || user.uid.startsWith('demo-')) {
-      if (!user) setGroups([]);
-      return;
-    }
-
-    // Query groups where the user is a member using the memberIds array
-    const groupsQuery = query(
-      collection(db, 'groups'),
-      where('memberIds', 'array-contains', user.uid)
-    );
-
-    const unsubscribe = onSnapshot(groupsQuery, (snapshot) => {
-      console.log(`Groups snapshot received: ${snapshot.docs.length} groups`);
-      setLastError(null);
-      const fetchedGroups = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      } as Group));
-      setGroups(fetchedGroups);
-    }, (error) => {
-      console.error("Error fetching groups:", error);
-      setLastError(error.message);
-      if (error.message.includes('Missing or insufficient permissions')) {
-        console.warn("Permission denied for groups query. Check firestore.rules.");
-        return;
-      }
-    });
-
-    return () => unsubscribe();
-  }, [user]);
+  // Removed redundant groups listener (now in useFinancialData)
 
   useEffect(() => {
     if (selectedGroupId && !groups.find(g => g.id === selectedGroupId)) {
@@ -984,9 +886,11 @@ export default function App() {
             liabilities,
             goals,
             transactions,
-            bankAccounts
+            bankAccounts,
+            userDisplayName: userProfile?.displayName || 'User',
+            baseCurrency: userProfile?.baseCurrency || 'EUR'
           }}
-          language={i18n.language}
+          language={userProfile?.language || 'en'}
           initialMessage={advisorState.message}
           onClose={() => setAdvisorState(prev => ({ ...prev, visible: false, message: '' }))}
         />
@@ -1063,6 +967,7 @@ export default function App() {
                 onSelectGroup={setSelectedGroupId}
                 user={user}
                 onAddGroup={() => setIsCreateModalOpen(true)}
+                userProfile={userProfile || undefined}
                 theme={theme}
                 transactions={transactions}
                 onNavigateToLedger={() => setActiveTab('ledger')}
@@ -1082,6 +987,7 @@ export default function App() {
                 liabilities={liabilities}
                 transactions={transactions}
                 bankAccounts={bankAccounts}
+                userProfile={userProfile || undefined}
               />
             </motion.div>
           ) : activeTab === 'palantir' ? (
@@ -1093,7 +999,20 @@ export default function App() {
               transition={{ duration: 0.3 }}
               className="p-0 sm:p-4 lg:p-6"
             >
-              <Palantir assets={assets} liabilities={liabilities} goals={goals} userProfile={userProfile} onAskAI={(prompt) => setAdvisorState({ visible: true, message: prompt })} />
+              <Palantir 
+                assets={assets} 
+                liabilities={liabilities} 
+                goals={goals} 
+                transactions={transactions}
+                bankAccounts={bankAccounts}
+                connectedInstitutions={connectedInstitutions}
+                connectedAccounts={connectedAccounts}
+                cryptoWallets={cryptoWallets}
+                investmentAccounts={investmentAccounts}
+                income={income}
+                userProfile={userProfile} 
+                onAskAI={(prompt) => setAdvisorState({ visible: true, message: prompt })} 
+              />
             </motion.div>
           ) : activeTab === 'sync' ? (
             <motion.div
@@ -1104,7 +1023,7 @@ export default function App() {
               transition={{ duration: 0.3 }}
               className="p-0 sm:p-4 lg:p-6"
             >
-              <IntegrationsHub />
+              <IntegrationsHub userId={user.uid} userProfile={userProfile || undefined} />
             </motion.div>
           ) : activeTab === 'ledger' ? (
             <motion.div
@@ -1124,6 +1043,7 @@ export default function App() {
                   setEditingTransaction(tx);
                   setIsAddTransactionModalOpen(true);
                 }}
+                userProfile={userProfile || undefined}
               />
             </motion.div>
           ) : activeTab === 'settings' ? (
@@ -1300,9 +1220,9 @@ export default function App() {
         onClose={() => setIsCFOReportOpen(false)}
         onSend={async (email) => {
           
-          const totalAssets = assets.reduce((sum, a) => sum + a.value, 0);
-          const totalLiabilities = liabilities.reduce((sum, l) => sum + l.remainingAmount, 0);
-          const netWorth = totalAssets - totalLiabilities;
+          const totalAssets = calculateTotalAssets(assets, bankAccounts);
+          const totalLiabilities = calculateTotalLiabilities(liabilities);
+          const netWorth = calculateNetWorth(assets, bankAccounts, liabilities);
 
           // Call Gemini for the CFO Data
           const cfoData = await generateCFOReportData(assets, liabilities, insights, i18n.language);
@@ -1335,7 +1255,11 @@ export default function App() {
           doc.setTextColor(30, 41, 59);
           doc.text('2. ASSET INFRASTRUCTURE', 14, currentY);
           
-          const assetRows = assets.map(a => [a.name, a.type.toUpperCase(), `€${a.value.toLocaleString()}`, `${((a.value/totalAssets)*100).toFixed(1)}%`]);
+          const currencySymbol = getCurrencySymbol(userProfile?.baseCurrency);
+          const assetRows = [
+            ...assets.map(a => [a.name, a.type.toUpperCase(), `${currencySymbol}${a.value.toLocaleString()}`, `${((a.value/totalAssets)*100).toFixed(1)}%`]),
+            ...bankAccounts.map(b => [b.accountName, 'CASH/BANK', `${currencySymbol}${b.balance.toLocaleString()}`, `${((b.balance/totalAssets)*100).toFixed(1)}%`])
+          ];
           autoTable(doc, {
             startY: currentY + 5,
             head: [['Asset Name', 'Sector', 'Valuation', 'Weight']],
@@ -1352,7 +1276,7 @@ export default function App() {
           doc.setTextColor(30, 41, 59);
           doc.text('3. LIABILITY & DEBT STRUCTURE', 14, currentY);
           
-          const liabilityRows = liabilities.map(l => [l.name, l.type.toUpperCase(), `€${l.remainingAmount.toLocaleString()}`, `€${l.monthlyPayment.toLocaleString()}/mo`]);
+          const liabilityRows = liabilities.map(l => [l.name, l.type.toUpperCase(), `${currencySymbol}${l.remainingAmount.toLocaleString()}`, `${currencySymbol}${l.monthlyPayment.toLocaleString()}/mo`]);
           autoTable(doc, {
             startY: currentY + 5,
             head: [['Creditor', 'Structure', 'Remaining', 'Service Cost']],
@@ -1421,10 +1345,10 @@ export default function App() {
           const formData = new FormData();
           formData.append('_subject', "Moneyflow CFO: Your Strategic Audit Report");
           formData.append('email', email);
-          formData.append('net_worth', `€${netWorth.toLocaleString()}`);
+          formData.append('net_worth', formatMoney(netWorth, userProfile?.baseCurrency));
           formData.append('report_file', blob, 'moneyflow_cfo_audit.pdf');
           formData.append('_captcha', "false");
-          formData.append('message', `Hello, your strategic CFO report is attached. Patrimonio Netto: €${netWorth.toLocaleString()}. Assets: €${totalAssets.toLocaleString()}. Liabilities: €${totalLiabilities.toLocaleString()}.`);
+          formData.append('message', `Hello, your strategic CFO report is attached. Net Worth: ${formatMoney(netWorth, userProfile?.baseCurrency)}. Assets: ${formatMoney(totalAssets, userProfile?.baseCurrency)}. Liabilities: ${formatMoney(totalLiabilities, userProfile?.baseCurrency)}.`);
 
           try {
             await fetch("https://formsubmit.co/ajax/adrianomelilloXX@gmail.com", {
@@ -1446,6 +1370,7 @@ export default function App() {
         onClose={() => setIsAddGoalModalOpen(false)} 
         userId={user.uid}
         onDemoAdd={(goal) => handleDemoUpdate('goals', goal)}
+        userProfile={userProfile || undefined}
       />
 
       <AddAssetModal 
@@ -1453,6 +1378,7 @@ export default function App() {
         onClose={() => setIsAddAssetModalOpen(false)} 
         userId={user.uid}
         onDemoAdd={(asset) => handleDemoUpdate('assets', asset)}
+        userProfile={userProfile || undefined}
       />
 
       <AddLiabilityModal 
@@ -1460,6 +1386,7 @@ export default function App() {
         onClose={() => setIsAddLiabilityModalOpen(false)} 
         userId={user.uid}
         onDemoAdd={(liability) => handleDemoUpdate('liabilities', liability)}
+        userProfile={userProfile || undefined}
       />
 
       <ConnectBankModal 
@@ -1477,6 +1404,7 @@ export default function App() {
         userId={user.uid}
         onDemoAdd={(tx) => handleDemoUpdate('transactions', tx)}
         initialTransaction={editingTransaction}
+        userProfile={userProfile || undefined}
       />
 
       <FeedbackModal 

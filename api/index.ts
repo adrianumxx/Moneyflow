@@ -8,23 +8,40 @@ dotenv.config();
 // Initialize Firebase Admin
 if (!admin.apps.length) {
   try {
-    admin.initializeApp({
-      projectId: process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID || 'remixed-project-id'
-    });
+    const projectId = process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
+    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+
+    if (projectId && clientEmail && privateKey) {
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId,
+          clientEmail,
+          privateKey,
+        }),
+        projectId
+      });
+      console.log('Firebase Admin initialized with Service Account.');
+    } else {
+      admin.initializeApp({
+        projectId: projectId || 'remixed-project-id'
+      });
+      console.log('Firebase Admin initialized with Project ID only (Default Credentials).');
+    }
   } catch (e) {
     console.error('Firebase Admin initialization failed:', e);
   }
 }
 
 const db = admin.firestore();
-const stripeKey = process.env.STRIPE_SECRET_KEY || process.env.VITE_STRIPE_SECRET_KEY || '';
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy_key_for_local_dev', {
+const stripeKey = process.env.STRIPE_SECRET_KEY || '';
+const stripe = new Stripe(stripeKey || 'sk_test_dummy_key_for_local_dev', {
   apiVersion: '2023-10-16' as any,
 });
 
 const app = express();
 
-// Stripe Webhook (MUST be before express.json() for raw body)
+// Stripe Webhook (PUBLIC - signature verified, NO AUTH)
 app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -80,14 +97,20 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
 
 app.use(express.json());
 
-import geminiRoutes from './geminiRoutes';
-app.use('/api/gemini', geminiRoutes);
+// Import Auth Middleware
+import { authMiddleware, AuthenticatedRequest } from './authMiddleware';
 
-// API Routes
-app.post('/api/create-checkout-session', async (req, res) => {
-  const { userId, userEmail } = req.body;
+// PROTECTED ROUTES (Require Firebase ID Token)
+import geminiRoutes from './geminiRoutes';
+import syncRoutes from './syncRoutes';
+app.use('/api/gemini', authMiddleware, geminiRoutes);
+app.use('/api/sync', authMiddleware, syncRoutes);
+
+app.post('/api/create-checkout-session', authMiddleware, async (req: AuthenticatedRequest, res) => {
+  const userId = req.user?.uid;
+  const { userEmail } = req.body;
   
-  if (!userId) return res.status(400).json({ error: 'Missing userId' });
+  if (!userId) return res.status(401).json({ error: 'Unauthorized: Missing UID' });
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -95,13 +118,13 @@ app.post('/api/create-checkout-session', async (req, res) => {
       customer_email: userEmail,
       line_items: [
         {
-          price: process.env.VITE_STRIPE_PRICE_ID_MONTHLY || process.env.STRIPE_PRICE_ID_MONTHLY || 'price_placeholder', // YOUR STRIPE PRICE ID
+          price: process.env.VITE_STRIPE_PRICE_ID_MONTHLY || process.env.STRIPE_PRICE_ID_MONTHLY || 'price_placeholder',
           quantity: 1,
         },
       ],
       mode: 'subscription',
       subscription_data: {
-        trial_period_days: 7, // 7-day free access for Palantir as requested
+        trial_period_days: 7, 
       },
       success_url: `${process.env.VITE_APP_URL || 'http://localhost:3000'}/?billing=success`,
       cancel_url: `${process.env.VITE_APP_URL || 'http://localhost:3000'}/?billing=cancel`,
@@ -111,17 +134,14 @@ app.post('/api/create-checkout-session', async (req, res) => {
     res.json({ url: session.url });
   } catch (error: any) {
     console.error('CRITICAL STRIPE ERROR:', error.message);
-    res.status(500).json({ 
-      error: error.message,
-      tip: "Ensure your STRIPE_PRICE_ID_MONTHLY is correct and valid in your Stripe Dashboard."
-    });
+    res.status(500).json({ error: error.message });
   }
 });
 
-app.post('/api/create-portal-session', async (req, res) => {
-  const { userId } = req.body;
+app.post('/api/create-portal-session', authMiddleware, async (req: AuthenticatedRequest, res) => {
+  const userId = req.user?.uid;
   
-  if (!userId) return res.status(400).json({ error: 'Missing userId' });
+  if (!userId) return res.status(401).json({ error: 'Unauthorized: Missing UID' });
 
   try {
     const userDoc = await db.collection('users').doc(userId).get();
@@ -145,3 +165,4 @@ app.post('/api/create-portal-session', async (req, res) => {
 
 // For Vercel, we export the app
 export default app;
+

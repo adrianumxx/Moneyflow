@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
 import { Wallet, Search, RefreshCw, AlertCircle, ArrowRight, Zap } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
+import { db } from '../firebase';
+import { collection, addDoc, serverTimestamp, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 
-export default function CryptoConnector() {
+interface CryptoConnectorProps {
+  userId: string;
+}
+
+export default function CryptoConnector({ userId }: CryptoConnectorProps) {
   const [address, setAddress] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [walletData, setWalletData] = useState<{ balanceETH: number; balanceUSD: number; ethPrice: number } | null>(null);
@@ -44,7 +50,63 @@ export default function CryptoConnector() {
         balanceUSD: balanceETH * ethPrice,
         ethPrice
       });
-      showNotification('Wallet Synced', 'Live balance retrieved from the blockchain.', 'success');
+
+      // 3. Save to Firestore (Architecture Bridge)
+      if (userId && !userId.startsWith('demo-')) {
+        const walletRef = collection(db, 'users', userId, 'cryptoWallets');
+        const q = query(walletRef, where('address', '==', address));
+        const querySnapshot = await getDocs(q);
+
+        const walletPayload = {
+          ownerId: userId,
+          address: address,
+          chain: 'ethereum',
+          label: 'Main Ethereum Wallet',
+          nativeBalance: balanceETH,
+          fiatValue: balanceETH * ethPrice,
+          currency: 'USD',
+          lastSyncedAt: serverTimestamp(),
+          status: 'connected',
+          updatedAt: serverTimestamp()
+        };
+
+        if (querySnapshot.empty) {
+          await addDoc(walletRef, {
+            ...walletPayload,
+            createdAt: serverTimestamp()
+          });
+        } else {
+          const docRef = doc(db, 'users', userId, 'cryptoWallets', querySnapshot.docs[0].id);
+          await updateDoc(docRef, walletPayload);
+        }
+
+        // Also update/create a corresponding Asset record for WealthOverview
+        const assetsRef = collection(db, 'users', userId, 'assets');
+        const assetQ = query(assetsRef, where('institution', '==', 'Web3 Wallet'), where('notes', '==', address));
+        const assetSnap = await getDocs(assetQ);
+
+        const assetPayload = {
+          ownerId: userId,
+          name: `ETH Wallet (${address.slice(0, 6)}...)`,
+          type: 'crypto',
+          value: balanceETH * ethPrice,
+          institution: 'Web3 Wallet',
+          notes: address,
+          updatedAt: serverTimestamp()
+        };
+
+        if (assetSnap.empty) {
+          await addDoc(assetsRef, {
+            ...assetPayload,
+            createdAt: serverTimestamp()
+          });
+        } else {
+          const assetDocRef = doc(db, 'users', userId, 'assets', assetSnap.docs[0].id);
+          await updateDoc(assetDocRef, assetPayload);
+        }
+      }
+
+      showNotification('Wallet Synced', 'Live balance retrieved and archived.', 'success');
       setAddress('');
     } catch (error) {
       console.error(error);

@@ -34,7 +34,22 @@ service cloud.firestore {
       return data.uid == request.auth.uid &&
              data.email is string && data.email.size() <= 128 &&
              (data.get('displayName', null) == null || (data.displayName is string && data.displayName.size() <= 100)) &&
-             (data.get('createdAt', null) != null);
+             (data.get('createdAt', null) == null || data.createdAt is timestamp) &&
+             (data.get('updatedAt', null) == null || data.updatedAt is timestamp) &&
+             (data.get('country', null) == null || (data.country is string && data.country.size() <= 100)) &&
+             (data.get('baseCurrency', null) == null || (data.baseCurrency is string && data.baseCurrency.size() <= 10)) &&
+             (data.get('primaryGoal', null) == null || data.primaryGoal is string) &&
+             (data.get('experienceLevel', null) == null || data.experienceLevel is string) &&
+             (data.get('taxResidence', null) == null || data.taxResidence is string) &&
+             (data.get('currencyExposure', null) == null || data.currencyExposure is list) &&
+             (data.get('financialMode', null) == null || data.financialMode is string) &&
+             (data.get('incomeType', null) == null || data.incomeType is string) &&
+             (data.get('employmentStatus', null) == null || data.employmentStatus is string) &&
+             (data.get('riskTolerance', null) == null || data.riskTolerance is number) &&
+             (data.get('investmentExperience', null) == null || data.investmentExperience is string) &&
+             (data.get('liquidityNeed', null) == null || data.liquidityNeed is string) &&
+             (data.get('monthlyFixedCostsEstimate', null) == null || data.monthlyFixedCostsEstimate is number) &&
+             (data.get('onboardingCompletedAt', null) == null || data.onboardingCompletedAt is timestamp);
     }
 
     function isValidAsset(data) {
@@ -93,9 +108,17 @@ service cloud.firestore {
     match /users/{userId} {
       allow get: if isOwner(userId) && isValidId(userId);
       allow create: if isOwner(userId) && isValidUser(incoming());
-      allow update: if isOwner(userId) && isValidUser(incoming()) && 
+      allow update: if isOwner(userId) && 
                     incoming().uid == existing().uid &&
-                    incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'currency', 'monthlyIncomeTarget', 'updatedAt', 'primaryGoal', 'experienceLevel', 'baseCurrency', 'hasCompletedOnboarding', 'stripeCustomerId', 'subscriptionStatus', 'plan', 'trialStartDate', 'trialDays', 'palantirTrialDays']);
+                    incoming().diff(existing()).affectedKeys().hasOnly([
+                      'displayName', 'photoURL', 'currency', 'monthlyIncomeTarget', 'updatedAt', 
+                      'primaryGoal', 'experienceLevel', 'baseCurrency', 'hasCompletedOnboarding', 
+                      'country', 'stripeCustomerId', 'subscriptionStatus', 'plan', 
+                      'trialStartDate', 'trialDays', 'palantirTrialDays',
+                      'taxResidence', 'currencyExposure', 'financialMode', 'incomeType', 
+                      'employmentStatus', 'riskTolerance', 'investmentExperience', 
+                      'liquidityNeed', 'monthlyFixedCostsEstimate', 'onboardingCompletedAt'
+                    ]);
 
       // Private Subcollections (Applying Pillar 8: evaluate resource.data in list)
       match /assets/{assetId} {
@@ -151,6 +174,20 @@ service cloud.firestore {
         allow list: if isOwner(userId);
         allow delete: if isOwner(userId);
         allow create: if isOwner(userId) && isValidInsight(incoming());
+      }
+      
+      // Connector Architecture subcollections
+      match /connectedInstitutions/{instId} {
+        allow read, write: if isOwner(userId);
+      }
+      match /connectedAccounts/{accId} {
+        allow read, write: if isOwner(userId);
+      }
+      match /cryptoWallets/{walletId} {
+        allow read, write: if isOwner(userId);
+      }
+      match /investmentAccounts/{invId} {
+        allow read, write: if isOwner(userId);
       }
 
       // Palantir RAG Memory (AI advice history)

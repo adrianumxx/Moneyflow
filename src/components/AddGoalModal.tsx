@@ -3,16 +3,19 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Target, Calendar as CalendarIcon, Coins } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { UserProfile } from '../types';
 import { handleFirestoreError, OperationType } from '../utils/errorHandling';
+import { getCurrencySymbol } from '../utils/format';
 
 interface AddGoalModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
   onDemoAdd?: (goal: any) => void;
+  userProfile?: UserProfile;
 }
 
-export default function AddGoalModal({ isOpen, onClose, userId, onDemoAdd }: AddGoalModalProps) {
+export default function AddGoalModal({ isOpen, onClose, userId, onDemoAdd, userProfile }: AddGoalModalProps) {
   const [name, setName] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [currentAmount, setCurrentAmount] = useState('');
@@ -36,6 +39,7 @@ export default function AddGoalModal({ isOpen, onClose, userId, onDemoAdd }: Add
             currentAmount: parseFloat(currentAmount) || 0,
             deadline: deadline ? Timestamp.fromDate(new Date(deadline)) : null,
             category,
+            currency: userProfile?.baseCurrency || 'EUR',
             status: 'active',
           });
         }
@@ -55,6 +59,7 @@ export default function AddGoalModal({ isOpen, onClose, userId, onDemoAdd }: Add
         currentAmount: parseFloat(currentAmount) || 0,
         deadline: deadline ? Timestamp.fromDate(new Date(deadline)) : null,
         category,
+        currency: userProfile?.baseCurrency || 'EUR',
         status: 'active',
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
@@ -113,7 +118,7 @@ export default function AddGoalModal({ isOpen, onClose, userId, onDemoAdd }: Add
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-3">Target Amount (€)</label>
+                    <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-3">Target Amount ({getCurrencySymbol(userProfile?.baseCurrency)})</label>
                     <input
                       type="number"
                       value={targetAmount}
@@ -124,7 +129,7 @@ export default function AddGoalModal({ isOpen, onClose, userId, onDemoAdd }: Add
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-3">Starting Amount (€)</label>
+                    <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mb-3">Starting Amount ({getCurrencySymbol(userProfile?.baseCurrency)})</label>
                     <input
                       type="number"
                       value={currentAmount}

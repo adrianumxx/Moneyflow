@@ -18,8 +18,8 @@ import {
   Pencil
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Transaction } from '../types';
-import { formatCurrency } from '../utils/format';
+import { Transaction, UserProfile } from '../types';
+import { formatMoney } from '../utils/format';
 import { db } from '../firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../utils/errorHandling';
@@ -30,6 +30,7 @@ interface TransactionsViewProps {
   onAddTransaction: () => void;
   onDeleteTransaction?: (id: string) => void;
   onEditTransaction?: (transaction: Transaction) => void;
+  userProfile?: UserProfile;
 }
 
 const CATEGORY_ICONS: Record<string, any> = {
@@ -48,7 +49,8 @@ export default function TransactionsView({
   userId, 
   onAddTransaction,
   onDeleteTransaction,
-  onEditTransaction 
+  onEditTransaction,
+  userProfile
 }: TransactionsViewProps) {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<string>('all');
@@ -164,7 +166,7 @@ export default function TransactionsView({
                      <span className={`font-mono font-black text-xl tracking-tighter ${
                       tx.type === 'income' ? 'text-emerald-500' : 'text-slate-800 dark:text-white'
                     }`}>
-                      {tx.type === 'income' ? '+' : '-'}€{formatCurrency(Math.abs(tx.amount))}
+                      {tx.type === 'income' ? '+' : '-'}{formatMoney(Math.abs(tx.amount), tx.currency || userProfile?.baseCurrency)}
                     </span>
                     <div className="flex items-center gap-2">
                       <button 

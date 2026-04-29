@@ -3,14 +3,16 @@ import { motion, AnimatePresence } from 'motion/react';
 import { X, Plus, CreditCard, Home, Car, Landmark, Calendar, Loader2, MinusCircle } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { LiabilityType } from '../types';
+import { LiabilityType, UserProfile } from '../types';
 import { useNotifications } from '../context/NotificationContext';
+import { getCurrencySymbol } from '../utils/format';
 
 interface AddLiabilityModalProps {
   isOpen: boolean;
   onClose: () => void;
   userId: string;
   onDemoAdd?: (liability: any) => void;
+  userProfile?: UserProfile;
 }
 
 const LIABILITY_TYPES: { type: LiabilityType; label: string; icon: any }[] = [
@@ -20,7 +22,7 @@ const LIABILITY_TYPES: { type: LiabilityType; label: string; icon: any }[] = [
   { type: 'other', icon: MinusCircle, label: 'Other Debt' },
 ];
 
-export default function AddLiabilityModal({ isOpen, onClose, userId, onDemoAdd }: AddLiabilityModalProps) {
+export default function AddLiabilityModal({ isOpen, onClose, userId, onDemoAdd, userProfile }: AddLiabilityModalProps) {
   const [name, setName] = useState('');
   const { showNotification } = useNotifications();
   const [type, setType] = useState<LiabilityType>('mortgage');
@@ -43,6 +45,7 @@ export default function AddLiabilityModal({ isOpen, onClose, userId, onDemoAdd }
         remainingAmount: parseFloat(remainingAmount),
         monthlyPayment: parseFloat(monthlyPayment || '0'),
         interestRate: interestRate ? parseFloat(interestRate) : 0,
+        currency: userProfile?.baseCurrency || 'EUR',
       };
 
       if (userId.startsWith('demo-')) {
@@ -150,7 +153,7 @@ export default function AddLiabilityModal({ isOpen, onClose, userId, onDemoAdd }
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Remaining Amount (€)</label>
+                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Remaining Amount ({getCurrencySymbol(userProfile?.baseCurrency)})</label>
                 <input
                   type="number"
                   step="0.01"
@@ -162,7 +165,7 @@ export default function AddLiabilityModal({ isOpen, onClose, userId, onDemoAdd }
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Monthly Payment (€)</label>
+                 <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-[0.15em] mb-2">Monthly Payment ({getCurrencySymbol(userProfile?.baseCurrency)})</label>
                 <input
                   type="number"
                   step="0.01"
