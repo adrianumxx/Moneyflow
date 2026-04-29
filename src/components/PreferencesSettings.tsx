@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Globe, ShieldCheck, Download, Trash2, AlertTriangle, X } from 'lucide-react';
+import { Globe, ShieldCheck, Download, Trash2, AlertTriangle, X, FileText } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useNotifications } from '../context/NotificationContext';
+import LegalPages from './LegalPages.js';
 
 import { prepareExportBundle } from '../utils/dataExport';
 
@@ -24,6 +25,7 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
   const { t, i18n } = useTranslation();
   const { showNotification } = useNotifications();
   const [isPurgeModalOpen, setIsPurgeModalOpen] = useState(false);
+  const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
   const [purgeInput, setPurgeInput] = useState('');
 
   const handleExportData = () => {
@@ -129,6 +131,19 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
             </button>
           </div>
 
+          <div className="p-6 bg-slate-50 dark:bg-zinc-950/50 rounded-3xl border border-slate-100 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-6">
+            <div className="space-y-1">
+              <h3 className="text-xs font-black uppercase tracking-widest text-slate-400">Legal & Privacy</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Review our beta terms, disclaimers, and data policies.</p>
+            </div>
+            <button 
+              onClick={() => setIsLegalModalOpen(true)}
+              className="px-6 py-3 bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-indigo-500 transition-all flex items-center gap-2 shadow-sm"
+            >
+              <FileText className="w-4 h-4" /> View Legal Docs
+            </button>
+          </div>
+
           <div className="p-6 bg-slate-50 dark:bg-zinc-950/50 rounded-3xl border border-slate-100 dark:border-zinc-800">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Data Integrity</h3>
             <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
@@ -137,6 +152,50 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
           </div>
         </div>
       </div>
+
+      {/* LEGAL MODAL */}
+      <AnimatePresence>
+        {isLegalModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsLegalModalOpen(false)}
+              className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[3rem] p-8 lg:p-12 shadow-2xl border border-white/10 overflow-hidden"
+            >
+              <div className="flex justify-between items-center mb-8">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center text-indigo-500">
+                    <ShieldCheck className="w-6 h-6" />
+                  </div>
+                  <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase italic">Trust Center</h2>
+                </div>
+                <button onClick={() => setIsLegalModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
+                <LegalPages />
+              </div>
+
+              <button 
+                onClick={() => setIsLegalModalOpen(false)}
+                className="w-full mt-10 py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl shadow-indigo-500/20 active:scale-[0.98] transition-all"
+              >
+                I Understand
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* PURGE MODAL */}
       <AnimatePresence>

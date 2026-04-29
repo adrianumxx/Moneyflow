@@ -10,6 +10,7 @@
 - [ ] **Auth Check**: `/api/gemini/global-pulse` unauthenticated returns 401.
 - [ ] **Privacy Check**: Data Export JSON does NOT contain tokens or API keys.
 - [ ] **Revocation Check**: Revoking an institution stops sync but preserves history.
+- [ ] **Availability Check**: `GET /api/health` returns status: "ok" and valid timestamp.
 
 ## 3. Financial Intelligence (Palantir)
 - [ ] **API Resilience**: Palantir Dashboard renders fallback if API fails.

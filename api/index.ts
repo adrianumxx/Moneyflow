@@ -134,6 +134,19 @@ import syncRoutes from './syncRoutes.js';
 app.use('/api/gemini', geminiLimiter, authMiddleware, geminiRoutes);
 app.use('/api/sync', syncLimiter, authMiddleware, syncRoutes);
 
+/**
+ * Production Health Endpoint
+ * Public route for monitoring service availability.
+ */
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'moneyflow-api',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 app.post('/api/create-checkout-session', authMiddleware, async (req: AuthenticatedRequest, res) => {
   const userId = req.user?.uid;
   const { userEmail } = req.body;
