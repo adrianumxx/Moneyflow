@@ -1,7 +1,9 @@
 import express from 'express';
 import { GoogleGenAI, Type } from '@google/genai';
 import admin from 'firebase-admin';
-import { AuthenticatedRequest } from './authMiddleware';
+import { AuthenticatedRequest } from './authMiddleware.js';
+import { getRelevantNewsSignals } from './newsSources.js';
+import { sanitizeUserContextForAI } from './aiPrivacy.js';
 
 const router = express.Router();
 
@@ -45,6 +47,7 @@ router.post('/chat', async (req: AuthenticatedRequest, res) => {
 
   try {
     const { query, context, language } = req.body;
+    const sanitizedContext = sanitizeUserContextForAI(context);
     const ai = getGenAI();
 
     const systemPrompt = `
@@ -133,11 +136,11 @@ Aggiungi una sezione **"Cosa direbbe il Consiglio"** dove distilli al massimo 3 
  
 Hai accesso (via connettori Sync Hub, Ledger e Palantir) a questi dati reali in tempo reale. Usali attivamente per personalizzare ogni risposta:
 
-- **Patrimonio Netto e Asset**: ${JSON.stringify(context.assets?.map((a: any) => ({ name: a.name, value: a.value, type: a.type })))}
-- **Liquidità e Conti Connessi (Sync)**: ${JSON.stringify(context.bankAccounts?.map((b: any) => ({ institution: b.institutionName, balance: b.balance })))}
-- **Passività e Debiti**: ${JSON.stringify(context.liabilities?.map((l: any) => ({ name: l.name, remaining: l.remainingAmount })))}
-- **Flusso di Cassa Recente (Ledger)**: ${JSON.stringify(context.transactions?.slice(0, 15).map((t: any) => ({ desc: t.description, amount: t.amount, type: t.type, category: t.category })))}
-- **Obiettivi Finanziari (Goals)**: ${JSON.stringify(context.goals?.map((g: any) => ({ name: g.name, target: g.targetAmount, progress: g.currentAmount })))}
+- **Patrimonio Netto e Asset**: ${JSON.stringify(sanitizedContext.assets?.map((a: any) => ({ name: a.name, value: a.value, type: a.type })))}
+- **Liquidità e Conti Connessi (Sync)**: ${JSON.stringify(sanitizedContext.bankAccounts?.map((b: any) => ({ institution: b.institutionName, balance: b.balance })))}
+- **Passività e Debiti**: ${JSON.stringify(sanitizedContext.liabilities?.map((l: any) => ({ name: l.name, remaining: l.remainingAmount })))}
+- **Flusso di Cassa Recente (Ledger)**: ${JSON.stringify(sanitizedContext.transactions?.slice(0, 15).map((t: any) => ({ desc: t.description, amount: t.amount, type: t.type, category: t.category })))}
+- **Obiettivi Finanziari (Goals)**: ${JSON.stringify(sanitizedContext.goals?.map((g: any) => ({ name: g.name, target: g.targetAmount, progress: g.currentAmount })))}
  
 **Regole d'oro:**
 - **Personalizza sempre** quando hai dati. *"Vedo che hai €X liquidi sul conto corrente — di questi, €Y sono fermi da oltre 6 mesi."* Non rispondere mai in astratto se hai i dati per essere specifico.
@@ -212,25 +215,44 @@ La lingua di risposta DEVE essere rigorosamente: ${language === 'it' ? 'Italiano
     const aiResponse = result?.text || "Mi scuso, il Neural Core è temporaneamente sovraccarico. Riprova tra poco.";
     res.json({ response: aiResponse });
   } catch (error: any) {
-    console.error("Gemini Chat Error:", error);
-    res.status(500).json({ error: error.message });
+    safeLogGeminiEvent('chat', { userId, success: false, latencyMs: 0, errorType: error.name });
+    res.status(500).json({ error: 'Neural Core encountered an issue.' });
   }
 });
+
+/**
+ * Structured logging for AI events.
+ * Excludes prompt content and financial data.
+ */
+function safeLogGeminiEvent(action: string, context: { 
+  userId?: string; 
+  success: boolean; 
+  latencyMs: number; 
+  errorType?: string; 
+  fallbackUsed?: boolean 
+}) {
+  console.log(`[GeminiEvent] ${action}`, {
+    timestamp: new Date().toISOString(),
+    ...context
+  });
+}
 
 router.post('/insights', async (req: AuthenticatedRequest, res) => {
   const userId = req.user?.uid;
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+  const start = Date.now();
   try {
     const { assets, liabilities, goals, incomes } = req.body;
+    const sanitized = sanitizeUserContextForAI({ assets, liabilities, goals });
     const ai = getGenAI();
     const prompt = `
       You are a professional Financial Strategist and Personal CFO. 
       Analyze the following financial data and provide 3-4 strategic, actionable insights.
       
       DATA:
-      - Assets: ${JSON.stringify(assets?.map((a: any) => ({ name: a.name, type: a.type, value: a.value })))}
-      - Liabilities: ${JSON.stringify(liabilities?.map((l: any) => ({ name: l.name, type: l.type, remaining: l.remainingAmount })))}
-      - Goals: ${JSON.stringify(goals?.map((g: any) => ({ name: g.name, target: g.targetAmount, current: g.currentAmount })))}
+      - Assets: ${JSON.stringify(sanitized.assets?.map((a: any) => ({ name: a.name, type: a.type, value: a.value })))}
+      - Liabilities: ${JSON.stringify(sanitized.liabilities?.map((l: any) => ({ name: l.name, type: l.type, remaining: l.remainingAmount })))}
+      - Goals: ${JSON.stringify(sanitized.goals?.map((g: any) => ({ name: g.name, target: g.targetAmount, current: g.currentAmount })))}
       
       Focus on diversification, debt reduction, and real-time wealth optimization. 
       Provide advice that sounds like a premium Swiss banker: precise, high-level, and highly valuable.
@@ -260,24 +282,29 @@ router.post('/insights', async (req: AuthenticatedRequest, res) => {
 
     const text = response.text || "[]";
     const insights = JSON.parse(text);
+    safeLogGeminiEvent('insights', { userId, success: true, latencyMs: Date.now() - start });
     res.json(insights);
   } catch (error: any) {
-    console.error("Gemini Insights Error:", error);
-    res.status(500).json({ error: error.message });
+    safeLogGeminiEvent('insights', { userId, success: false, latencyMs: Date.now() - start, errorType: error.name });
+    res.status(500).json({ error: 'Neural Core failed to generate insights.' });
   }
 });
 
 router.post('/categorize', async (req: AuthenticatedRequest, res) => {
   const userId = req.user?.uid;
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+  const start = Date.now();
   try {
     const { description, amount } = req.body;
+    // Simple redaction for single description string
+    const sanitizedDescription = description.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[EMAIL]')
+                                            .replace(/\b\d{10,}\b/g, '[NUMBER]');
     const ai = getGenAI();
     const prompt = `
       Categorize this bank transaction into one of these categories: 
       housing, food, transport, entertainment, health, shopping, income, other.
       
-      Transaction: "${description}"
+      Transaction: "${sanitizedDescription}"
       Amount: ${amount}
       
       Respond ONLY with the category name in lowercase.
@@ -290,18 +317,21 @@ router.post('/categorize', async (req: AuthenticatedRequest, res) => {
     
     const category = (result.text || "other").trim().toLowerCase();
     const validCategories = ['housing', 'food', 'transport', 'entertainment', 'health', 'shopping', 'income', 'other'];
+    safeLogGeminiEvent('categorize', { userId, success: true, latencyMs: Date.now() - start });
     res.json({ category: validCategories.includes(category) ? category : 'other' });
   } catch (error: any) {
-    console.error("Gemini Categorize Error:", error);
-    res.status(500).json({ error: error.message });
+    safeLogGeminiEvent('categorize', { userId, success: false, latencyMs: Date.now() - start, errorType: error.name });
+    res.status(500).json({ error: 'Categorization failed.' });
   }
 });
 
 router.post('/cfo-report', async (req: AuthenticatedRequest, res) => {
   const userId = req.user?.uid;
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+  const start = Date.now();
   try {
     const { assets, liabilities, insights, language } = req.body;
+    const sanitized = sanitizeUserContextForAI({ assets, liabilities });
     const ai = getGenAI();
     
     const languagePrompt = language === 'it' 
@@ -312,8 +342,8 @@ router.post('/cfo-report', async (req: AuthenticatedRequest, res) => {
     ${languagePrompt}
     
     User Data:
-    Assets: ${JSON.stringify(assets)}
-    Liabilities: ${JSON.stringify(liabilities)}
+    Assets: ${JSON.stringify(sanitized.assets)}
+    Liabilities: ${JSON.stringify(sanitized.liabilities)}
     Quick Scan Insights: ${JSON.stringify(insights)}
 
     Provide a JSON strictly matching this schema, completely empty of markdown blocks (just raw JSON):
@@ -337,10 +367,11 @@ router.post('/cfo-report', async (req: AuthenticatedRequest, res) => {
     });
 
     if (!response.text) throw new Error("No response from AI");
+    safeLogGeminiEvent('cfo-report', { userId, success: true, latencyMs: Date.now() - start });
     res.json(JSON.parse(response.text));
   } catch (error: any) {
-    console.error("Gemini CFO Report Error:", error);
-    res.status(500).json({ error: error.message });
+    safeLogGeminiEvent('cfo-report', { userId, success: false, latencyMs: Date.now() - start, errorType: error.name });
+    res.status(500).json({ error: 'CFO Report generation failed.' });
   }
 });
 
@@ -378,23 +409,28 @@ function classifyTransactionForCashFlow(t: any): 'income' | 'expense' | 'transfe
 router.post('/global-pulse', async (req: AuthenticatedRequest, res) => {
   const userId = req.user?.uid;
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+  const start = Date.now();
   try {
     const { localTime, language, userContext, pastMemory, userProfile } = req.body;
+    const sanitizedUserContext = sanitizeUserContextForAI(userContext);
     const ai = getGenAI();
+    
+    // Fetch external news signals from abstraction layer
+    const externalNewsSignals = await getRelevantNewsSignals(userContext);
     
     const dateAnchor = localTime ? new Date(localTime).toLocaleDateString('en-US', { dateStyle: 'full' }) : 'Today';
     const currency = userProfile?.baseCurrency || 'EUR';
 
     // ── Safe defaults ────────────────────────────────────────────────────────
-    const assets:               any[] = userContext?.assets               || [];
-    const liabilities:          any[] = userContext?.liabilities          || [];
-    const goals:                any[] = userContext?.goals                || [];
-    const transactions:         any[] = userContext?.transactions         || [];
-    const bankAccounts:         any[] = userContext?.bankAccounts         || [];
-    const connectedAccounts:    any[] = userContext?.connectedAccounts    || [];
-    const cryptoWallets:        any[] = userContext?.cryptoWallets        || [];
-    const investmentAccounts:   any[] = userContext?.investmentAccounts   || [];
-    const income:               any[] = userContext?.income               || [];
+    const assets:               any[] = sanitizedUserContext?.assets               || [];
+    const liabilities:          any[] = sanitizedUserContext?.liabilities          || [];
+    const goals:                any[] = sanitizedUserContext?.goals                || [];
+    const transactions:         any[] = sanitizedUserContext?.transactions         || [];
+    const bankAccounts:         any[] = sanitizedUserContext?.bankAccounts         || [];
+    const connectedAccounts:    any[] = sanitizedUserContext?.connectedAccounts    || [];
+    const cryptoWallets:        any[] = sanitizedUserContext?.cryptoWallets        || [];
+    const investmentAccounts:   any[] = sanitizedUserContext?.investmentAccounts   || [];
+    const income:               any[] = sanitizedUserContext?.income               || [];
 
     // ── Net Worth calculation (balance-based ONLY — transactions excluded) ──
     const totalManualAssets        = assets.reduce((s: number, a: any) => s + (a.value || 0), 0);
@@ -535,6 +571,10 @@ router.post('/global-pulse', async (req: AuthenticatedRequest, res) => {
     ${personalizedContextString}
     ${memoryContextString}
     
+    [EXTERNAL NEWS SIGNALS — Use these as primary verified sources if available]:
+    ${JSON.stringify(externalNewsSignals)}
+    
+    
 CRITICAL RULES:
 1. Deliver sharp, predictive insights about upcoming macro trends, systemic risks, and massive capital rotational shifts. Use LIVE data from your search tool.
 2. The tone MUST be confident, clear, honest, and slightly urgent when warranted. Never alarmist. Write as a brilliant, trusted friend who understands global finance, NOT a machine or Bloomberg terminal. Zero jargon.
@@ -611,7 +651,10 @@ Return JSON EXACTLY matching this schema:
   ],
   "intelligenceFeed": [
     // 3-6 RELEVANT ARTICLES. Use reputable sources only. 
-    // Explain relevance to user's country, currency, or portfolio.
+    // - Require source name and URL when available (DO NOT invent URLs).
+    // - If no reliable source is available, return empty array [].
+    // - Summaries must be short, original, and avoid full article reproduction.
+    // - Explain relevance to user's country, currency, portfolio, or geopolitical exposure.
     {
       "title": string,
       "source": string,
@@ -622,7 +665,8 @@ Return JSON EXACTLY matching this schema:
       "relevanceToUser": string (why this matters for them),
       "impactScore": number (1-10),
       "actionSignal": "observe" | "prepare" | "act",
-      "affectedAreas": string[]
+      "affectedAreas": string[],
+      "confidenceScore": number (0-100)
     }
   ],
   "geopoliticalRings": {
@@ -693,10 +737,11 @@ IMPORTANT: The "dataQuality" and "confidenceScore" MUST reflect the reality of t
     if (startIdx !== -1 && endIdx !== -1) cleanText = cleanText.substring(startIdx, endIdx + 1);
 
     const parsed = JSON.parse(cleanText);
+    safeLogGeminiEvent('global-pulse', { userId, success: true, latencyMs: Date.now() - start });
     res.json(parsed);
   } catch (error: any) {
-    console.error("Gemini Global Pulse Error:", error);
-    res.status(500).json({ error: error.message });
+    safeLogGeminiEvent('global-pulse', { userId, success: false, latencyMs: Date.now() - start, errorType: error.name || 'Error' });
+    res.status(500).json({ error: 'Neural Core (Palantir) is temporarily unavailable.' });
   }
 });
 

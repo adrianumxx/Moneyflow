@@ -162,7 +162,7 @@ export default function WealthOverview({
         <motion.section 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="md:col-span-2 md:row-span-2 relative p-8 sm:p-10 rounded-[3rem] bg-zinc-950 text-white overflow-hidden shadow-glow group min-h-[420px] flex flex-col"
+          className="md:col-span-2 md:row-span-2 relative p-6 sm:p-10 rounded-[3rem] bg-zinc-950 text-white overflow-hidden shadow-glow group min-h-[300px] md:min-h-[420px] flex flex-col"
         >
           <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none">
             <div className="absolute top-0 right-0 w-[80%] h-[80%] bg-indigo-500/20 rounded-full -mr-20 -mt-20 blur-[120px] animate-pulse" />
@@ -171,7 +171,7 @@ export default function WealthOverview({
           
           <div className="relative z-10 flex flex-col h-full justify-between">
             <div className="space-y-2">
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md border border-white/10 group-hover:rotate-12 transition-transform duration-500">
                     <ShieldCheck className="w-6 h-6 text-indigo-400" />
@@ -182,18 +182,18 @@ export default function WealthOverview({
                   </div>
                 </div>
                 <div className="flex gap-2">
-                  <div className="p-4 bg-emerald-500/10 rounded-2xl">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1">Monthly Surplus</p>
-                    <p className="text-xl font-black text-white">{formatMoney(monthlySurplus, userProfile?.baseCurrency)}</p>
+                  <div className="p-3 sm:p-4 bg-emerald-500/10 rounded-2xl">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-emerald-500 mb-1">Monthly Surplus</p>
+                    <p className="text-lg sm:text-xl font-black text-white">{formatMoney(monthlySurplus, userProfile?.baseCurrency)}</p>
                   </div>
-                  <div className="p-4 bg-indigo-500/10 rounded-2xl">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500 mb-1">Net Flow</p>
-                    <p className="text-xl font-black text-white">{formatMoney(totalCashFlow, userProfile?.baseCurrency)}</p>
+                  <div className="p-3 sm:p-4 bg-indigo-500/10 rounded-2xl">
+                    <p className="text-[9px] font-black uppercase tracking-widest text-indigo-500 mb-1">Net Flow</p>
+                    <p className="text-lg sm:text-xl font-black text-white">{formatMoney(totalCashFlow, userProfile?.baseCurrency)}</p>
                   </div>
                 </div>
               </div>
               <h2 
-                className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black font-display tracking-tighter leading-none w-full drop-shadow-2xl break-words" 
+                className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black font-display tracking-tighter leading-none w-full drop-shadow-2xl truncate" 
                 title={formatMoney(netWorth, userProfile?.baseCurrency)}
               >
                 {formatMoney(netWorth, userProfile?.baseCurrency)}
@@ -211,7 +211,7 @@ export default function WealthOverview({
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-8 pt-8 border-t border-white/10 mt-12 md:mt-auto">
+            <div className="grid grid-cols-2 gap-8 pt-8 border-t border-white/10 mt-8 md:mt-auto">
               <div className="space-y-1">
                 <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{t('Total Assets')}</p>
                 <p className="text-3xl font-black text-emerald-400 font-display truncate">{formatMoney(totalAssets, userProfile?.baseCurrency)}</p>

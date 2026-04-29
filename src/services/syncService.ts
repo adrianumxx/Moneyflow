@@ -15,16 +15,18 @@ export interface SyncResponse {
   message?: string;
   error?: string;
   lastSyncedAt?: any;
+  redirectUrl?: string;
+  accounts?: any[];
 }
 
 /**
  * Initiates a connection session for a specific provider.
  */
-export async function createSyncSession(providerId: string): Promise<SyncResponse> {
+export async function createSyncSession(providerId: string, institutionId?: string): Promise<SyncResponse> {
   try {
     const response = await authenticatedFetch('/api/sync/session/create', {
       method: 'POST',
-      body: JSON.stringify({ providerId })
+      body: JSON.stringify({ providerId, institutionId })
     });
     
     return await response.json();
@@ -37,11 +39,15 @@ export async function createSyncSession(providerId: string): Promise<SyncRespons
 /**
  * Handles the callback/handshake response from a provider connection.
  */
-export async function handleSyncCallback(providerId: string, authCode: string): Promise<SyncResponse> {
+export async function handleSyncCallback(providerId: string, payload: string | { requisitionId: string }): Promise<SyncResponse> {
   try {
+    const body = typeof payload === 'string' 
+      ? { providerId, authCode: payload }
+      : { providerId, ...payload };
+
     const response = await authenticatedFetch('/api/sync/session/callback', {
       method: 'POST',
-      body: JSON.stringify({ providerId, authCode })
+      body: JSON.stringify(body)
     });
     
     return await response.json();
@@ -54,11 +60,11 @@ export async function handleSyncCallback(providerId: string, authCode: string): 
 /**
  * Triggers a synchronization refresh for an existing institution.
  */
-export async function syncAccounts(institutionId: string): Promise<SyncResponse> {
+export async function syncAccounts(institutionId: string, options?: { syncTransactions?: boolean }): Promise<SyncResponse> {
   try {
     const response = await authenticatedFetch('/api/sync/accounts/sync', {
       method: 'POST',
-      body: JSON.stringify({ institutionId })
+      body: JSON.stringify({ institutionId, ...options })
     });
     
     return await response.json();
@@ -99,5 +105,22 @@ export async function disconnectInstitution(institutionId: string): Promise<Sync
   } catch (error) {
     console.error('[syncService] Failed to disconnect:', error);
     return { success: false, status: 'error', error: 'Disconnect failed' };
+  }
+}
+
+/**
+ * Lists available banking institutions for a provider.
+ */
+export async function listInstitutions(providerId: string, countryCode: string = 'BE'): Promise<any> {
+  try {
+    const response = await authenticatedFetch('/api/sync/institutions/list', {
+      method: 'POST',
+      body: JSON.stringify({ providerId, countryCode })
+    });
+    
+    return await response.json();
+  } catch (error) {
+    console.error('[syncService] Failed to list institutions:', error);
+    return { success: false, status: 'error', error: 'Fetch failed' };
   }
 }

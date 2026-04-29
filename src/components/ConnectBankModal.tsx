@@ -5,7 +5,7 @@ import { db } from '../firebase';
 import { collection, addDoc, serverTimestamp, setDoc, doc } from 'firebase/firestore';
 import { useNotifications } from '../context/NotificationContext';
 import { buildDemoInstitution, buildDemoAccount } from '../utils/connectors';
-import { handleSyncCallback } from '../services/syncService';
+import { createSyncSession, handleSyncCallback, listInstitutions } from '../services/syncService';
 
 interface ConnectBankModalProps {
   isOpen: boolean;
@@ -27,12 +27,16 @@ const INSTITUTIONS = [
   { id: 'ing-be', name: 'ING Belgium', category: 'BANK', color: '#FF6200', logo: 'https://logo.clearbit.com/ing.com' },
   { id: 'kraken', name: 'Kraken', category: 'CRYPTO', color: '#5841D8', logo: 'https://logo.clearbit.com/kraken.com' },
   { id: 'ledger', name: 'Ledger', category: 'CRYPTO', color: '#000000', logo: 'https://logo.clearbit.com/ledger.com' },
-  { id: 'metamask', name: 'MetaMask', category: 'CRYPTO', color: '#E2761B', logo: 'https://logo.clearbit.com/metamask.io' }
+  { id: 'metamask', name: 'MetaMask', category: 'CRYPTO', color: '#E2761B', logo: 'https://logo.clearbit.com/metamask.io' },
+  { id: 'gocardless_sandbox', name: 'GoCardless (Sandbox)', category: 'BANK', color: '#ffffff', logo: 'https://logo.clearbit.com/gocardless.com' }
 ];
 
 export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBankModalProps) {
-  const [step, setStep] = useState<'select' | 'consent' | 'auth' | 'handshake' | 'selection' | 'success'>('select');
+  const [step, setStep] = useState<'select' | 'consent' | 'auth' | 'handshake' | 'selection' | 'success' | 'gocardless_list'>('select');
   const [selectedBank, setSelectedBank] = useState<any>(null);
+  const [gocardlessInstitutions, setGocardlessInstitutions] = useState<any[]>([]);
+  const [selectedGoCardlessInst, setSelectedGoCardlessInst] = useState<any>(null);
+  const [consentLink, setConsentLink] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<Category>('ALL');
@@ -46,9 +50,30 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
     });
   }, [searchQuery, activeCategory]);
 
-  const handleBankSelect = (bank: any) => {
+  const handleBankSelect = async (bank: any) => {
     setSelectedBank(bank);
-    setStep('consent');
+    if (bank.id === 'gocardless_sandbox') {
+      setStep('gocardless_list');
+      await fetchGoCardlessInstitutions();
+    } else {
+      setStep('consent');
+    }
+  };
+
+  const fetchGoCardlessInstitutions = async () => {
+    setIsLoading(true);
+    try {
+      const response = await listInstitutions('gocardless_sandbox', 'BE');
+      if (response.success) {
+        setGocardlessInstitutions(response.institutions);
+      } else if (response.status === 'not_configured') {
+        showNotification('Provider Error', 'GoCardless is not configured in this environment.', 'error');
+      }
+    } catch (error) {
+      showNotification('Sync Error', 'Failed to fetch bank list.', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const { showNotification } = useNotifications();
@@ -179,7 +204,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
         {/* Glowing Background Accent */}
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-indigo-600/20 blur-[100px] rounded-full pointer-events-none" />
 
-        <div className="p-10">
+        <div className="p-5 sm:p-10">
           {/* Header */}
           <div className="flex items-start justify-between mb-8">
             <div className="space-y-4">
@@ -188,9 +213,9 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                 <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Institutional Access</span>
               </div>
               <div className="space-y-1">
-                <h3 className="text-4xl font-black tracking-tight text-white font-display flex items-center gap-3">
+                <h3 className="text-2xl sm:text-4xl font-black tracking-tight text-white font-display flex items-center gap-3">
                   Moneyflow <span className="text-zinc-500">Connect</span>
-                  <span className="text-[10px] bg-white/10 text-zinc-400 px-2 py-1 rounded-md tracking-widest uppercase">Sandbox</span>
+                  <span className="hidden sm:inline text-[10px] bg-white/10 text-zinc-400 px-2 py-1 rounded-md tracking-widest uppercase">Sandbox</span>
                 </h3>
                 <p className="text-zinc-500 text-sm font-medium">Simulate sync with major institutions.</p>
               </div>
@@ -267,7 +292,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                             }}
                           />
                         </div>
-                        <span className="text-[10px] font-bold text-center text-zinc-500 group-hover:text-white transition-colors">{inst.name}</span>
+                        <span className="text-[10px] font-bold text-center text-zinc-500 group-hover:text-white transition-colors truncate w-full px-1">{inst.name}</span>
                       </div>
                     </button>
                   ))}
@@ -301,7 +326,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-8"
               >
-                <div className="flex items-center gap-6 p-6 bg-white/5 rounded-[2.5rem] border border-white/5">
+                <div className="flex items-center gap-4 sm:gap-6 p-4 sm:p-6 bg-white/5 rounded-[2rem] sm:rounded-[2.5rem] border border-white/5">
                   <div className="w-16 h-16 bg-zinc-900 rounded-3xl p-3 shadow-xl flex items-center justify-center">
                     <img 
                       src={selectedBank.logo} 
@@ -350,6 +375,15 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                   ))}
                 </div>
 
+                {selectedBank?.id === 'gocardless_sandbox' && (
+                  <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-start gap-3">
+                    <ShieldCheck className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
+                    <p className="text-[10px] text-indigo-400 font-bold leading-tight">
+                      Neural Handover active. You will be redirected to <span className="text-white">{selectedGoCardlessInst?.name}</span> to securely authorize the connection.
+                    </p>
+                  </div>
+                )}
+
                 <div className="flex gap-4">
                   <button 
                     onClick={() => setStep('select')}
@@ -358,10 +392,29 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                     Cancel Request
                   </button>
                   <button 
-                    onClick={() => setStep('auth')}
-                    className="flex-[2] py-5 addictive-gradient text-white rounded-[2rem] font-black uppercase tracking-widest text-[10px] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-indigo-600/20"
+                    onClick={async () => {
+                      if (selectedBank?.id === 'gocardless_sandbox') {
+                        setIsLoading(true);
+                        try {
+                          const response = await createSyncSession('gocardless_sandbox', selectedGoCardlessInst?.id);
+                          if (response.success && response.redirectUrl) {
+                            window.location.href = response.redirectUrl;
+                          } else {
+                            showNotification('Handshake Failed', response.message || 'Could not initiate bank consent.', 'error');
+                          }
+                        } catch (error) {
+                          showNotification('Sync Error', 'Failed to start authorization.', 'error');
+                        } finally {
+                          setIsLoading(false);
+                        }
+                      } else {
+                        setStep('auth');
+                      }
+                    }}
+                    disabled={isLoading}
+                    className="flex-[2] py-5 addictive-gradient text-white rounded-[2rem] font-black uppercase tracking-widest text-[10px] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-indigo-600/20 disabled:opacity-50"
                   >
-                    Authorize via {selectedBank.name}
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : `Authorize via ${selectedBank?.name}`}
                   </button>
                 </div>
               </motion.div>
@@ -518,7 +571,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                           <Landmark className="w-6 h-6" />
                         </div>
                         <div className="text-left">
-                          <h5 className="font-black text-white uppercase tracking-wider text-xs">{acc.name}</h5>
+                          <h5 className="font-black text-white uppercase tracking-wider text-xs truncate max-w-[140px] sm:max-w-none">{acc.name}</h5>
                           <p className="text-[10px] text-zinc-500 font-mono">{acc.number}</p>
                         </div>
                       </div>
@@ -561,7 +614,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                   </p>
                 </div>
 
-                <div className="bg-white/5 border border-white/5 rounded-[2.5rem] p-8 max-w-sm mx-auto space-y-4">
+                <div className="bg-white/5 border border-white/5 rounded-[2rem] sm:rounded-[2.5rem] p-5 sm:p-8 max-w-sm mx-auto space-y-4">
                   <div className="flex justify-between text-xs font-black uppercase tracking-widest">
                     <span className="text-zinc-500">Accounts Synced</span>
                     <span className="text-white">{selectedAccounts.length}</span>
@@ -582,6 +635,81 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                 >
                   View My Strategic Wealth Overview
                 </button>
+              </motion.div>
+            )}
+            {step === 'gocardless_list' && (
+              <motion.div
+                key="gocardless-list-step"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="space-y-6"
+              >
+                <div className="space-y-2">
+                  <h4 className="text-2xl font-black text-white tracking-tight">Select your Belgian Bank</h4>
+                  <p className="text-zinc-500 font-medium text-sm">Real-time sync via GoCardless Open Banking network.</p>
+                </div>
+
+                <div className="space-y-3 overflow-y-auto max-h-[350px] pr-2 custom-scrollbar">
+                  {isLoading ? (
+                    <div className="py-20 flex flex-col items-center justify-center gap-4">
+                      <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                      <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">Querying Banking Network...</p>
+                    </div>
+                  ) : gocardlessInstitutions.length === 0 ? (
+                    <div className="py-20 text-center space-y-4">
+                      <ShieldAlert className="w-12 h-12 text-zinc-800 mx-auto" />
+                      <p className="text-zinc-500 font-medium">No institutions found or provider not configured.</p>
+                    </div>
+                  ) : (
+                    gocardlessInstitutions.map((inst) => (
+                      <button
+                        key={inst.id}
+                        onClick={() => setSelectedGoCardlessInst(inst)}
+                        className={`w-full flex items-center justify-between p-5 rounded-[2rem] border transition-all ${
+                          selectedGoCardlessInst?.id === inst.id
+                          ? 'bg-indigo-600/10 border-indigo-500 shadow-lg shadow-indigo-600/10'
+                          : 'bg-white/5 border-white/5 hover:border-white/20'
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center overflow-hidden p-2">
+                            {inst.logo ? (
+                              <img src={inst.logo} alt="" className="w-full h-full object-contain" />
+                            ) : (
+                              <Landmark className="w-6 h-6 text-zinc-500" />
+                            )}
+                          </div>
+                          <div className="text-left">
+                            <h5 className="font-black text-white uppercase tracking-wider text-xs">{inst.name}</h5>
+                            <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">{inst.bic || 'No BIC'}</p>
+                          </div>
+                        </div>
+                        {selectedGoCardlessInst?.id === inst.id && (
+                          <div className="w-6 h-6 bg-indigo-600 rounded-full flex items-center justify-center">
+                            <ShieldCheck className="w-4 h-4 text-white" />
+                          </div>
+                        )}
+                      </button>
+                    ))
+                  )}
+                </div>
+
+                <div className="flex gap-4">
+                  <button 
+                    onClick={() => setStep('select')}
+                    className="flex-1 py-5 bg-white/5 text-zinc-500 rounded-[2rem] font-black uppercase tracking-widest text-[10px] hover:text-white transition-all"
+                  >
+                    Back
+                  </button>
+                  <button 
+                    disabled={!selectedGoCardlessInst || isLoading}
+                    onClick={() => setStep('consent')}
+                    className="flex-[2] py-5 addictive-gradient text-white rounded-[2rem] font-black uppercase tracking-widest text-[10px] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-indigo-600/20 disabled:opacity-50"
+                  >
+                    Select {selectedGoCardlessInst?.name || 'Institution'}
+                  </button>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>

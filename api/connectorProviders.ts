@@ -47,6 +47,12 @@ export const BACKEND_PROVIDERS: Record<string, BackendProvider> = {
     providerName: 'Custom Neural API',
     providerType: 'custom_api',
     isDemo: false
+  },
+  gocardless_sandbox: {
+    providerId: 'gocardless_sandbox',
+    providerName: 'GoCardless (Sandbox)',
+    providerType: 'bank',
+    isDemo: false
   }
 };
 

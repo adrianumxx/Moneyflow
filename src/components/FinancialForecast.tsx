@@ -143,7 +143,7 @@ export default function FinancialForecast({
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
       {/* Header & Controls */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 glass-card p-10 rounded-[3rem] shadow-premium">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 glass-card p-5 sm:p-10 rounded-[2.5rem] sm:rounded-[3rem] shadow-premium">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="p-2 addictive-gradient rounded-xl shadow-lg shadow-indigo-500/20">
@@ -238,29 +238,29 @@ export default function FinancialForecast({
       </div>
 
       {/* Main Chart */}
-      <div className="glass-card p-10 rounded-[3rem] shadow-premium relative overflow-hidden">
+      <div className="glass-card p-5 sm:p-10 rounded-[2.5rem] sm:rounded-[3rem] shadow-premium relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-indigo-500/5 rounded-full -mr-32 -mt-32 blur-[100px]" />
         
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
           <div>
-            <h3 className="text-2xl font-black font-display tracking-tight text-slate-800 dark:text-white">Growth Simulation</h3>
-            <p className="text-sm text-slate-500 font-medium tracking-tight">Compound growth visualization over {projectionYears} years</p>
+            <h3 className="text-xl sm:text-2xl font-black font-display tracking-tight text-slate-800 dark:text-white">Growth Simulation</h3>
+            <p className="text-xs sm:text-sm text-slate-500 font-medium tracking-tight">Compound growth visualization over {projectionYears} years</p>
           </div>
-          <div className="flex gap-6">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-indigo-500 shadow-lg shadow-indigo-500/20" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Net Worth</span>
+          <div className="flex flex-wrap gap-4 sm:gap-6">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-indigo-500 shadow-lg shadow-indigo-500/20" />
+              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] text-slate-400">Net Worth</span>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-emerald-400 shadow-lg shadow-emerald-500/20" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Liquid Cash</span>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-400 shadow-lg shadow-emerald-500/20" />
+              <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.1em] sm:tracking-[0.2em] text-slate-400">Liquid Cash</span>
             </div>
           </div>
         </div>
 
-        <div className="h-[450px] w-full">
+        <div className="h-[280px] sm:h-[450px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={projectionData}>
+            <AreaChart data={projectionData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorNetWorth" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
@@ -276,27 +276,30 @@ export default function FinancialForecast({
                 dataKey="monthName" 
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
-                dy={15}
+                tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 700 }}
+                dy={10}
+                minTickGap={20}
               />
               <YAxis 
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 700 }}
+                tick={{ fill: '#94a3b8', fontSize: 9, fontWeight: 700 }}
                 tickFormatter={(val) => formatCompactMoney(val, userProfile?.baseCurrency)}
+                width={35}
               />
               <Tooltip 
+                allowEscapeViewBox={{ x: true, y: true }}
                 contentStyle={{ 
-                  backgroundColor: 'rgba(15, 23, 42, 0.9)', 
+                  backgroundColor: 'rgba(15, 23, 42, 0.95)', 
                   backdropFilter: 'blur(16px)',
                   border: '1px solid rgba(255,255,255,0.1)', 
-                  borderRadius: '24px',
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-                  padding: '20px'
+                  borderRadius: '16px',
+                  boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+                  padding: '12px'
                 }}
-                itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 800 }}
-                labelStyle={{ color: '#6366f1', fontSize: '10px', textTransform: 'uppercase', fontWeight: 900, letterSpacing: '0.1em', marginBottom: '8px' }}
-                formatter={(val: number) => [formatMoney(val, userProfile?.baseCurrency), 'Position']}
+                itemStyle={{ color: '#fff', fontSize: '11px', fontWeight: 800, padding: 0 }}
+                labelStyle={{ color: '#6366f1', fontSize: '9px', textTransform: 'uppercase', fontWeight: 900, letterSpacing: '0.1em', marginBottom: '4px' }}
+                formatter={(val: number) => [formatMoney(val, userProfile?.baseCurrency), 'Value']}
               />
               <Area 
                 type="monotone" 
@@ -326,14 +329,14 @@ export default function FinancialForecast({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="mt-12 p-8 addictive-gradient rounded-3xl text-white shadow-glow flex gap-6 items-center"
+          className="mt-8 sm:mt-12 p-5 sm:p-8 addictive-gradient rounded-3xl text-white shadow-glow flex flex-col sm:flex-row gap-4 sm:gap-6 items-center text-center sm:text-left"
         >
-          <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-md">
+          <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-md shrink-0">
             <Sparkles className="w-6 h-6 text-white" />
           </div>
           <div className="text-sm">
             <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Algorithmic Forecast Summary</p>
-            <p className="font-medium text-lg tracking-tight leading-relaxed">
+            <p className="font-medium text-base sm:text-lg tracking-tight leading-relaxed">
               Based on your momentum, your net worth is trajectorying towards <span className="font-black text-white underline decoration-white/30 underline-offset-4">{formatMoney(projectionData[projectionData.length-1].netWorth, userProfile?.baseCurrency)}</span> by the end of this period.
             </p>
           </div>

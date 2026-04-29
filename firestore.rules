@@ -206,7 +206,7 @@ service cloud.firestore {
         return isSignedIn() && (request.auth.uid in resource.data.memberIds);
       }
 
-      allow get: if isSignedIn();
+      allow get: if isGroupMember();
       allow list: if isSignedIn() && (request.auth.uid in resource.data.memberIds);
       
       allow create: if isSignedIn() && incoming().createdBy == request.auth.uid && incoming().ownerId == request.auth.uid;

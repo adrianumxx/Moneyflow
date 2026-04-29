@@ -297,25 +297,24 @@ export default function Palantir({
                   </button>
                </div>
             </div>
-          )}
+          )}          <div className={`space-y-12 ${!isPremium ? 'blur-md select-none pointer-events-none opacity-50' : ''}`}>
 
-          <div className={`space-y-8 ${!isPremium ? 'blur-md select-none pointer-events-none opacity-50' : ''}`}>
-
-          {/* Desktop Metric Cards (Top on Desktop, Hidden on Mobile here) */}
-          <div className="hidden lg:grid grid-cols-3 gap-4 mb-8">
+          {/* Desktop Metric Cards */}
+          <div className="hidden lg:grid grid-cols-6 gap-4">
              {data.metrics?.map(metric => <MetricCard key={metric.id} metric={metric} />)}
           </div>
 
-          {/* Main Layout Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+          {/* 1. STRATEGIC COUNSEL SECTION */}
+          <section className="space-y-6">
+            <div className="flex items-center gap-2 px-2">
+              <div className="h-4 w-1 bg-amber-500 rounded-full" />
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Strategic Pulse</h2>
+            </div>
             
-            {/* LEFT COLUMN (Orb, Narrative, Semaphore) */}
-            <div className="col-span-1 lg:col-span-7 space-y-8">
-              
-              {/* THE ORB */}
-              <div className="flex flex-col items-center justify-center py-8">
-                <div className="relative w-64 h-64 sm:w-80 sm:h-80 flex items-center justify-center">
-                  {/* Orbital Rings */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              {/* THE ORB (Left on Desktop) */}
+              <div className="lg:col-span-5 flex items-center justify-center bg-slate-900/30 border border-slate-800/50 rounded-[3rem] p-8 backdrop-blur-sm h-full">
+                <div className="relative w-64 h-64 flex items-center justify-center">
                   <motion.div 
                     animate={{ rotate: 360 }} 
                     transition={{ repeat: Infinity, duration: rotateDurationOuter, ease: "linear" }}
@@ -331,864 +330,362 @@ export default function Palantir({
                     transition={{ repeat: Infinity, duration: pulseDuration, ease: "easeInOut" }}
                     className={`absolute inset-8 rounded-full ${orbColors.bg} backdrop-blur-md shadow-2xl ${orbColors.glow} border ${orbColors.border} flex flex-col items-center justify-center p-6 text-center transition-all duration-1000`}
                   >
-                    <span className={`text-6xl sm:text-7xl font-black tracking-tighter ${orbColors.text} drop-shadow-lg`}>
+                    <span className={`text-5xl font-black tracking-tighter ${orbColors.text} drop-shadow-lg`}>
                       {data.orb.confidenceScore}%
                     </span>
-                    <p className="mt-4 text-sm sm:text-base font-bold text-white leading-tight">
+                    <p className="mt-3 text-xs font-bold text-white leading-tight">
                       {data.orb.statusLine}
                     </p>
                   </motion.div>
-
-                  {/* Satellite Dots */}
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-slate-900 border border-slate-700 px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-widest text-slate-300 shadow-xl">
-                    {data.orb.state.toUpperCase()}
-                  </div>
-                  <div className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-full flex items-center gap-2 shadow-xl">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Portfolio Risk Signal</span>
-                    <span className="text-xs font-black text-white">{data.orb.activeRisksCount}</span>
-                    {data.orb.activeRisksCount > 2 && <span className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse" />}
-                  </div>
                 </div>
               </div>
 
-              {/* NARRATIVE */}
-              <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-sm relative">
-                {loginStreak >= 3 && (
-                  <div className="absolute top-0 right-0 bg-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-bl-xl border-b border-l border-indigo-500/30">
-                    Day {loginStreak} Streak
-                  </div>
-                )}
-                <p className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-500 mb-4">Strategic Counsel</p>
-                <p className="text-lg sm:text-xl font-medium leading-relaxed text-slate-200 mb-4">
-                  {data.narrative}
-                </p>
-                {loginStreak >= 3 && (
-                  <p className="text-xs font-medium text-indigo-300/80 italic border-t border-slate-800/50 pt-4">
-                    Palantir noticed your discipline. The markets reward those who stay vigilant.
-                  </p>
-                )}
-
-                {/* DATA QUALITY METADATA */}
-                {(data.confidenceScore !== undefined || data.dataQuality || data.sourceStatus) && (
-                  <div className="mt-6 pt-4 border-t border-slate-800/50 flex flex-wrap gap-3">
-                    {data.confidenceScore !== undefined && (
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800">
-                        <CheckCircle2 className={`w-3 h-3 ${data.confidenceScore > 80 ? 'text-emerald-500' : data.confidenceScore > 50 ? 'text-amber-500' : 'text-rose-500'}`} />
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">Trust: {data.confidenceScore}%</span>
-                      </div>
-                    )}
-                    {data.dataQuality && (
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800">
-                        <Zap className="w-3 h-3 text-indigo-400" />
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{data.dataQuality.replace('_', ' ')}</span>
-                      </div>
-                    )}
-                    {data.sourceStatus && (
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800">
-                        <Globe className="w-3 h-3 text-sky-400" />
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{data.sourceStatus.replace('_', ' ')}</span>
-                      </div>
-                    )}
-                    {data.missingData && data.missingData.length > 0 && (
-                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20 group relative cursor-help">
-                        <AlertCircle className="w-3 h-3 text-rose-400" />
-                        <span className="text-[10px] font-bold text-rose-400 uppercase tracking-tight">Data Gaps</span>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                          <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-1">Missing Context</p>
-                          <ul className="text-[10px] text-slate-400 list-disc list-inside">
-                            {data.missingData.map((item, idx) => <li key={idx}>{item.replace('_', ' ')}</li>)}
-                          </ul>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* SEMAPHORE */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {data.semaphore?.map((sig, i) => (
-                  <div key={i} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex items-start gap-4">
-                    <div className={`mt-1 w-3 h-3 rounded-full shrink-0 ${
-                      sig.state === 'GREEN' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' :
-                      sig.state === 'YELLOW' ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' :
-                      'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]'
-                    }`} />
-                    <div>
-                      <p className="text-xs font-black uppercase tracking-widest text-slate-400 mb-1">
-                        {sig.category.replace('_', ' ')}
-                      </p>
-                      <p className="text-sm font-medium text-slate-200 leading-snug">
-                        {sig.explanation}
-                      </p>
+              {/* NARRATIVE & SEMAPHORE (Right on Desktop) */}
+              <div className="lg:col-span-7 space-y-6">
+                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-8 backdrop-blur-sm relative h-full">
+                  {loginStreak >= 3 && (
+                    <div className="absolute top-0 right-0 bg-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-bl-xl border-b border-l border-indigo-500/30">
+                      Day {loginStreak} Streak
                     </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Mobile Metric Cards (Hidden on Desktop) */}
-              <div className="grid lg:hidden grid-cols-1 sm:grid-cols-2 gap-4">
-                {data.metrics?.map(metric => <MetricCard key={metric.id} metric={metric} />)}
-              </div>
-
-              {/* SCENARIO ENGINE */}
-              {data.scenarios && data.scenarios.length > 0 && (
-                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-sm">
-                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-5">Scenario Engine</p>
-                  <div className="space-y-4">
-                    {data.scenarios.map((s, i) => {
-                      const signal = s.actionSignal;
-                      const signalColor = signal === 'act' ? 'text-rose-400 border-rose-500/30 bg-rose-500/10'
-                        : signal === 'prepare' ? 'text-amber-400 border-amber-500/30 bg-amber-500/10'
-                        : 'text-slate-400 border-slate-700 bg-slate-900';
-                      return (
-                        <div key={i} className="border border-slate-800 rounded-2xl p-4 bg-slate-950/50">
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <p className="text-sm font-bold text-white leading-snug">{s.title}</p>
-                            <span className={`shrink-0 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${signalColor}`}>
-                              {signal ?? 'observe'}
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            {s.probability !== undefined && (
-                              <span className="text-[10px] font-bold text-slate-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-full">
-                                ~{s.probability}% likely
-                              </span>
-                            )}
-                            {s.timeHorizon && (
-                              <span className="text-[10px] font-bold text-slate-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-full">
-                                {s.timeHorizon}
-                              </span>
-                            )}
-                            {s.impactScore !== undefined && (
-                              <span className="text-[10px] font-bold text-slate-400 bg-slate-900 border border-slate-800 px-2 py-0.5 rounded-full">
-                                Impact {s.impactScore}/10
-                              </span>
-                            )}
-                          </div>
-                          {s.rationale && <p className="text-xs text-slate-400 leading-relaxed">{s.rationale}</p>}
-                          {s.affectedAreas && s.affectedAreas.length > 0 && (
-                            <p className="text-[10px] text-slate-600 mt-2 uppercase tracking-widest">
-                              Affects: {s.affectedAreas.join(' · ')}
-                            </p>
-                          )}
+                  )}
+                  <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-4">Strategic Counsel</p>
+                  <p className="text-lg font-medium leading-relaxed text-slate-200">
+                    {data.narrative}
+                  </p>
+                  
+                  {/* SEMAPHORE (Integrated) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-8">
+                    {data.semaphore?.map((sig, i) => (
+                      <div key={i} className="bg-slate-950/50 border border-slate-800/50 p-4 rounded-2xl flex items-center gap-4">
+                        <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${
+                          sig.state === 'GREEN' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' :
+                          sig.state === 'YELLOW' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]' :
+                          'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]'
+                        }`} />
+                        <div>
+                          <p className="text-[10px] font-black uppercase tracking-tight text-slate-500">{sig.category.replace('_', ' ')}</p>
+                          <p className="text-xs font-medium text-slate-300">{sig.explanation}</p>
                         </div>
-                      );
-                    })}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* 2. PERSONAL IMPACT SECTION */}
+          <section className="space-y-6">
+            <div className="flex items-center gap-2 px-2">
+              <div className="h-4 w-1 bg-indigo-500 rounded-full" />
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Personal Impact</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* YIELD OPTIMIZER */}
+              {data.yieldOptimizer && (
+                <div className="bg-emerald-950/10 border border-emerald-900/30 rounded-3xl p-6 flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <TrendingUp className="w-5 h-5 text-emerald-400" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500/70">Yield Optimizer</span>
+                  </div>
+                  <p className="text-sm text-slate-300 mb-4 flex-grow">{data.yieldOptimizer.detectedInefficiency}</p>
+                  <div className="bg-slate-950/40 rounded-xl p-3 mb-4 border border-emerald-900/20">
+                    <p className="text-[10px] font-black uppercase text-emerald-500 mb-1">Strategy</p>
+                    <p className="text-xs font-bold text-white">{data.yieldOptimizer.actionableStrategy}</p>
+                  </div>
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <p className="text-[9px] font-black text-slate-500 uppercase">Est. Annual Alpha</p>
+                      <p className="text-2xl font-black text-emerald-400">+{formatMoney(data.yieldOptimizer.estimatedAnnualAlpha, userProfile?.baseCurrency)}</p>
+                    </div>
+                    <button 
+                      onClick={() => onAskAI?.(`Dettagli strategia yield: ${data.yieldOptimizer?.actionableStrategy}`)}
+                      className="px-3 py-2 bg-emerald-500/20 text-emerald-400 rounded-lg text-[10px] font-black uppercase hover:bg-emerald-500/30 transition-all"
+                    >
+                      Analyze Impact
+                    </button>
                   </div>
                 </div>
               )}
 
-              {/* GEOPOLITICAL RINGS */}
-              {data.geopoliticalRings && (
-                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-sm mt-8">
-                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-5">Geopolitical Rings</p>
-                  <div className="space-y-4">
-                    {(['state', 'neighborhood', 'continent', 'superpowers', 'world'] as const).map((key) => {
-                      const ring = data.geopoliticalRings?.[key];
-                      if (!ring) return null;
-                      const signal = ring.actionSignal;
-                      const signalColor = signal === 'act' ? 'text-rose-400 border-rose-500/30 bg-rose-500/10'
-                        : signal === 'prepare' ? 'text-amber-400 border-amber-500/30 bg-amber-500/10'
-                        : 'text-slate-400 border-slate-700 bg-slate-900';
-                      return (
-                        <div key={key} className="border border-slate-800 rounded-2xl p-4 bg-slate-950/50 transition-colors hover:bg-slate-900/50">
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-0.5">{key.replace('_', ' ')}</p>
-                                <p className="text-sm font-bold text-white leading-snug">{ring.title}</p>
-                            </div>
-                            <span className={`shrink-0 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${signalColor}`}>
-                              {signal ?? 'observe'}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-400 leading-relaxed mb-3">{ring.summary}</p>
-                          <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                            {ring.riskScore !== undefined && (
-                                <div className="space-y-1">
-                                    <div className="flex justify-between text-[9px] font-bold uppercase tracking-widest">
-                                        <span className="text-slate-500">Risk</span>
-                                        <span className="text-rose-400">{ring.riskScore}%</span>
-                                    </div>
-                                    <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                                      <div className="h-full bg-rose-500" style={{ width: `${ring.riskScore}%` }} />
-                                    </div>
-                                </div>
-                            )}
-                            {ring.opportunityScore !== undefined && (
-                                <div className="space-y-1">
-                                    <div className="flex justify-between text-[9px] font-bold uppercase tracking-widest">
-                                        <span className="text-slate-500">Opportunity</span>
-                                        <span className="text-emerald-400">{ring.opportunityScore}%</span>
-                                    </div>
-                                    <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                                      <div className="h-full bg-emerald-500" style={{ width: `${ring.opportunityScore}%` }} />
-                                    </div>
-                                </div>
-                            )}
-                          </div>
-                          {ring.affectedAreas && ring.affectedAreas.length > 0 && (
-                            <div className="mt-3 flex flex-wrap gap-1.5">
-                              {ring.affectedAreas.map((area, idx) => (
-                                <span key={idx} className="text-[9px] font-bold text-slate-500 border border-slate-800/50 rounded px-1.5 py-0.5">
-                                  {area}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+              {/* FISCAL AWARENESS */}
+              {data.taxShield && (
+                <div className="bg-violet-950/10 border border-violet-900/30 rounded-3xl p-6 flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <ShieldAlert className="w-5 h-5 text-violet-400" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-violet-500/70">Fiscal Awareness</span>
+                  </div>
+                  <p className="text-sm text-slate-300 mb-4 flex-grow">{data.taxShield.description}</p>
+                  <div className="bg-slate-950/40 rounded-xl p-3 mb-4 border border-violet-900/20">
+                    <p className="text-[10px] font-black uppercase text-violet-500 mb-1">Action</p>
+                    <p className="text-xs font-bold text-white">{data.taxShield.taxOptimizationAction}</p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${data.taxShield.riskLevel === 'CRITICAL' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}`}>
+                      {data.taxShield.riskLevel}
+                    </span>
+                    <button 
+                      onClick={() => onAskAI?.(`Ottimizzazione fiscale: ${data.taxShield?.taxOptimizationAction}`)}
+                      className="px-3 py-2 bg-violet-500/20 text-violet-400 rounded-lg text-[10px] font-black uppercase hover:bg-violet-500/30 transition-all"
+                    >
+                      Explain Signal
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* SILENT NEGOTIATOR */}
+              {data.negotiator && (
+                <div className="bg-sky-950/10 border border-sky-900/30 rounded-3xl p-6 flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <TrendingDown className="w-5 h-5 text-sky-400" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-sky-500/70">Silent Negotiator</span>
+                  </div>
+                  <div className="space-y-2 mb-4 flex-grow">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-slate-500">Target Expense</span>
+                      <span className="text-xs font-bold text-white">{data.negotiator.targetExpense}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-slate-500">Market Potential</span>
+                      <span className="text-xs font-bold text-sky-400">{data.negotiator.currentMarketRate}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-end justify-between pt-4 border-t border-slate-800">
+                    <div>
+                      <p className="text-[9px] font-black text-slate-500 uppercase">Annual Savings</p>
+                      <p className="text-2xl font-black text-sky-400">+{formatMoney(data.negotiator.potentialSavings, userProfile?.baseCurrency)}</p>
+                    </div>
+                    <button 
+                      onClick={() => onAskAI?.(`Script negoziazione per ${data.negotiator?.targetExpense}`)}
+                      className="px-3 py-2 bg-sky-500/20 text-sky-400 rounded-lg text-[10px] font-black uppercase hover:bg-sky-500/30 transition-all"
+                    >
+                      Review Assumption
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* BLACK SWAN */}
+              {data.blackSwan && (
+                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <AlertCircle className="w-5 h-5 text-slate-400" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Black Swan Protocol</span>
+                  </div>
+                  <p className="text-xs text-slate-300 mb-4 flex-grow leading-relaxed">{data.blackSwan.survivalAssessment}</p>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-[10px] font-bold uppercase">
+                      <span className="text-slate-500">Liquid Runway</span>
+                      <span className="text-white">{data.blackSwan.runwayMonths} Months</span>
+                    </div>
+                    <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full ${data.blackSwan.runwayMonths < 3 ? 'bg-rose-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min((data.blackSwan.runwayMonths / 12) * 100, 100)}%` }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ARBITRAGE */}
+              {data.arbitrageFinder && (
+                <div className="bg-fuchsia-950/10 border border-fuchsia-900/30 rounded-3xl p-6 flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <Globe className="w-5 h-5 text-fuchsia-400" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-fuchsia-500/70">Arbitrage Finder</span>
+                  </div>
+                  <p className="text-xs text-slate-300 mb-4 flex-grow italic">"{data.arbitrageFinder.action}"</p>
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <p className="text-[9px] font-black text-slate-500 uppercase">Efficiency Gap</p>
+                      <p className="text-2xl font-black text-fuchsia-400">+{data.arbitrageFinder.arbitrageSpread}%</p>
+                    </div>
+                    <button 
+                      onClick={() => onAskAI?.(`Dettagli arbitraggio: ${data.arbitrageFinder?.action}`)}
+                      className="px-3 py-2 bg-fuchsia-500/20 text-fuchsia-400 rounded-lg text-[10px] font-black uppercase hover:bg-fuchsia-500/30 transition-all"
+                    >
+                      Analyze Impact
+                    </button>
                   </div>
                 </div>
               )}
 
               {/* ACTION QUEUE */}
               {data.actionQueue && data.actionQueue.length > 0 && (
-                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-sm mt-8">
-                  <p className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-400 mb-5">Action Queue</p>
-                  <div className="space-y-4">
-                    {[...data.actionQueue]
-                      .sort((a, b) => {
-                        const order = { critical: 0, high: 1, medium: 2, low: 3 };
-                        return (order[a.priority || 'low'] ?? 4) - (order[b.priority || 'low'] ?? 4);
-                      })
-                      .map((action, idx) => {
-                        const priorityColor = 
-                          action.priority === 'critical' ? 'text-rose-400 border-rose-500/30 bg-rose-500/10' :
-                          action.priority === 'high' ? 'text-amber-400 border-amber-500/30 bg-amber-500/10' :
-                          'text-slate-400 border-slate-700 bg-slate-900';
-                        
-                        return (
-                          <div key={idx} className="border border-slate-800 rounded-2xl p-4 bg-slate-950/50 transition-colors hover:bg-slate-900/50">
-                            <div className="flex items-start justify-between gap-2 mb-2">
-                              <div className="flex flex-col gap-1">
-                                <span className={`w-fit text-[9px] font-black uppercase tracking-widest px-1.5 py-0.5 rounded border ${priorityColor}`}>
-                                  {action.priority || 'low'}
-                                </span>
-                                <p className="text-sm font-bold text-white leading-snug">{action.title}</p>
-                              </div>
-                              {action.actionSignal && (
-                                <span className="shrink-0 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                                  {action.actionSignal}
-                                </span>
-                              )}
-                            </div>
-                            {action.reason && <p className="text-xs text-slate-400 leading-relaxed mb-3">{action.reason}</p>}
-                            <div className="flex flex-wrap gap-2">
-                              {action.timeHorizon && (
-                                <span className="text-[9px] font-bold text-slate-500 bg-slate-900/50 px-2 py-0.5 rounded border border-slate-800/30">
-                                  {action.timeHorizon}
-                                </span>
-                              )}
-                              {action.affectedAreas?.map((area, aidx) => (
-                                <span key={aidx} className="text-[9px] font-bold text-indigo-400/70 bg-indigo-500/5 px-2 py-0.5 rounded border border-indigo-500/10">
-                                  {area}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })
-                    }
+                <div className="bg-indigo-950/10 border border-indigo-900/30 rounded-3xl p-6 flex flex-col h-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <Zap className="w-5 h-5 text-indigo-400" />
+                    <span className="text-[9px] font-black uppercase tracking-widest text-indigo-500/70">Action Queue</span>
+                  </div>
+                  <div className="space-y-3 flex-grow">
+                    {data.actionQueue.slice(0, 2).map((action, idx) => (
+                      <div key={idx} className="border-l-2 border-indigo-500/30 pl-3">
+                        <p className="text-xs font-bold text-white leading-tight">{action.title}</p>
+                        <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">{action.reason}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
             </div>
+          </section>
 
-            {/* RIGHT COLUMN (Tabs, Vectors, Signals, Risks) */}
-            <div className="col-span-1 lg:col-span-5 space-y-12">
-              
-              {/* CLUSTER TABS */}
-              <div className="flex overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar custom-scrollbar gap-2 scroll-smooth">
-                {clusters.map(cluster => (
-                  <button
-                    key={cluster}
-                    onClick={() => setSelectedCluster(cluster)}
-                    className={`whitespace-nowrap px-4 py-2 rounded-full text-xs font-bold transition-all border ${
-                      selectedCluster === cluster 
-                        ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' 
-                        : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-white'
-                    }`}
-                  >
-                    {cluster}
-                  </button>
-                ))}
-              </div>
-
-              {/* PREMIUM LOCK OVERLAY CONTAINER */}
-              <div className="relative">
-                {!isPremium && (
-                  <div className="absolute inset-0 z-20 bg-[#020617]/80 backdrop-blur-md rounded-3xl flex flex-col items-center justify-center border border-slate-800/80 p-6 sm:p-10 text-center">
-                    <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_40px_rgba(245,158,11,0.2)] border border-amber-500/20">
-                      <Lock className="w-8 h-8 text-amber-500" />
+          {/* 3. RISK & SCENARIOS SECTION */}
+          <section className="space-y-6">
+            <div className="flex items-center gap-2 px-2">
+              <div className="h-4 w-1 bg-rose-500 rounded-full" />
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Risk & Scenarios</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* SCENARIO ENGINE & RINGS */}
+              <div className="space-y-6">
+                {data.scenarios && data.scenarios.length > 0 && (
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 backdrop-blur-sm">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-5">Scenario Engine</p>
+                    <div className="space-y-4">
+                      {data.scenarios.slice(0, 3).map((s, i) => (
+                        <div key={i} className="border border-slate-800 rounded-2xl p-4 bg-slate-950/50">
+                          <div className="flex items-start justify-between gap-2 mb-1">
+                            <p className="text-sm font-bold text-white">{s.title}</p>
+                            <span className="text-[10px] font-black text-indigo-400">{s.probability}%</span>
+                          </div>
+                          <p className="text-xs text-slate-400 line-clamp-2">{s.rationale}</p>
+                        </div>
+                      ))}
                     </div>
-                    
-                    <h3 className="text-xl sm:text-2xl font-black text-white mb-2 tracking-tight">Advanced Analysis Locked</h3>
-                    <p className="text-sm text-slate-400 mb-8 max-w-sm leading-relaxed">
-                      Upgrade to access proprietary probability vectors, structural signals, and active risk analysis.
-                    </p>
-
-                    <div className="w-full max-w-xs mb-8">
-                      <div className="flex justify-between text-[10px] font-black uppercase tracking-widest mb-2">
-                        <span className="text-slate-400">Palantir Capacity</span>
-                        <span className="text-amber-500">94%</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
-                        <motion.div 
-                          initial={{ width: 0 }}
-                          animate={{ width: '94%' }}
-                          transition={{ duration: 2, ease: "easeOut", delay: 0.5 }}
-                          className="h-full bg-amber-500 rounded-full"
-                        />
-                      </div>
-                      <p className="text-xs font-bold text-rose-400 mt-3 flex items-center justify-center gap-2">
-                        <AlertTriangle className="w-3 h-3" />
-                        Only 312 Executive spots remaining
-                      </p>
-                    </div>
-
-                    <button 
-                      onClick={() => showNotification('Premium Required', 'Please upgrade to Executive tier to unlock deep intelligence.', 'info')}
-                      className="px-8 py-4 bg-amber-500 text-amber-950 font-black text-sm uppercase tracking-widest rounded-xl hover:bg-amber-400 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-amber-500/20"
-                    >
-                      Unlock Palantir
-                    </button>
                   </div>
                 )}
-
-                <div className={`space-y-10 ${!isPremium ? 'opacity-30 select-none pointer-events-none' : ''}`}>
-                                  {/* GEOPOLITICAL ARCHITECTURE RINGS */}
-                  {data.geopoliticalRings && (
-                    <section>
-                      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-6 flex items-center gap-2">
-                        <Globe className="w-4 h-4 text-indigo-400" /> Geopolitical Architecture
-                      </p>
-                      <div className="grid grid-cols-1 gap-4">
-                        {[
-                          { key: 'world', ring: data.geopoliticalRings.world, color: 'text-slate-400', border: 'border-slate-800' },
-                          { key: 'superpowers', ring: data.geopoliticalRings.superpowers, color: 'text-rose-400', border: 'border-rose-900/30' },
-                          { key: 'continent', ring: data.geopoliticalRings.continent, color: 'text-sky-400', border: 'border-sky-900/30' },
-                          { key: 'neighborhood', ring: data.geopoliticalRings.neighborhood, color: 'text-amber-400', border: 'border-amber-900/30' },
-                          { key: 'state', ring: data.geopoliticalRings.state, color: 'text-emerald-400', border: 'border-emerald-900/30' },
-                        ].filter(r => r.ring).map((item, idx) => {
-                          const r = item.ring!;
-                          const signal = r.actionSignal;
-                          const signalColor = signal === 'act' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                            : signal === 'prepare' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                            : 'bg-slate-800 text-slate-400 border-slate-700';
-
-                          return (
-                            <div key={item.key} className={`relative border ${item.border} rounded-2xl p-5 bg-slate-900/40 backdrop-blur-sm group hover:bg-slate-900/60 transition-all`}>
-                              <div className="flex flex-col md:flex-row gap-5">
-                                <div className="w-full md:w-40 shrink-0">
-                                  <div className="flex items-center justify-between md:flex-col md:items-start gap-2">
-                                    <div>
-                                      <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 block mb-0.5">Ring {5 - idx}</span>
-                                      <span className={`text-sm font-black uppercase tracking-widest ${item.color}`}>{r.title || item.key}</span>
-                                    </div>
-                                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${signalColor}`}>
-                                      {signal || 'observe'}
-                                    </span>
-                                  </div>
-                                </div>
-                                
-                                <div className="flex-grow">
-                                  <p className="text-xs text-slate-200 font-medium leading-relaxed mb-4">{r.summary}</p>
-                                  
-                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                    <div className="space-y-1">
-                                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Risk</span>
-                                      <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-rose-500" style={{ width: `${r.riskScore || 0}%` }} />
-                                      </div>
-                                    </div>
-                                    <div className="space-y-1">
-                                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Opportunity</span>
-                                      <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-emerald-500" style={{ width: `${r.opportunityScore || 0}%` }} />
-                                      </div>
-                                    </div>
-                                    <div className="space-y-1">
-                                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Impact</span>
-                                      <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-sky-500" style={{ width: `${r.impactScore || 0}%` }} />
-                                      </div>
-                                    </div>
-                                    <div className="space-y-1">
-                                      <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Confidence</span>
-                                      <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                                        <div className="h-full bg-indigo-500" style={{ width: `${r.confidenceScore || 0}%` }} />
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              
-                              {r.affectedAreas && r.affectedAreas.length > 0 && (
-                                <div className="mt-4 pt-3 border-t border-slate-800/50 flex items-center gap-2">
-                                  <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Scope:</span>
-                                  <div className="flex flex-wrap gap-2">
-                                    {r.affectedAreas.map((area, ai) => (
-                                      <span key={ai} className="text-[9px] font-bold text-slate-400 bg-slate-950 px-2 py-0.5 rounded border border-slate-800">
-                                        {area}
-                                      </span>
-                                    ))}
-                                  </div>
-                                </div>
-                              )}
+                
+                {data.geopoliticalRings && (
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 backdrop-blur-sm">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-sky-400 mb-5">Geopolitical Rings</p>
+                    <div className="space-y-3">
+                      {['state', 'continent', 'world'].map((key) => {
+                        const r = (data.geopoliticalRings as any)[key];
+                        if (!r) return null;
+                        return (
+                          <div key={key} className="flex items-center justify-between p-3 bg-slate-950/50 rounded-xl border border-slate-800/50">
+                            <div>
+                              <p className="text-[9px] font-black uppercase text-slate-500">{key}</p>
+                              <p className="text-xs font-bold text-white">{r.title}</p>
                             </div>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  )}
-
-                  {/* YIELD OPTIMIZER (L'Alpha Generator) */}
-                  {data.yieldOptimizer && (
-                    <section>
-                      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-emerald-400" /> Yield Optimizer
-                      </p>
-                      <div className="bg-emerald-950/20 border border-emerald-900/40 rounded-3xl p-6 sm:p-8 relative group">
-                        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                          <TrendingUp className="w-32 h-32 text-emerald-500" />
-                        </div>
-                        <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
-                          <div className="flex-grow">
-                            <div className="flex items-center gap-2 mb-3">
-                                <span className="text-[10px] font-black uppercase tracking-widest bg-rose-500/20 text-rose-400 px-2 py-1 rounded">
-                                  Optimization Potential
-                                </span>
-                              <span className="text-[10px] font-bold text-slate-500">
-                                Confidence: {data.yieldOptimizer.confidenceScore}%
-                              </span>
-                            </div>
-                            <p className="text-sm text-slate-300 mb-4 leading-relaxed">
-                              {data.yieldOptimizer.detectedInefficiency}
-                            </p>
-                            <div className="bg-[#020617]/50 border border-slate-800 rounded-xl p-4">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-2">Alpha Strategy</p>
-                              <p className="text-sm font-bold text-white">{data.yieldOptimizer.actionableStrategy}</p>
+                            <div className="text-right">
+                              <p className="text-[9px] font-black uppercase text-rose-500">Risk</p>
+                              <p className="text-xs font-black text-white">{r.riskScore}%</p>
                             </div>
                           </div>
-                          <div className="shrink-0 text-left md:text-right w-full md:w-auto border-t md:border-t-0 border-slate-800 pt-6 md:pt-0">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Estimated Annual Alpha</p>
-                            <p className="text-4xl sm:text-5xl font-black text-emerald-400 tracking-tight">
-                              +{formatMoney(data.yieldOptimizer.estimatedAnnualAlpha, userProfile?.baseCurrency)}
-                            </p>
-                            <button 
-                              onClick={() => onAskAI?.(`Come posso eseguire concretamente questa strategia: "${data.yieldOptimizer?.actionableStrategy}"?`)}
-                              className="mt-4 w-full py-3 bg-emerald-500 text-emerald-950 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-emerald-400 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
-                            >
-                              <Bot className="w-4 h-4" /> Ask Neural Core
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </section>
-                  )}
-
-                  {/* FISCAL AWARENESS */}
-                  {data.taxShield && (
-                    <section>
-                      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
-                        <ShieldAlert className="w-4 h-4 text-violet-400" /> Fiscal Awareness
-                      </p>
-                      <div className="bg-violet-950/20 border border-violet-900/40 rounded-3xl p-6 sm:p-8 relative group">
-                        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                          <ShieldAlert className="w-32 h-32 text-violet-500" />
-                        </div>
-                        <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
-                          <div className="flex-grow">
-                            <div className="flex items-center gap-2 mb-3">
-                              <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded ${data.taxShield.riskLevel === 'CRITICAL' ? 'bg-rose-500/20 text-rose-400' : data.taxShield.riskLevel === 'WARNING' ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
-                                {data.taxShield.riskLevel}
-                              </span>
-                            </div>
-                            <p className="text-sm font-medium text-slate-300 mb-4 leading-relaxed">
-                              {data.taxShield.description}
-                            </p>
-                            <div className="bg-[#020617]/50 border border-slate-800 rounded-xl p-4">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-2">Fiscal Awareness</p>
-                              <p className="text-sm font-bold text-white">{data.taxShield.taxOptimizationAction}</p>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </section>
-                  )}
-
-                  {/* NEGOTIATOR */}
-                  {data.negotiator && (
-                    <section>
-                      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
-                        <TrendingDown className="w-4 h-4 text-sky-400" /> Silent Negotiator
-                      </p>
-                      <div className="bg-sky-950/20 border border-sky-900/40 rounded-3xl p-6 sm:p-8 relative group">
-                        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                          <TrendingDown className="w-32 h-32 text-sky-500" />
-                        </div>
-                        <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
-                          <div className="flex-grow">
-                            <p className="text-sm text-slate-300 mb-2 leading-relaxed">
-                              Target Expense: <strong className="text-white">{data.negotiator.targetExpense}</strong>
-                            </p>
-                            <p className="text-sm text-slate-300 mb-4 leading-relaxed">
-                              Market Rate: <strong className="text-sky-400">{data.negotiator.currentMarketRate}</strong>
-                            </p>
-                          </div>
-                          <div className="shrink-0 text-left md:text-right w-full md:w-auto border-t md:border-t-0 border-slate-800 pt-6 md:pt-0">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Potential Annual Savings</p>
-                            <p className="text-4xl sm:text-5xl font-black text-sky-400 tracking-tight">
-                              +{formatMoney(data.negotiator.potentialSavings, userProfile?.baseCurrency)}
-                            </p>
-                            <button 
-                              onClick={() => onAskAI?.(`Come posso negoziare per abbassare la mia bolletta/spesa di ${data.negotiator?.targetExpense}? Dammi uno script.`)}
-                              className="mt-4 w-full py-3 bg-sky-500 text-sky-950 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-sky-400 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-sky-500/20 flex items-center justify-center gap-2"
-                            >
-                              <Bot className="w-4 h-4" /> Ask Neural Core
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </section>
-                  )}
-
-                  {/* BLACK SWAN */}
-                  {data.blackSwan && (
-                    <section>
-                      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 text-slate-400" /> Black Swan Protocol
-                      </p>
-                      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 relative group">
-                        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                          <AlertCircle className="w-32 h-32 text-slate-500" />
-                        </div>
-                        <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
-                          <div className="flex-grow">
-                            <p className="text-sm text-slate-300 mb-4 leading-relaxed">
-                              {data.blackSwan.survivalAssessment}
-                            </p>
-                            <div className="w-full bg-slate-950 rounded-full h-2 mb-2">
-                              <div className={`h-2 rounded-full ${data.blackSwan.runwayMonths < 3 ? 'bg-rose-500' : data.blackSwan.runwayMonths < 6 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min((data.blackSwan.runwayMonths / 12) * 100, 100)}%` }}></div>
-                            </div>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">Target: 6.0 Months</p>
-                          </div>
-                          <div className="shrink-0 text-left md:text-right w-full md:w-auto border-t md:border-t-0 border-slate-800 pt-6 md:pt-0">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Liquid Runway</p>
-                            <p className="text-4xl sm:text-5xl font-black text-white tracking-tight">
-                              {data.blackSwan.runwayMonths} <span className="text-xl text-slate-500">mo</span>
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </section>
-                  )}
-
-                  {/* ARBITRAGE FINDER */}
-                  {data.arbitrageFinder && (
-                    <section>
-                      <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
-                        <Globe className="w-4 h-4 text-fuchsia-400" /> Arbitrage Finder
-                      </p>
-                      <div className="bg-fuchsia-950/20 border border-fuchsia-900/40 rounded-3xl p-6 sm:p-8 relative group">
-                        <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                          <Globe className="w-32 h-32 text-fuchsia-500" />
-                        </div>
-                        <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
-                          <div className="flex-grow">
-                            <div className="flex items-center gap-4 mb-4">
-                              <div className="flex flex-col">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Inefficient Debt</span>
-                                <span className="text-sm font-bold text-rose-400">{data.arbitrageFinder.inefficientDebt}</span>
-                              </div>
-                              <span className="text-slate-600">vs</span>
-                              <div className="flex flex-col">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Idle Asset</span>
-                                <span className="text-sm font-bold text-emerald-400">{data.arbitrageFinder.idleAsset}</span>
-                              </div>
-                            </div>
-                            <div className="bg-[#020617]/50 border border-slate-800 rounded-xl p-4">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-fuchsia-500 mb-2">Arbitrage Action</p>
-                              <p className="text-sm font-bold text-white">{data.arbitrageFinder.action}</p>
-                            </div>
-                          </div>
-                          <div className="shrink-0 text-left md:text-right w-full md:w-auto border-t md:border-t-0 border-slate-800 pt-6 md:pt-0">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-1">Potential Efficiency Gap</p>
-                            <p className="text-4xl sm:text-5xl font-black text-fuchsia-400 tracking-tight">
-                              +{data.arbitrageFinder.arbitrageSpread}%
-                            </p>
-                            <button 
-                              onClick={() => onAskAI?.(`Come eseguo l'arbitraggio tra ${data.arbitrageFinder?.inefficientDebt} e ${data.arbitrageFinder?.idleAsset}? Spiegami passo per passo.`)}
-                              className="mt-4 w-full py-3 bg-fuchsia-500 text-fuchsia-950 font-black text-xs uppercase tracking-widest rounded-xl hover:bg-fuchsia-400 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-fuchsia-500/20 flex items-center justify-center gap-2"
-                            >
-                              <Bot className="w-4 h-4" /> Ask Neural Core
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </section>
-                  )}
-
-                  {/* PROBABILITY VECTORS */}
-                  <section>
-                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-indigo-400" /> Probability Vectors
-                    </p>
-                    <div className="space-y-4">
-                      {filteredVectors.length > 0 ? filteredVectors.map((vector, i) => (
-                        <div key={i} className="bg-slate-900 border border-slate-800 rounded-2xl p-5">
-                          <div className="flex justify-between items-start mb-3">
-                            <h4 className="text-sm font-bold text-white max-w-[70%] leading-tight">{vector.title}</h4>
-                            <span className="text-lg font-black text-indigo-400">{vector.probability}%</span>
-                          </div>
-                          
-                          <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden mb-4">
-                            <div 
-                              className={`h-full ${vector.severity === 'EXTREME' ? 'bg-rose-500' : vector.severity === 'HIGH' ? 'bg-amber-500' : 'bg-indigo-500'}`}
-                              style={{ width: `${vector.probability}%` }}
-                            />
-                          </div>
-
-                          <p className="text-xs text-slate-300 font-medium mb-3">{vector.meaning}</p>
-                          
-                          <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest">
-                            <span className={`px-2 py-1 rounded text-white ${vector.severity === 'EXTREME' ? 'bg-rose-500/20' : vector.severity === 'HIGH' ? 'bg-amber-500/20' : 'bg-indigo-500/20'}`}>
-                              {vector.severity} SEVERITY
-                            </span>
-                            <span className="text-slate-500 flex items-center gap-1"><Zap className="w-3 h-3" /> {vector.affects}</span>
-                          </div>
-                        </div>
-                      )) : (
-                        <div className="py-6 flex flex-col items-center justify-center border border-dashed border-slate-800 rounded-2xl text-center">
-                          <CheckCircle2 className="w-6 h-6 text-slate-700 mb-2" />
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No anomalies detected</p>
-                        </div>
-                      )}
-                    </div>
-                  </section>
-
-                  {/* SIGNALS & ALPHA */}
-                  <section>
-                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
-                      <Zap className="w-4 h-4 text-emerald-400" /> Signals & Alpha
-                    </p>
-                    <div className="space-y-4">
-                      {filteredSignals.length > 0 ? filteredSignals.map((signal, i) => (
-                        <div key={i} className="bg-emerald-950/20 border border-emerald-900/30 rounded-2xl p-5 border-l-4 border-l-emerald-500">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-[11px] font-black uppercase tracking-widest bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded">
-                              {signal.urgency}
-                            </span>
-                            <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">
-                              {signal.type}
-                            </span>
-                          </div>
-                          <h4 className="text-sm font-black text-white mb-2">{signal.title}</h4>
-                          <p className="text-xs text-slate-300 leading-relaxed">{signal.explanation}</p>
-                        </div>
-                      )) : (
-                        <div className="py-6 flex flex-col items-center justify-center border border-dashed border-slate-800 rounded-2xl text-center">
-                          <Info className="w-6 h-6 text-slate-700 mb-2" />
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No active signals</p>
-                        </div>
-                      )}
-                    </div>
-                  </section>
-
-                  {/* ACTIVE RISKS */}
-                  <section>
-                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
-                      <ShieldAlert className="w-4 h-4 text-rose-400" /> Active Risks
-                    </p>
-                    <div className="space-y-4">
-                      {filteredRisks.length > 0 ? filteredRisks.map((risk, i) => (
-                        <div key={i} className="bg-rose-950/20 border border-rose-900/30 rounded-2xl p-5 border-l-4 border-l-rose-500">
-                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="text-sm font-black text-white leading-tight max-w-[80%]">{risk.title}</h4>
-                            <span className="text-[11px] font-black uppercase tracking-widest bg-rose-500/20 text-rose-400 px-2 py-0.5 rounded shrink-0">
-                              {risk.severity}
-                            </span>
-                          </div>
-                          <p className="text-xs text-slate-300 leading-relaxed mb-3">{risk.explanation}</p>
-                          <div className="flex items-center gap-2 text-[11px] font-bold text-rose-300/70">
-                            <AlertTriangle className="w-3 h-3" />
-                            Escalation risk: {risk.escalationProbability}%
-                          </div>
-                        </div>
-                      )) : (
-                        <div className="py-6 flex flex-col items-center justify-center border border-dashed border-slate-800 rounded-2xl text-center">
-                          <ShieldAlert className="w-6 h-6 text-slate-700 mb-2" />
-                          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">No critical risks</p>
-                        </div>
-                      )}
-                    </div>
-                  </section>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* EDUCATIONAL INSIGHT */}
-          {data.educationalInsight && (
-            <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 mt-12 relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-8 opacity-5">
-                <BookOpen className="w-32 h-32" />
-              </div>
-              <div className="relative z-10">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-xl">💡</span>
-                  <h3 className="text-sm font-black uppercase tracking-widest text-white">Did you know?</h3>
-                </div>
-                <h4 className="text-xl font-bold text-amber-500 mb-3">{data.educationalInsight.concept}</h4>
-                <p className="text-sm text-slate-300 leading-relaxed mb-4 max-w-3xl">
-                  {data.educationalInsight.explanation}
-                </p>
-                <div className="bg-amber-950/30 border border-amber-900/50 rounded-xl p-4 inline-block">
-                  <p className="text-xs font-medium text-amber-200/90">
-                    <strong className="text-amber-500 uppercase text-[10px] tracking-widest mr-2">Why it matters today:</strong>
-                    {data.educationalInsight.relevanceToday}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* NEWS FEED */}
-          <section className="mt-12">
-            <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-6 px-2">Intelligence Stream</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {filteredNews.length > 0 ? filteredNews.map((news, i) => (
-                <div key={news.id || i} className="bg-slate-900/60 rounded-3xl p-6 sm:p-8 hover:bg-slate-900 transition-colors">
-                  <div className="flex items-center justify-between gap-4 mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[11px] font-black uppercase tracking-widest px-2.5 py-1 rounded-md ${
-                        news.category === 'MACRO' ? 'bg-indigo-500/20 text-indigo-400' :
-                        news.category === 'ENERGY' ? 'bg-amber-500/20 text-amber-400' :
-                        news.category === 'CRYPTO' ? 'bg-emerald-500/20 text-emerald-400' :
-                        news.category === 'GEOPOLITICS' ? 'bg-rose-500/20 text-rose-400' :
-                        'bg-slate-800 text-slate-300'
-                      }`}>
-                        {news.category}
-                      </span>
-                      <span className="text-xs text-slate-500 font-bold">{news.source}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500" title="Impact Score">
-                        {news.impactScore}/10
-                      </div>
-                      <div className="flex items-center gap-1 text-[11px] font-bold text-slate-500">
-                         {news.trend === 'up' ? <TrendingUp className="w-4 h-4 text-rose-400" /> : 
-                          news.trend === 'down' ? <TrendingDown className="w-4 h-4 text-emerald-400" /> : 
-                          <Minus className="w-4 h-4" />}
-                      </div>
+                        );
+                      })}
                     </div>
                   </div>
-                  
-                  <h4 className="text-base sm:text-lg font-bold text-white mb-4 leading-snug">{news.headline}</h4>
-                  
-                  <div className="mb-6">
-                    <p className="text-sm font-medium text-slate-300 leading-relaxed border-l-2 border-amber-500/50 pl-4">
-                      <span className="text-amber-500 font-bold block mb-1 uppercase text-[10px] tracking-widest">What this means for you</span>
-                      {news.meaning}
-                    </p>
-                  </div>
+                )}
+              </div>
 
-                  <div className="flex items-center justify-start border-t border-slate-800/50 pt-4">
-                    <button 
-                      onClick={() => setExpandedNewsId(expandedNewsId === news.id ? null : news.id)}
-                      className="text-xs font-black uppercase tracking-widest text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-2"
-                    >
-                      {expandedNewsId === news.id ? 'Close AI Summary' : 'Read AI Summary'}
-                    </button>
-                  </div>
-
-                  <AnimatePresence>
-                    {expandedNewsId === news.id && (
-                      <motion.div 
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        className="overflow-hidden"
-                      >
-                        <div className="mt-4 bg-slate-950/50 p-4 rounded-xl text-xs text-slate-400 leading-relaxed">
-                          {news.aiSummary}
-                          {news.url && (
-                            <a href={news.url} target="_blank" rel="noopener noreferrer" className="block mt-4 text-amber-500 font-bold hover:underline">
-                              Read original source →
-                            </a>
-                          )}
+              {/* PROBABILITY VECTORS & ACTIVE RISKS */}
+              <div className="space-y-6">
+                <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 backdrop-blur-sm">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-rose-400 mb-5">Active Threats</p>
+                  <div className="space-y-4">
+                    {data.activeRisks?.slice(0, 2).map((risk, i) => (
+                      <div key={i} className="bg-rose-950/10 border border-rose-900/30 rounded-2xl p-4">
+                        <div className="flex justify-between items-start mb-1">
+                          <h4 className="text-sm font-black text-white">{risk.title}</h4>
+                          <span className="text-[9px] font-black uppercase text-rose-400">{risk.severity}</span>
                         </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                        <p className="text-xs text-slate-300 leading-relaxed">{risk.explanation}</p>
+                      </div>
+                    ))}
+                    {data.probabilityVectors?.slice(0, 2).map((vector, i) => (
+                      <div key={i} className="bg-slate-950/50 border border-slate-800 rounded-2xl p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="text-sm font-bold text-white">{vector.title}</h4>
+                          <span className="text-sm font-black text-indigo-400">{vector.probability}%</span>
+                        </div>
+                        <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                          <div className="h-full bg-indigo-500" style={{ width: `${vector.probability}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              )) : <p className="text-sm text-slate-500 px-2 col-span-full">No intelligence gathered for this filter.</p>}
+              </div>
             </div>
           </section>
 
-          {/* INTELLIGENCE FEED */}
-          {data.intelligenceFeed && data.intelligenceFeed.length > 0 && (
-            <section className="mt-12">
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-6 px-2 flex items-center gap-2">
-                <Bot className="w-4 h-4 text-indigo-400" /> Curated Intelligence Feed
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {data.intelligenceFeed.map((item, i) => {
-                  const signalColor = item.actionSignal === 'act' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
-                    : item.actionSignal === 'prepare' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-                    : 'bg-slate-800 text-slate-400 border-slate-700';
-
-                  return (
-                    <div key={i} className="bg-slate-900/60 border border-slate-800/50 rounded-3xl p-6 hover:bg-slate-900 transition-all group">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20`}>
-                            {item.category || 'global'}
-                          </span>
-                          <span className="text-[10px] font-bold text-slate-500 uppercase">{item.source || 'Intelligence Source'}</span>
+          {/* 4. GLOBAL INTELLIGENCE SECTION */}
+          <section className="space-y-6">
+            <div className="flex items-center gap-2 px-2">
+              <div className="h-4 w-1 bg-sky-500 rounded-full" />
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Global Intelligence</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* NEWS FEED & INTELLIGENCE FEED (Main) */}
+              <div className="lg:col-span-8 space-y-6">
+                {filteredNews.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {filteredNews.slice(0, 2).map((news, i) => (
+                      <div key={i} className="bg-slate-900/60 rounded-3xl p-6 border border-slate-800/50">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-slate-800 text-slate-300">{news.category}</span>
+                          <span className="text-[9px] font-bold text-slate-500">{news.source}</span>
                         </div>
-                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${signalColor}`}>
-                          {item.actionSignal || 'observe'}
-                        </span>
+                        <h4 className="text-sm font-bold text-white mb-3 line-clamp-2">{news.headline}</h4>
+                        <p className="text-xs text-slate-400 line-clamp-3 leading-relaxed">{news.meaning}</p>
                       </div>
-                      
-                      <h4 className="text-base font-bold text-white mb-3 group-hover:text-amber-400 transition-colors leading-snug">
-                        {item.url ? (
-                          <a href={item.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
-                            {item.title} <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          </a>
-                        ) : item.title}
-                      </h4>
-                      
-                      <p className="text-xs text-slate-400 leading-relaxed mb-4">{item.summary}</p>
-                      
-                      <div className="bg-slate-950/50 rounded-xl p-4 border border-slate-800/50">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-1">Strategic Relevance</p>
-                        <p className="text-xs font-medium text-slate-300 italic">"{item.relevanceToUser}"</p>
+                    ))}
+                  </div>
+                )}
+                
+                {data.intelligenceFeed && data.intelligenceFeed.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {data.intelligenceFeed.slice(0, 4).map((item, i) => (
+                      <div key={i} className="bg-slate-900/40 border border-slate-800/30 rounded-2xl p-5 group hover:bg-slate-900 transition-all">
+                        <div className="flex justify-between items-start mb-3">
+                          <span className="text-[9px] font-black uppercase text-indigo-400">{item.category}</span>
+                          <span className="text-[9px] font-bold text-slate-600">{item.source}</span>
+                        </div>
+                        <h4 className="text-xs font-bold text-white mb-2 line-clamp-2 group-hover:text-amber-400 transition-colors">
+                          {item.url ? (
+                            <a href={item.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                              {item.title} <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </a>
+                          ) : item.title}
+                        </h4>
+                        <p className="text-[11px] text-slate-400 line-clamp-2 italic">"{item.relevanceToUser}"</p>
                       </div>
-
-                      <div className="mt-4 flex items-center justify-between">
-                         <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-bold text-slate-500 uppercase">Impact</span>
-                            <div className="flex gap-0.5">
-                               {[...Array(5)].map((_, idx) => (
-                                 <div key={idx} className={`w-1.5 h-1.5 rounded-full ${idx < (item.impactScore || 0) / 2 ? 'bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.5)]' : 'bg-slate-800'}`} />
-                               ))}
-                            </div>
-                         </div>
-                         {item.publishedAt && (
-                           <span className="text-[10px] font-medium text-slate-600">{new Date(item.publishedAt).toLocaleDateString()}</span>
-                         )}
-                      </div>
-                    </div>
-                  );
-                })}
+                    ))}
+                  </div>
+                )}
               </div>
-            </section>
-          )}
+
+              {/* SIGNALS & ALPHA + EDUCATION (Side) */}
+              <div className="lg:col-span-4 space-y-6">
+                {data.signalsAndAlpha && data.signalsAndAlpha.length > 0 && (
+                  <div className="bg-emerald-950/10 border border-emerald-900/30 rounded-3xl p-6">
+                    <p className="text-[10px] font-black uppercase text-emerald-500 mb-4">Alpha Signals</p>
+                    <div className="space-y-4">
+                      {data.signalsAndAlpha.slice(0, 2).map((signal, i) => (
+                        <div key={i}>
+                          <h4 className="text-xs font-black text-white uppercase">{signal.title}</h4>
+                          <p className="text-[11px] text-slate-300 mt-1">{signal.explanation}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {data.educationalInsight && (
+                  <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6">
+                    <p className="text-[10px] font-black uppercase text-amber-500 mb-3">Education</p>
+                    <h4 className="text-sm font-bold text-white mb-2">{data.educationalInsight.concept}</h4>
+                    <p className="text-[11px] text-slate-400 leading-relaxed">{data.educationalInsight.explanation}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
 
           {/* LEGAL & RISK DISCLAIMER */}
           <section className="mt-16 pt-8 border-t border-slate-800/50 text-center px-4">
@@ -1198,8 +695,8 @@ export default function Palantir({
             </p>
           </section>
 
-            </div>
           </div>
+        </div>
       ) : (
         <div className="text-center text-slate-500 py-20 font-bold">Nothing critical right now — markets are breathing normally.</div>
       )}

@@ -88,7 +88,7 @@ import FeedbackModal from './components/FeedbackModal';
 import GlobalPulse from './components/GlobalPulse';
 import NeuralAdvisor from './components/NeuralAdvisor';
 import IntegrationsHub from './components/IntegrationsHub';
-import { useTranslation } from 'react-i18next';
+import { handleSyncCallback, listInstitutions } from './services/syncService';
 
 export default function App() {
   const { t, i18n } = useTranslation();
@@ -246,6 +246,36 @@ export default function App() {
       delete (window as any).openCreateGroupModal;
     };
   }, []);
+
+  // GoCardless Callback Detection
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requisitionId = params.get('requisitionId') || params.get('requisition_id') || params.get('ref');
+    
+    if (requisitionId && user) {
+      const handleCallback = async () => {
+        try {
+          const response = await handleSyncCallback('gocardless_sandbox', { requisitionId });
+          if (response.success) {
+            setAdvisorState({
+              visible: true,
+              message: `Neural Link Verified: ${response.status === 'LN' ? 'Linked & Authorized' : 'Authorization pending.'}`,
+              actionLabel: "View Accounts"
+            });
+          } else {
+            setLastError(response.error || 'Failed to verify bank handshake.');
+          }
+        } catch (error) {
+          console.error('[App] Callback error:', error);
+        } finally {
+          // Clean URL
+          const newUrl = window.location.pathname + window.location.hash;
+          window.history.replaceState({}, document.title, newUrl);
+        }
+      };
+      handleCallback();
+    }
+  }, [user]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -833,7 +863,7 @@ export default function App() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto relative pb-20 lg:pb-0">
+      <main className="flex-1 overflow-y-auto relative pb-32 lg:pb-0">
         {/* Mobile Header */}
         <div className="lg:hidden flex items-center justify-between p-4 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-100 dark:border-white/5 sticky top-0 z-30 transition-colors">
           <div className="flex items-center gap-2">
@@ -1023,7 +1053,11 @@ export default function App() {
               transition={{ duration: 0.3 }}
               className="p-0 sm:p-4 lg:p-6"
             >
-              <IntegrationsHub userId={user.uid} userProfile={userProfile || undefined} />
+              <IntegrationsHub 
+                userId={user.uid} 
+                userProfile={userProfile || undefined} 
+                connectedInstitutions={connectedInstitutions}
+              />
             </motion.div>
           ) : activeTab === 'ledger' ? (
             <motion.div
@@ -1073,7 +1107,19 @@ export default function App() {
                 userId={user.uid}
                 userEmail={user.email}
               />
-              <PreferencesSettings />
+              <PreferencesSettings 
+                exportData={{
+                  userProfile,
+                  assets,
+                  liabilities,
+                  transactions,
+                  bankAccounts,
+                  goals,
+                  connectedInstitutions,
+                  connectedAccounts,
+                  cryptoWallets
+                }}
+              />
             </motion.div>
           ) : (
             <motion.div
@@ -1089,22 +1135,22 @@ export default function App() {
         </AnimatePresence>
 
         {/* Mobile Bottom Navigation */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border-t border-zinc-100 dark:border-white/5 px-6 py-3 pb-6 z-40 transition-colors">
-          <div className="flex items-center justify-between max-w-md mx-auto">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-2xl border-t border-zinc-100 dark:border-white/5 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,1.5rem))] z-40 transition-colors shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
+          <div className="flex items-center justify-around max-w-md mx-auto">
             <button
               onClick={() => {
                 setActiveTab('groups');
                 setSelectedGroupId(null);
                 setIsSidebarOpen(false);
               }}
-              className={`flex flex-col items-center gap-1 transition-all ${
+              className={`flex-1 flex flex-col items-center gap-1.5 py-2 transition-all ${
                 activeTab === 'groups' && !selectedGroupId
                   ? 'text-indigo-600 dark:text-indigo-400 scale-110' 
                   : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
               }`}
             >
-              <Users className={`w-6 h-6 ${(activeTab === 'groups' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
-              <span className="text-[11px] font-black uppercase tracking-widest">Circles</span>
+              <Users className={`w-5 h-5 ${(activeTab === 'groups' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
+              <span className="text-xs font-black uppercase tracking-tight">Circles</span>
             </button>
             <button
               onClick={() => {
@@ -1112,14 +1158,14 @@ export default function App() {
                 setSelectedGroupId(null);
                 setIsSidebarOpen(false);
               }}
-              className={`flex flex-col items-center gap-1 transition-all ${
+              className={`flex-1 flex flex-col items-center gap-1.5 py-2 transition-all ${
                 activeTab === 'wealth' && !selectedGroupId
                   ? 'text-indigo-600 dark:text-indigo-400 scale-110' 
                   : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
               }`}
             >
-              <Briefcase className={`w-6 h-6 ${(activeTab === 'wealth' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
-              <span className="text-[11px] font-black uppercase tracking-widest">Wealth</span>
+              <Briefcase className={`w-5 h-5 ${(activeTab === 'wealth' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
+              <span className="text-xs font-black uppercase tracking-tight">Wealth</span>
             </button>
             <button
               onClick={() => {
@@ -1127,14 +1173,14 @@ export default function App() {
                 setSelectedGroupId(null);
                 setIsSidebarOpen(false);
               }}
-              className={`flex flex-col items-center gap-1 transition-all ${
+              className={`flex-1 flex flex-col items-center gap-1.5 py-2 transition-all ${
                 activeTab === 'palantir' && !selectedGroupId
                   ? 'text-indigo-600 dark:text-indigo-400 scale-110' 
                   : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
               }`}
             >
-              <Globe className={`w-6 h-6 ${(activeTab === 'palantir' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
-              <span className="text-[11px] font-black uppercase tracking-widest">Palantir</span>
+              <Globe className={`w-5 h-5 ${(activeTab === 'palantir' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
+              <span className="text-xs font-black uppercase tracking-tight">Palantir</span>
             </button>
             <button
               onClick={() => {
@@ -1142,14 +1188,14 @@ export default function App() {
                 setSelectedGroupId(null);
                 setIsSidebarOpen(false);
               }}
-              className={`flex flex-col items-center gap-1 transition-all ${
+              className={`flex-1 flex flex-col items-center gap-1.5 py-2 transition-all ${
                 activeTab === 'sync' && !selectedGroupId
                   ? 'text-indigo-600 dark:text-indigo-400 scale-110' 
                   : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
               }`}
             >
-              <Link className={`w-6 h-6 ${(activeTab === 'sync' && !selectedGroupId) ? 'stroke-indigo-500' : ''}`} />
-              <span className="text-[11px] font-black uppercase tracking-widest">Sync</span>
+              <Link className={`w-5 h-5 ${(activeTab === 'sync' && !selectedGroupId) ? 'stroke-indigo-500' : ''}`} />
+              <span className="text-xs font-black uppercase tracking-tight">Sync</span>
             </button>
             <button
               onClick={() => {
@@ -1157,14 +1203,14 @@ export default function App() {
                 setSelectedGroupId(null);
                 setIsSidebarOpen(false);
               }}
-              className={`flex flex-col items-center gap-1 transition-all ${
+              className={`flex-1 flex flex-col items-center gap-1.5 py-2 transition-all ${
                 activeTab === 'ledger' && !selectedGroupId
                   ? 'text-indigo-600 dark:text-indigo-400 scale-110' 
                   : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
               }`}
             >
-              <Receipt className={`w-6 h-6 ${(activeTab === 'ledger' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
-              <span className="text-[11px] font-black uppercase tracking-widest">Ledger</span>
+              <Receipt className={`w-5 h-5 ${(activeTab === 'ledger' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
+              <span className="text-xs font-black uppercase tracking-tight">Ledger</span>
             </button>
           </div>
         </div>

@@ -86,7 +86,7 @@ export default function TransactionsView({
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
         <div>
-          <h2 className="text-5xl font-black font-display tracking-tighter text-slate-900 dark:text-white leading-none mb-4">Financial Ledger</h2>
+          <h2 className="text-3xl sm:text-5xl font-black font-display tracking-tighter text-slate-900 dark:text-white leading-none mb-4">Financial Ledger</h2>
           <p className="text-slate-500 font-medium text-lg leading-relaxed max-w-xl">Every transaction audited and searchable. Precise control over your cash flow.</p>
         </div>
         <button 
@@ -97,7 +97,7 @@ export default function TransactionsView({
         </button>
       </div>
 
-      <div className="glass-card rounded-[3rem] p-10 shadow-premium">
+      <div className="glass-card rounded-[2.5rem] sm:rounded-[3rem] p-5 sm:p-10 shadow-premium">
         <div className="flex flex-col md:flex-row gap-6 mb-10">
           <div className="flex-1 relative">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
@@ -142,45 +142,58 @@ export default function TransactionsView({
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: idx * 0.05 }}
-                  className="flex items-center justify-between p-6 rounded-[2rem] hover:bg-slate-50 dark:hover:bg-white/5 transition-all group"
+                  className="p-4 sm:p-6 rounded-[2rem] hover:bg-slate-50 dark:hover:bg-white/5 transition-all group border border-transparent hover:border-slate-100 dark:hover:border-white/10"
                 >
-                  <div className="flex items-center gap-6">
-                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all ${
+                  <div className="flex items-start sm:items-center gap-4 sm:gap-6">
+                    <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center border shrink-0 transition-all ${
                       tx.type === 'income' 
                         ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-100 dark:border-emerald-500/20 text-emerald-600' 
-                        : 'bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/10 text-slate-500'
+                        : 'bg-slate-50 dark:bg-white/5 border-slate-100 dark:border-white/10 text-slate-400 dark:text-slate-500'
                     }`}>
-                      <Icon className="w-7 h-7" />
+                      <Icon className="w-6 h-6 sm:w-7 sm:h-7" />
                     </div>
-                    <div>
-                      <p className="font-black text-slate-800 dark:text-white tracking-tight text-lg leading-tight mb-1">{tx.description}</p>
-                      <div className="flex items-center gap-3 text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                        <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> {tx.date.toDate().toLocaleDateString()}</span>
-                        <span>•</span>
-                        <span className="bg-slate-100 dark:bg-white/10 px-2.5 py-0.5 rounded-lg">{tx.category}</span>
-                      </div>
-                    </div>
-                  </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="font-black text-slate-800 dark:text-white tracking-tight text-base sm:text-lg leading-tight truncate pr-2" title={tx.description}>
+                            {tx.description}
+                          </p>
+                          <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1 text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                            <span className="flex items-center gap-1.5 shrink-0">
+                              <Calendar className="w-3.5 h-3.5" /> 
+                              {tx.date.toDate().toLocaleDateString()}
+                            </span>
+                            <span className="hidden sm:inline opacity-30">•</span>
+                            <span className="bg-slate-100 dark:bg-white/10 px-2.5 py-0.5 rounded-lg shrink-0">
+                              {tx.category}
+                            </span>
+                          </div>
+                        </div>
 
-                  <div className="flex items-center gap-4">
-                     <span className={`font-mono font-black text-xl tracking-tighter ${
-                      tx.type === 'income' ? 'text-emerald-500' : 'text-slate-800 dark:text-white'
-                    }`}>
-                      {tx.type === 'income' ? '+' : '-'}{formatMoney(Math.abs(tx.amount), tx.currency || userProfile?.baseCurrency)}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button 
-                        onClick={() => onEditTransaction?.(tx)}
-                        className="p-3 text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => handleDelete(tx.id)}
-                        className="p-3 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                        <div className="flex items-center justify-between sm:justify-end gap-4 mt-1 sm:mt-0">
+                          <span className={`font-mono font-black text-lg sm:text-xl tracking-tighter shrink-0 ${
+                            tx.type === 'income' ? 'text-emerald-500' : 'text-slate-800 dark:text-white'
+                          }`}>
+                            {tx.type === 'income' ? '+' : '-'}{formatMoney(Math.abs(tx.amount), tx.currency || userProfile?.baseCurrency)}
+                          </span>
+                          
+                          <div className="flex items-center gap-1 sm:gap-2">
+                            <button 
+                              onClick={() => onEditTransaction?.(tx)}
+                              className="p-2 sm:p-3 text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl transition-all sm:opacity-0 sm:group-hover:opacity-100"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(tx.id)}
+                              className="p-2 sm:p-3 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all sm:opacity-0 sm:group-hover:opacity-100"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </motion.div>

@@ -2,44 +2,45 @@ import express from 'express';
 import Stripe from 'stripe';
 import admin from 'firebase-admin';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
+import cors from 'cors';
 
 dotenv.config();
 
-// Initialize Firebase Admin
-if (!admin.apps.length) {
-  try {
-    const projectId = process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
-    const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-
-    if (projectId && clientEmail && privateKey) {
-      admin.initializeApp({
-        credential: admin.credential.cert({
-          projectId,
-          clientEmail,
-          privateKey,
-        }),
-        projectId
-      });
-      console.log('Firebase Admin initialized with Service Account.');
-    } else {
-      admin.initializeApp({
-        projectId: projectId || 'remixed-project-id'
-      });
-      console.log('Firebase Admin initialized with Project ID only (Default Credentials).');
-    }
-  } catch (e) {
-    console.error('Firebase Admin initialization failed:', e);
-  }
-}
-
-const db = admin.firestore();
+import admin, { db } from './firebaseAdmin.js';
 const stripeKey = process.env.STRIPE_SECRET_KEY || '';
 const stripe = new Stripe(stripeKey || 'sk_test_dummy_key_for_local_dev', {
   apiVersion: '2023-10-16' as any,
 });
 
 const app = express();
+ 
+// 1. Security Headers (Helmet)
+app.use(helmet({
+  contentSecurityPolicy: false, // Strict CSP deferred to avoid Vite build breakages
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  frameguard: { action: "deny" } // Mitigates Clickjacking
+}));
+ 
+// 2. CORS Hardening
+const allowedOrigins = [
+  process.env.VITE_APP_URL,
+  process.env.APP_URL,
+  'http://localhost:3000',
+  'http://localhost:5173'
+].filter(Boolean) as string[];
+ 
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  credentials: true
+}));
 
 // Stripe Webhook (PUBLIC - signature verified, NO AUTH)
 app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -55,7 +56,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
     event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
   } catch (err: any) {
     console.error(`Webhook Error: ${err.message}`);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    return res.status(400).send('Webhook verification failed.');
   }
 
   switch (event.type) {
@@ -98,13 +99,40 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
 app.use(express.json());
 
 // Import Auth Middleware
-import { authMiddleware, AuthenticatedRequest } from './authMiddleware';
+import { authMiddleware, AuthenticatedRequest } from './authMiddleware.js';
+import { rateLimit } from 'express-rate-limit';
+
+/**
+ * Neural Core Rate Limiter
+ * Protects expensive AI endpoints from exhaustion.
+ * Limit: 30 requests per 15 minutes per IP.
+ */
+const geminiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  max: 30, 
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Neural Core is temporarily busy. Please try again in 15 minutes.' }
+});
+ 
+/**
+ * Sync Service Rate Limiter
+ * Protects banking sync routes from abuse.
+ * Limit: 60 requests per 15 minutes per IP.
+ */
+const syncLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, 
+  max: 60, 
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Sync service is temporarily rate limited. Please try again later.' }
+});
 
 // PROTECTED ROUTES (Require Firebase ID Token)
-import geminiRoutes from './geminiRoutes';
-import syncRoutes from './syncRoutes';
-app.use('/api/gemini', authMiddleware, geminiRoutes);
-app.use('/api/sync', authMiddleware, syncRoutes);
+import geminiRoutes from './geminiRoutes.js';
+import syncRoutes from './syncRoutes.js';
+app.use('/api/gemini', geminiLimiter, authMiddleware, geminiRoutes);
+app.use('/api/sync', syncLimiter, authMiddleware, syncRoutes);
 
 app.post('/api/create-checkout-session', authMiddleware, async (req: AuthenticatedRequest, res) => {
   const userId = req.user?.uid;
@@ -134,7 +162,7 @@ app.post('/api/create-checkout-session', authMiddleware, async (req: Authenticat
     res.json({ url: session.url });
   } catch (error: any) {
     console.error('CRITICAL STRIPE ERROR:', error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to initiate checkout session.' });
   }
 });
 
@@ -159,7 +187,7 @@ app.post('/api/create-portal-session', authMiddleware, async (req: Authenticated
     res.json({ url: session.url });
   } catch (error: any) {
     console.error('Stripe Portal Error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to open billing portal.' });
   }
 });
 

@@ -140,9 +140,14 @@ export default function NeuralAdvisor({ isVisible, onClose, context, language = 
                   <Send className="w-3 h-3" />
                 </button>
               </div>
-              <p className="text-[8px] text-center text-slate-400 mt-2 uppercase tracking-[0.2em] font-black">
-                Powering by Neural Core Gemini 1.5 Pro
-              </p>
+               <div className="mt-2 space-y-1 text-center">
+                  <p className="text-[8px] text-slate-400 uppercase tracking-[0.2em] font-black">
+                    Powered by Neural Core Gemini 1.5 Pro
+                  </p>
+                  <p className="text-[7px] text-slate-500 uppercase tracking-widest font-bold px-4 leading-tight">
+                    Informational purposes only. Not financial advice. AI models may occasionally produce inaccuracies.
+                  </p>
+               </div>
             </div>
           </div>
         </motion.div>

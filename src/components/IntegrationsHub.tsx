@@ -3,13 +3,13 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Building2, Wallet, Landmark, Globe, Plus, ShieldCheck, 
   ArrowRight, CheckCircle2, QrCode, Smartphone, ExternalLink,
-  Lock, Zap, Info, Bitcoin, TrendingUp, Code2, Terminal, RefreshCw
+  Lock, Zap, Info, Bitcoin, TrendingUp, Code2, Terminal, RefreshCw, X, History
 } from 'lucide-react';
 import CryptoConnector from './CryptoConnector';
 import { UserProfile } from '../types';
 
 import { PROVIDER_REGISTRY, Provider } from '../utils/connectors';
-import { createSyncSession } from '../services/syncService';
+import { createSyncSession, disconnectInstitution, syncAccounts } from '../services/syncService';
 import { useNotifications } from '../context/NotificationContext';
 
 const FALLBACK_ICONS: Record<string, any> = {
@@ -39,9 +39,10 @@ const PROVIDER_COLORS: Record<string, string> = {
 interface IntegrationsHubProps {
   userId: string;
   userProfile?: UserProfile;
+  connectedInstitutions?: any[];
 }
 
-export default function IntegrationsHub({ userId, userProfile }: IntegrationsHubProps) {
+export default function IntegrationsHub({ userId, userProfile, connectedInstitutions }: IntegrationsHubProps) {
   const [activeTab, setActiveTab] = useState<'all' | 'banks' | 'crypto' | 'brokers'>('all');
   const [connectingProvider, setConnectingProvider] = useState<any | null>(null);
   const [connectionStep, setConnectionStep] = useState<'intro' | 'qr' | 'custom' | 'success'>('intro');
@@ -69,6 +70,20 @@ export default function IntegrationsHub({ userId, userProfile }: IntegrationsHub
     }
   };
 
+  const handleDisconnect = async (institutionId: string) => {
+    try {
+      const response = await disconnectInstitution(institutionId);
+      if (response.success) {
+        showNotification('Neural Bridge Revoked', 'Access disconnected. Historical records preserved.', 'success');
+        // Note: Real state update would come from onSnapshot in parent, but we can notify user immediately
+      } else {
+        throw new Error(response.error || 'Revocation failed');
+      }
+    } catch (error: any) {
+      showNotification('Revocation Error', error.message, 'error');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-slate-200 pb-24 lg:pb-12 pt-6 lg:pt-8 px-4 sm:px-6 max-w-7xl mx-auto font-sans selection:bg-indigo-500/30">
       <div className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
@@ -88,6 +103,81 @@ export default function IntegrationsHub({ userId, userProfile }: IntegrationsHub
            </div>
         </div>
       </div>
+
+      {/* ACTIVE CONNECTIONS */}
+      {connectedInstitutions && connectedInstitutions.length > 0 && (
+        <div className="mb-12">
+          <div className="flex items-center gap-3 mb-6">
+             <div className="w-8 h-8 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500">
+               <RefreshCw className="w-4 h-4" />
+             </div>
+             <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Active Neural Bridges</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+             {connectedInstitutions.map((inst) => (
+               <div key={inst.id} className="bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-3xl p-6 flex items-center justify-between shadow-sm group">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-slate-100 dark:bg-white/5 rounded-2xl flex items-center justify-center overflow-hidden p-2">
+                       {PROVIDER_LOGOS[inst.providerId] ? (
+                         <img src={PROVIDER_LOGOS[inst.providerId]} className="w-full h-full object-contain" alt={inst.providerName} />
+                       ) : (
+                         <Building2 className="w-6 h-6 text-slate-400" />
+                       )}
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{inst.providerName}</h4>
+                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                        Last Synced: {inst.lastSyncedAt ? (typeof inst.lastSyncedAt === 'object' && 'toDate' in inst.lastSyncedAt ? inst.lastSyncedAt.toDate().toLocaleDateString() : new Date(inst.lastSyncedAt).toLocaleDateString()) : 'Pending'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={async () => {
+                        showNotification('Sync Initiated', `Querying ${inst.providerName} for latest balances...`, 'info');
+                        const res = await syncAccounts(inst.id);
+                        if (res.success) {
+                          showNotification('Sync Complete', `Successfully updated ${res.accounts?.length || 0} accounts.`, 'success');
+                        } else {
+                          showNotification('Sync Failed', res.error || 'Connection failed', 'error');
+                        }
+                      }}
+                      title="Sync Balances"
+                      className="p-3 text-slate-300 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 rounded-xl transition-all"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        showNotification('Transaction Sync', `Fetching ledger items from ${inst.providerName}. This may take a moment...`, 'info');
+                        const res = await syncAccounts(inst.id, { syncTransactions: true });
+                        if (res.success) {
+                          showNotification('Sync Complete', `Successfully ingested transaction history.`, 'success');
+                        } else {
+                          showNotification('Sync Failed', res.error || 'Connection failed', 'error');
+                        }
+                      }}
+                      title="Sync Transactions"
+                      className="p-3 text-slate-300 hover:text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-xl transition-all"
+                    >
+                      <History className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => handleDisconnect(inst.id)}
+                      title="Disconnect Neural Bridge"
+                      className="p-3 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+               </div>
+             ))}
+          </div>
+          <p className="mt-4 text-[9px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed max-w-2xl italic">
+            Note: Disconnecting stops future neural synchronizations. Historical financial records already indexed in your ledger are preserved for continuous analysis.
+          </p>
+        </div>
+      )}
 
       {/* FILTERS */}
       <div className="flex overflow-x-auto no-scrollbar gap-2 mb-10 pb-2">
@@ -146,7 +236,7 @@ export default function IntegrationsHub({ userId, userProfile }: IntegrationsHub
                 </div>
               </div>
 
-              <h3 className="text-xl font-black text-slate-900 dark:text-white mb-1 group-hover:translate-x-1 transition-transform">{provider.providerName}</h3>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white mb-1 group-hover:translate-x-1 transition-transform truncate" title={provider.providerName}>{provider.providerName}</h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{provider.description}</p>
               
               <div className="mt-8 pt-6 border-t border-slate-100 dark:border-white/5 flex items-center justify-between">
@@ -172,7 +262,7 @@ export default function IntegrationsHub({ userId, userProfile }: IntegrationsHub
             
             <motion.div
               layoutId={connectingProvider.providerId}
-              className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[3rem] p-8 sm:p-12 shadow-2xl overflow-hidden border border-white/20"
+              className="relative w-full max-w-lg bg-white dark:bg-slate-900 rounded-[3rem] p-5 sm:p-10 shadow-2xl overflow-hidden border border-white/20"
             >
               <div className="flex flex-col items-center text-center">
                 {connectionStep === 'intro' && connectingProvider.providerType === 'crypto_wallet' && (

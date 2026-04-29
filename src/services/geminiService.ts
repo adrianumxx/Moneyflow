@@ -431,6 +431,12 @@ export async function getPalantirIntelligence(
       newsFeed: [
         { id: '1', category: 'MACRO', source: 'Financial Times', headline: 'Central Banks Hold Rates Steady', impactScore: 8, meaning: 'Borrowing costs are expected to remain stable for now.', escalationProbability: 20, affects: 'Borrowers', trend: 'neutral', aiSummary: 'Banks are waiting for more data before cutting rates.', url: '#' }
       ],
+      scenarios: [],
+      geopoliticalRings: {
+        world: { title: 'Global', summary: 'Macroeconomic stabilization in progress.', riskScore: 40, opportunityScore: 50, impactScore: 45, confidenceScore: 70, actionSignal: 'observe' }
+      },
+      actionQueue: [],
+      intelligenceFeed: [],
       dataQuality: 'fallback_data',
       sourceStatus: 'fallback'
     };
