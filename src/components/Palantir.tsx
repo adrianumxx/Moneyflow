@@ -203,7 +203,7 @@ export default function Palantir({
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-200 pb-24 lg:pb-12 pt-6 lg:pt-8 px-4 sm:px-6 max-w-7xl mx-auto font-sans selection:bg-amber-500/30">
+    <div className="min-h-screen bg-[#020617] text-slate-200 pb-40 lg:pb-32 pt-6 lg:pt-8 px-4 sm:px-6 max-w-7xl mx-auto font-sans selection:bg-amber-500/30">
       
       {/* Header & Search */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -270,7 +270,7 @@ export default function Palantir({
                     <Lock className="w-10 h-10 text-amber-500" />
                   </div>
                   
-                  <h2 className="text-3xl font-black text-white mb-4 tracking-tight">Executive Intelligence Locked</h2>
+                  <h2 className="text-3xl font-black text-white mb-4 tracking-tight">Advanced Analysis Locked</h2>
                   <p className="text-slate-400 font-medium leading-relaxed mb-8">
                     Upgrade to access proprietary probability vectors, structural signals, and active risk analysis. <br/>
                     <span className="text-amber-500 font-bold italic">Start your 7-day free trial today.</span>
@@ -344,7 +344,7 @@ export default function Palantir({
                     {data.orb.state.toUpperCase()}
                   </div>
                   <div className="absolute top-1/2 right-0 translate-x-1/2 -translate-y-1/2 bg-slate-900 border border-slate-700 px-3 py-1.5 rounded-full flex items-center gap-2 shadow-xl">
-                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Risks</span>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Portfolio Risk Signal</span>
                     <span className="text-xs font-black text-white">{data.orb.activeRisksCount}</span>
                     {data.orb.activeRisksCount > 2 && <span className="w-1.5 h-1.5 bg-rose-500 rounded-full animate-pulse" />}
                   </div>
@@ -352,7 +352,7 @@ export default function Palantir({
               </div>
 
               {/* NARRATIVE */}
-              <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-sm relative overflow-hidden">
+              <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-sm relative">
                 {loginStreak >= 3 && (
                   <div className="absolute top-0 right-0 bg-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-bl-xl border-b border-l border-indigo-500/30">
                     Day {loginStreak} Streak
@@ -600,7 +600,7 @@ export default function Palantir({
             <div className="col-span-1 lg:col-span-5 space-y-12">
               
               {/* CLUSTER TABS */}
-              <div className="flex overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 scrollbar-hide gap-2">
+              <div className="flex overflow-x-auto pb-4 -mx-4 px-4 sm:mx-0 sm:px-0 no-scrollbar custom-scrollbar gap-2 scroll-smooth">
                 {clusters.map(cluster => (
                   <button
                     key={cluster}
@@ -624,7 +624,7 @@ export default function Palantir({
                       <Lock className="w-8 h-8 text-amber-500" />
                     </div>
                     
-                    <h3 className="text-xl sm:text-2xl font-black text-white mb-2 tracking-tight">Executive Intelligence Locked</h3>
+                    <h3 className="text-xl sm:text-2xl font-black text-white mb-2 tracking-tight">Advanced Analysis Locked</h3>
                     <p className="text-sm text-slate-400 mb-8 max-w-sm leading-relaxed">
                       Upgrade to access proprietary probability vectors, structural signals, and active risk analysis.
                     </p>
@@ -679,7 +679,7 @@ export default function Palantir({
                             : 'bg-slate-800 text-slate-400 border-slate-700';
 
                           return (
-                            <div key={item.key} className={`relative overflow-hidden border ${item.border} rounded-2xl p-5 bg-slate-900/40 backdrop-blur-sm group hover:bg-slate-900/60 transition-all`}>
+                            <div key={item.key} className={`relative border ${item.border} rounded-2xl p-5 bg-slate-900/40 backdrop-blur-sm group hover:bg-slate-900/60 transition-all`}>
                               <div className="flex flex-col md:flex-row gap-5">
                                 <div className="w-full md:w-40 shrink-0">
                                   <div className="flex items-center justify-between md:flex-col md:items-start gap-2">
@@ -750,16 +750,16 @@ export default function Palantir({
                       <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
                         <TrendingUp className="w-4 h-4 text-emerald-400" /> Yield Optimizer
                       </p>
-                      <div className="bg-emerald-950/20 border border-emerald-900/40 rounded-3xl p-6 sm:p-8 relative overflow-hidden group">
+                      <div className="bg-emerald-950/20 border border-emerald-900/40 rounded-3xl p-6 sm:p-8 relative group">
                         <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
                           <TrendingUp className="w-32 h-32 text-emerald-500" />
                         </div>
                         <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start md:items-center">
                           <div className="flex-grow">
                             <div className="flex items-center gap-2 mb-3">
-                              <span className="text-[10px] font-black uppercase tracking-widest bg-rose-500/20 text-rose-400 px-2 py-1 rounded">
-                                Inefficiency Detected
-                              </span>
+                                <span className="text-[10px] font-black uppercase tracking-widest bg-rose-500/20 text-rose-400 px-2 py-1 rounded">
+                                  Optimization Potential
+                                </span>
                               <span className="text-[10px] font-bold text-slate-500">
                                 Confidence: {data.yieldOptimizer.confidenceScore}%
                               </span>
@@ -789,13 +789,13 @@ export default function Palantir({
                     </section>
                   )}
 
-                  {/* TAX SHIELD */}
+                  {/* FISCAL AWARENESS */}
                   {data.taxShield && (
                     <section>
                       <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
-                        <ShieldAlert className="w-4 h-4 text-violet-400" /> Tax Shield
+                        <ShieldAlert className="w-4 h-4 text-violet-400" /> Fiscal Awareness
                       </p>
-                      <div className={`bg-violet-950/20 border border-violet-900/40 rounded-3xl p-6 sm:p-8 relative overflow-hidden group`}>
+                      <div className="bg-violet-950/20 border border-violet-900/40 rounded-3xl p-6 sm:p-8 relative group">
                         <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
                           <ShieldAlert className="w-32 h-32 text-violet-500" />
                         </div>
@@ -810,7 +810,7 @@ export default function Palantir({
                               {data.taxShield.description}
                             </p>
                             <div className="bg-[#020617]/50 border border-slate-800 rounded-xl p-4">
-                              <p className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-2">Legal Tax Optimization</p>
+                              <p className="text-[10px] font-black uppercase tracking-widest text-violet-500 mb-2">Fiscal Awareness</p>
                               <p className="text-sm font-bold text-white">{data.taxShield.taxOptimizationAction}</p>
                             </div>
                           </div>
@@ -825,7 +825,7 @@ export default function Palantir({
                       <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
                         <TrendingDown className="w-4 h-4 text-sky-400" /> Silent Negotiator
                       </p>
-                      <div className="bg-sky-950/20 border border-sky-900/40 rounded-3xl p-6 sm:p-8 relative overflow-hidden group">
+                      <div className="bg-sky-950/20 border border-sky-900/40 rounded-3xl p-6 sm:p-8 relative group">
                         <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
                           <TrendingDown className="w-32 h-32 text-sky-500" />
                         </div>
@@ -861,7 +861,7 @@ export default function Palantir({
                       <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
                         <AlertCircle className="w-4 h-4 text-slate-400" /> Black Swan Protocol
                       </p>
-                      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 relative overflow-hidden group">
+                      <div className="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 relative group">
                         <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
                           <AlertCircle className="w-32 h-32 text-slate-500" />
                         </div>
@@ -892,7 +892,7 @@ export default function Palantir({
                       <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-4 flex items-center gap-2">
                         <Globe className="w-4 h-4 text-fuchsia-400" /> Arbitrage Finder
                       </p>
-                      <div className="bg-fuchsia-950/20 border border-fuchsia-900/40 rounded-3xl p-6 sm:p-8 relative overflow-hidden group">
+                      <div className="bg-fuchsia-950/20 border border-fuchsia-900/40 rounded-3xl p-6 sm:p-8 relative group">
                         <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
                           <Globe className="w-32 h-32 text-fuchsia-500" />
                         </div>
@@ -1128,6 +1128,67 @@ export default function Palantir({
               )) : <p className="text-sm text-slate-500 px-2 col-span-full">No intelligence gathered for this filter.</p>}
             </div>
           </section>
+
+          {/* INTELLIGENCE FEED */}
+          {data.intelligenceFeed && data.intelligenceFeed.length > 0 && (
+            <section className="mt-12">
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-500 mb-6 px-2 flex items-center gap-2">
+                <Bot className="w-4 h-4 text-indigo-400" /> Curated Intelligence Feed
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {data.intelligenceFeed.map((item, i) => {
+                  const signalColor = item.actionSignal === 'act' ? 'bg-rose-500/20 text-rose-400 border-rose-500/30'
+                    : item.actionSignal === 'prepare' ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
+                    : 'bg-slate-800 text-slate-400 border-slate-700';
+
+                  return (
+                    <div key={i} className="bg-slate-900/60 border border-slate-800/50 rounded-3xl p-6 hover:bg-slate-900 transition-all group">
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20`}>
+                            {item.category || 'global'}
+                          </span>
+                          <span className="text-[10px] font-bold text-slate-500 uppercase">{item.source || 'Intelligence Source'}</span>
+                        </div>
+                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${signalColor}`}>
+                          {item.actionSignal || 'observe'}
+                        </span>
+                      </div>
+                      
+                      <h4 className="text-base font-bold text-white mb-3 group-hover:text-amber-400 transition-colors leading-snug">
+                        {item.url ? (
+                          <a href={item.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2">
+                            {item.title} <ArrowRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </a>
+                        ) : item.title}
+                      </h4>
+                      
+                      <p className="text-xs text-slate-400 leading-relaxed mb-4">{item.summary}</p>
+                      
+                      <div className="bg-slate-950/50 rounded-xl p-4 border border-slate-800/50">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-indigo-400 mb-1">Strategic Relevance</p>
+                        <p className="text-xs font-medium text-slate-300 italic">"{item.relevanceToUser}"</p>
+                      </div>
+
+                      <div className="mt-4 flex items-center justify-between">
+                         <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-slate-500 uppercase">Impact</span>
+                            <div className="flex gap-0.5">
+                               {[...Array(5)].map((_, idx) => (
+                                 <div key={idx} className={`w-1.5 h-1.5 rounded-full ${idx < (item.impactScore || 0) / 2 ? 'bg-amber-500 shadow-[0_0_5px_rgba(245,158,11,0.5)]' : 'bg-slate-800'}`} />
+                               ))}
+                            </div>
+                         </div>
+                         {item.publishedAt && (
+                           <span className="text-[10px] font-medium text-slate-600">{new Date(item.publishedAt).toLocaleDateString()}</span>
+                         )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
 
           {/* LEGAL & RISK DISCLAIMER */}
           <section className="mt-16 pt-8 border-t border-slate-800/50 text-center px-4">

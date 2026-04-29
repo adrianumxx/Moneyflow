@@ -615,7 +615,7 @@ export default function Dashboard({
                   <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-300">Moneyflow AI</span>
                 </div>
                 <h4 className="text-xl font-black font-display tracking-tight mb-2">Automated Savings Protocol</h4>
-                <p className="text-slate-400 text-xs leading-relaxed mb-6">Optimization ready for your household circle. Potential €420 monthly yield improvement detected.</p>
+                <p className="text-slate-400 text-xs leading-relaxed mb-6">Optimization ready for your household circle. Potential {formatMoney(420, userProfile?.baseCurrency)} monthly yield improvement detected.</p>
                 <div className="flex items-center gap-2 text-indigo-400 text-[10px] font-black uppercase tracking-widest group-hover:gap-4 transition-all">
                   Review Intelligence <ChevronRight className="w-4 h-4" />
                 </div>

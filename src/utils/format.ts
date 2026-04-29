@@ -62,10 +62,10 @@ export const formatMoney = (
   } catch (e) {
     // Fallback formatting if Intl.NumberFormat fails
     const symbol = getCurrencySymbol(code);
-    return `${symbol}${value.toLocaleString(activeLocale, {
+    return `${value.toLocaleString(activeLocale, {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    })}`;
+    })} ${symbol}`;
   }
 };
 

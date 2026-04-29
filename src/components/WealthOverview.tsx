@@ -162,7 +162,7 @@ export default function WealthOverview({
         <motion.section 
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="md:col-span-2 md:row-span-2 relative p-10 rounded-[3rem] bg-zinc-950 text-white overflow-hidden shadow-glow group"
+          className="md:col-span-2 md:row-span-2 relative p-8 sm:p-10 rounded-[3rem] bg-zinc-950 text-white overflow-hidden shadow-glow group min-h-[420px] flex flex-col"
         >
           <div className="absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none">
             <div className="absolute top-0 right-0 w-[80%] h-[80%] bg-indigo-500/20 rounded-full -mr-20 -mt-20 blur-[120px] animate-pulse" />
@@ -192,7 +192,10 @@ export default function WealthOverview({
                   </div>
                 </div>
               </div>
-              <h2 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black font-display tracking-tighter leading-none truncate w-full drop-shadow-2xl" title={formatMoney(netWorth, userProfile?.baseCurrency)}>
+              <h2 
+                className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black font-display tracking-tighter leading-none w-full drop-shadow-2xl break-words" 
+                title={formatMoney(netWorth, userProfile?.baseCurrency)}
+              >
                 {formatMoney(netWorth, userProfile?.baseCurrency)}
               </h2>
               <div className="flex items-center gap-3 pt-6">
@@ -262,7 +265,7 @@ export default function WealthOverview({
                  <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.8)]" />
                </div>
                
-               <div className="flex-1 space-y-3 overflow-y-auto pr-2 no-scrollbar mb-4">
+               <div className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar mb-4 max-h-[320px]">
                  {insights.map(insight => (
                    <div key={insight.id} className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10">
                      <div className="flex items-center gap-2 mb-2">
@@ -451,7 +454,7 @@ export default function WealthOverview({
                    {yearsToMillion ? (
                       <div className="mt-4 p-3 bg-white/5 rounded-xl border border-white/10">
                         <p className="text-[10px] font-bold text-white/60">
-                          At this speed: <strong className="text-white text-xs">{yearsToMillion} years</strong> to {formatMoney(1000000, userProfile?.baseCurrency)}.
+                          Trajectory: <strong className="text-white text-xs">~{yearsToMillion} years</strong> to {formatMoney(1000000, userProfile?.baseCurrency)} at current speed.
                         </p>
                       </div>
                    ) : isPositive && netWorth >= 1000000 ? (

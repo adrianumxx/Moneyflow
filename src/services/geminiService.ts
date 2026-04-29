@@ -191,6 +191,20 @@ export interface PalantirNewsItem {
   url: string;
 }
 
+export interface PalantirIntelligenceArticle {
+  title: string;
+  source?: string;
+  url?: string;
+  publishedAt?: string;
+  category?: 'macro' | 'geopolitics' | 'markets' | 'energy' | 'currency' | 'crypto' | 'local';
+  summary?: string;
+  relevanceToUser?: string;
+  impactScore?: number;
+  actionSignal?: 'observe' | 'prepare' | 'act';
+  affectedAreas?: string[];
+  confidenceScore?: number;
+}
+
 export interface PalantirEducationalInsight {
   concept: string;
   explanation: string;
@@ -263,6 +277,7 @@ export interface PalantirIntelligence {
   negotiator?: PalantirNegotiator;
   blackSwan?: PalantirBlackSwan;
   arbitrageFinder?: PalantirArbitrageFinder;
+  intelligenceFeed?: PalantirIntelligenceArticle[];
   // Scenario Engine
   scenarios?: Array<{
     title: string;
@@ -366,56 +381,58 @@ export async function getPalantirIntelligence(
         { category: 'borrowing', state: 'RED', explanation: 'Mortgage and loan rates remain restrictively high.' }
       ],
       metrics: [
-        { id: 'cost_of_money', value: '5.25%', explanation: 'Borrowing $100,000 costs you $5,250 per year in interest.', alertState: 'RED' },
-        { id: 'purchasing_power', value: '3.1%', explanation: 'What cost $100 in January now costs $103.10.', alertState: 'YELLOW' },
+        { id: 'cost_of_money', value: '5.25%', explanation: 'Borrowing costs are currently elevated due to central bank positioning.', alertState: 'RED' },
+        { id: 'purchasing_power', value: '3.1%', explanation: 'What cost 100 units in January now costs 103.10 due to inflation.', alertState: 'YELLOW' },
         { id: 'market_mood', value: 42, explanation: 'Fear is present. Historically from here, markets can be volatile.', alertState: 'YELLOW', trend: 'down' },
-        { id: 'energy_cost', value: '$84.50', explanation: 'Fuel and logistics trending UP this week.', alertState: 'YELLOW', trend: 'up' },
-        { id: 'safe_harbor', value: '4.8%', explanation: 'Doing nothing earns you 4.8% — beating inflation comfortably.', alertState: 'GREEN' },
+        { id: 'energy_cost', value: '84.50', explanation: 'Fuel and logistics trending UP this week.', alertState: 'YELLOW', trend: 'up' },
+        { id: 'safe_harbor', value: '4.8%', explanation: 'Doing nothing earns you yield — beating inflation comfortably.', alertState: 'GREEN' },
         { id: 'global_stability', value: 65, explanation: 'The world is tense but contained right now.', alertState: 'YELLOW' }
       ],
       probabilityVectors: [
-        { title: 'Energy Supply Shock', probability: 45, severity: 'HIGH', meaning: 'Gas prices at the pump could surge 15% next month.', affects: 'Everyone', cluster: 'Energy / Minerals' }
+        { title: 'Energy Supply Shock', probability: 45, severity: 'HIGH', meaning: 'Gas prices could surge significantly next month.', affects: 'Everyone', cluster: 'Energy / Minerals' }
       ],
       signalsAndAlpha: [
-        { title: 'AI INFRASTRUCTURE MONOPOLIES', explanation: 'Capital is flowing exclusively to companies building the physical data centers for AI.', urgency: 'THIS MONTH', type: 'STRUCTURAL', cluster: 'AI Infrastructure' }
+        { title: 'AI INFRASTRUCTURE MONOPOLIES', explanation: 'Capital is flowing to companies building the physical data centers for AI.', urgency: 'THIS MONTH', type: 'STRUCTURAL', cluster: 'AI Infrastructure' }
       ],
       activeRisks: [
-        { title: 'Commercial Real Estate Debt', severity: 'HIGH', explanation: 'Regional banks hold massive amounts of bad debt. Could trigger a localized credit freeze.', escalationProbability: 60, cluster: 'Macro Finance' }
+        { title: 'Commercial Real Estate Debt', severity: 'HIGH', explanation: 'Regional banks hold significant debt. Could trigger a localized credit freeze.', escalationProbability: 60, cluster: 'Macro Finance' }
       ],
       educationalInsight: {
         concept: 'Yield Curve Inversion',
         explanation: 'When short-term bonds pay more than long-term bonds. It usually means investors expect the economy to slow down soon. It is considered one of the most reliable recession indicators.',
-        relevanceToday: 'The curve has been inverted for 18 months, signaling structural stress.'
+        relevanceToday: 'The curve has been inverted for some time, signaling structural stress.'
       },
       yieldOptimizer: {
-        detectedInefficiency: "Excessive uninvested cash losing 2.5% purchasing power to inflation.",
-        actionableStrategy: "Rotate 15,000 to an MMF (Money Market Fund) yielding 3.8%.",
+        detectedInefficiency: "Optimization Potential: Uninvested cash losing purchasing power to inflation.",
+        actionableStrategy: "Consider rotating a portion of idle cash to an MMF (Money Market Fund).",
         estimatedAnnualAlpha: 570,
         confidenceScore: 88
       },
       taxShield: {
         riskLevel: 'WARNING',
-        description: 'You are $800 away from the 43% tax bracket.',
-        taxOptimizationAction: 'Contribute $800 to a registered pension fund to deduct it from taxable income.'
+        description: 'Fiscal Awareness: You are approaching a higher tax bracket.',
+        taxOptimizationAction: 'Consider contributions to a pension fund to potentially lower taxable income.'
       },
       negotiator: {
-        targetExpense: 'Energy Bill',
-        currentMarketRate: '-28% vs last year',
+        targetExpense: 'Utility Bills',
+        currentMarketRate: 'Declining vs last year',
         potentialSavings: 312
       },
       blackSwan: {
         runwayMonths: 4.2,
-        survivalAssessment: 'You have 4.2 months of liquid runway. Pause high-risk DCA until you reach 6 months.'
+        survivalAssessment: 'You have approximately 4.2 months of liquid runway. Consider reaching 6 months for optimal security.'
       },
       arbitrageFinder: {
-        inefficientDebt: 'Car Loan (6.5%)',
-        idleAsset: 'Bank Savings (2.0%)',
+        inefficientDebt: 'High-interest debt',
+        idleAsset: 'Low-yield savings',
         arbitrageSpread: 4.5,
-        action: 'Liquidate $5,000 from savings to aggressively pay down the car loan.'
+        action: 'Consider a potential efficiency gap strategy by paying down debt with idle savings.'
       },
       newsFeed: [
-        { id: '1', category: 'MACRO', source: 'Financial Times', headline: 'Central Banks Hold Rates Steady', impactScore: 8, meaning: 'Your mortgage rate won\'t go down anytime soon.', escalationProbability: 20, affects: 'Borrowers', trend: 'neutral', aiSummary: 'Banks are waiting for more data before cutting rates.', url: '#' }
-      ]
+        { id: '1', category: 'MACRO', source: 'Financial Times', headline: 'Central Banks Hold Rates Steady', impactScore: 8, meaning: 'Borrowing costs are expected to remain stable for now.', escalationProbability: 20, affects: 'Borrowers', trend: 'neutral', aiSummary: 'Banks are waiting for more data before cutting rates.', url: '#' }
+      ],
+      dataQuality: 'fallback_data',
+      sourceStatus: 'fallback'
     };
   }
 }

@@ -609,6 +609,22 @@ Return JSON EXACTLY matching this schema:
   "newsFeed": [
     { "id": string, "category": "MACRO" | "ENERGY" | "CRYPTO" | "GEOPOLITICS" | "TECH" | "MARKETS", "source": string, "headline": string, "impactScore": number (1-10), "meaning": string, "escalationProbability": number, "affects": string, "trend": "up" | "down" | "neutral", "aiSummary": string, "url": string }
   ],
+  "intelligenceFeed": [
+    // 3-6 RELEVANT ARTICLES. Use reputable sources only. 
+    // Explain relevance to user's country, currency, or portfolio.
+    {
+      "title": string,
+      "source": string,
+      "url": string (clickable URL if available),
+      "publishedAt": string (ISO date),
+      "category": "macro" | "geopolitics" | "markets" | "energy" | "currency" | "crypto" | "local",
+      "summary": string (short, original summary),
+      "relevanceToUser": string (why this matters for them),
+      "impactScore": number (1-10),
+      "actionSignal": "observe" | "prepare" | "act",
+      "affectedAreas": string[]
+    }
+  ],
   "geopoliticalRings": {
     // ANALYZE IN CONCENTRIC LAYERS:
     // state: user country/tax residence/local economy

@@ -209,6 +209,7 @@ export default function FinancialForecast({
           onSimulate={(val) => setSimulatedMonthlyIncome(val)}
           originalValue={analysis.realMonthlyIncome}
           icon={<DollarSign className="w-5 h-5 text-indigo-500" />}
+          currency={userProfile?.baseCurrency}
         />
         <AnalysisCard 
           title="Burn Rate" 
@@ -216,6 +217,7 @@ export default function FinancialForecast({
           subtitle={`${formatMoney(analysis.monthlyDebtPayments, userProfile?.baseCurrency)} recurring debt`}
           icon={<TrendingDown className="w-5 h-5 text-rose-500" />}
           color="rose"
+          currency={userProfile?.baseCurrency}
         />
         <AnalysisCard 
           title="Capital Surplus" 
@@ -223,6 +225,7 @@ export default function FinancialForecast({
           subtitle={`${((analysis.monthlySurplus / (analysis.effectiveIncome || 1)) * 100).toFixed(1)}% efficiency`}
           icon={<PiggyBank className="w-5 h-5 text-emerald-500" />}
           color="emerald"
+          currency={userProfile?.baseCurrency}
         />
         <AnalysisCard 
           title="Current Base" 
@@ -230,6 +233,7 @@ export default function FinancialForecast({
           subtitle={`${assets.length} active positions`}
           icon={<Activity className="w-5 h-5 text-blue-500" />}
           color="blue"
+          currency={userProfile?.baseCurrency}
         />
       </div>
 
@@ -340,7 +344,7 @@ export default function FinancialForecast({
   );
 }
 
-function AnalysisCard({ title, value, subtitle, icon, color }: { title: string, value: number, subtitle: string, icon: React.ReactNode, color: string }) {
+function AnalysisCard({ title, value, subtitle, icon, color, currency }: { title: string, value: number, subtitle: string, icon: React.ReactNode, color: string, currency?: string }) {
   const colorMap: Record<string, string> = {
     indigo: 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400',
     rose: 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400',
@@ -358,7 +362,7 @@ function AnalysisCard({ title, value, subtitle, icon, color }: { title: string, 
       <div>
         <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</p>
         <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">
-          {formatMoney(value, undefined)}
+          {formatMoney(value, currency)}
         </p>
         <p className="text-xs text-slate-500 mt-1">{subtitle}</p>
       </div>
@@ -366,7 +370,7 @@ function AnalysisCard({ title, value, subtitle, icon, color }: { title: string, 
   );
 }
 
-function SimulationCard({ title, value, isEditable, onSimulate, originalValue, icon }: { title: string, value: number, isEditable?: boolean, onSimulate: (val: number | null) => void, originalValue: number, icon: React.ReactNode }) {
+function SimulationCard({ title, value, isEditable, onSimulate, originalValue, icon, currency }: { title: string, value: number, isEditable?: boolean, onSimulate: (val: number | null) => void, originalValue: number, icon: React.ReactNode, currency?: string }) {
   const [inputValue, setInputValue] = useState(value.toString());
   const [isEditing, setIsEditing] = useState(false);
 
@@ -423,11 +427,11 @@ function SimulationCard({ title, value, isEditable, onSimulate, originalValue, i
             className="text-xl font-bold text-slate-900 dark:text-white mt-1 cursor-pointer hover:text-indigo-500 transition-colors"
             onClick={() => setIsEditing(true)}
           >
-            {formatMoney(value, undefined)}
+            {formatMoney(value, currency)}
           </p>
         )}
         
-        <p className="text-xs text-slate-500 mt-1">Real: {formatMoney(originalValue, undefined)}</p>
+        <p className="text-xs text-slate-500 mt-1">Real: {formatMoney(originalValue, currency)}</p>
       </div>
     </div>
   );
