@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { auth, db, signIn, signUpWithEmail, logInWithEmail, logOut } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
