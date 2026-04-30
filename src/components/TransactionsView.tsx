@@ -23,6 +23,7 @@ import { formatMoney } from '../utils/format';
 import { db } from '../firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../utils/errorHandling';
+import { getTransactionIntelligence } from '../utils/transactionInsights';
 
 interface TransactionsViewProps {
   transactions: Transaction[];
@@ -95,6 +96,75 @@ export default function TransactionsView({
         >
           <Plus className="w-5 h-5" /> Add Transaction
         </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        {(() => {
+          const processedTxs = transactions.map(t => ({
+            ...t,
+            date: t.date ? (typeof t.date.toDate === 'function' ? t.date.toDate().toISOString() : t.date.toString()) : ''
+          }));
+          const intel = getTransactionIntelligence(processedTxs as any);
+          const hasData = transactions.length > 5;
+
+          if (!hasData) {
+            return (
+              <div className="md:col-span-3 p-8 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2rem] text-center">
+                <Receipt className="w-8 h-8 text-slate-300 mx-auto mb-3" />
+                <p className="text-xs font-black uppercase tracking-widest text-slate-500">
+                  Add more transactions or connect a bank to unlock spending insights.
+                </p>
+              </div>
+            );
+          }
+
+          return (
+            <>
+              <div className="p-6 bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2rem]">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4">Spending this month</p>
+                <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
+                  {formatMoney(intel.monthlySpending, userProfile?.baseCurrency)}
+                </p>
+                <div className="flex items-center gap-2 mt-3 text-[10px] font-bold">
+                  <span className={`px-2 py-0.5 rounded ${intel.netCashFlow >= 0 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
+                    Net: {intel.netCashFlow >= 0 ? '+' : ''}{formatMoney(intel.netCashFlow, userProfile?.baseCurrency)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-6 bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2rem]">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4">Large transactions</p>
+                <div className="space-y-3">
+                  {intel.largeTransactions.slice(0, 2).map((t, idx) => (
+                    <div key={idx} className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-500 truncate max-w-[120px]">{t.description}</span>
+                      <span className="text-xs font-black text-slate-900 dark:text-white">{formatMoney(Math.abs(t.amount), userProfile?.baseCurrency)}</span>
+                    </div>
+                  ))}
+                  {intel.largeTransactions.length === 0 && <span className="text-xs text-slate-400 font-medium">No large items detected.</span>}
+                </div>
+              </div>
+
+              <div className="p-6 bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-[2rem]">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-4">Recurring signals</p>
+                <div className="space-y-3">
+                  {intel.recurringCandidates.slice(0, 2).map((r, idx) => (
+                    <div key={idx} className="flex justify-between items-center">
+                      <span className="text-xs font-bold text-slate-500 truncate max-w-[120px]">{r.description}</span>
+                      <span className="text-xs font-black text-emerald-500">x{r.count}</span>
+                    </div>
+                  ))}
+                  {intel.recurringCandidates.length === 0 && <span className="text-xs text-slate-400 font-medium">Sync bank to detect patterns.</span>}
+                </div>
+              </div>
+
+              <div className="md:col-span-3 flex justify-between px-2">
+                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Based on available transactions</p>
+                <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest italic">Review suggestions, not financial advice</p>
+              </div>
+            </>
+          );
+        })()}
       </div>
 
       <div className="glass-card rounded-[2.5rem] sm:rounded-[3rem] p-5 sm:p-10 shadow-premium">

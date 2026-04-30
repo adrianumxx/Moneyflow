@@ -26,6 +26,7 @@ import { formatMoney } from '../utils/format';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { generateFinancialInsights } from '../services/geminiService';
 import { useNotifications } from '../context/NotificationContext';
+import { assessGoalProgress } from '../utils/goalInsights';
 import { 
   calculateTotalAssets, 
   calculateTotalLiabilities, 
@@ -82,6 +83,7 @@ export default function WealthOverview({
 }: WealthOverviewProps) {
   const { t } = useTranslation();
   const [isGenerating, setIsGenerating] = useState(false);
+  const [activeTooltip, setActiveTooltip] = useState<string | null>(null);
   const { showNotification } = useNotifications();
 
   const handleGenerateInsights = async () => {
@@ -187,11 +189,17 @@ export default function WealthOverview({
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-300">Fiscal Awareness</span>
-                      <div className="group relative">
-                        <Info className="w-2.5 h-2.5 text-slate-500 cursor-help" />
-                        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 p-2 bg-slate-900 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                          Highlights areas that may be worth reviewing with a qualified advisor.
-                        </div>
+                      <div className="relative">
+                        <Info 
+                          className="w-2.5 h-2.5 text-slate-500 cursor-help"
+                          onMouseEnter={() => setActiveTooltip('fiscal')}
+                          onMouseLeave={() => setActiveTooltip(null)}
+                        />
+                        {activeTooltip === 'fiscal' && (
+                          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 p-3 bg-slate-900 border border-slate-800 rounded-2xl text-[10px] font-bold text-slate-300 shadow-2xl z-[60] backdrop-blur-xl">
+                            Highlights areas that may be worth reviewing with a qualified advisor.
+                          </div>
+                        )}
                       </div>
                     </div>
                     <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest italic leading-none">Total Assets</span>
@@ -215,12 +223,18 @@ export default function WealthOverview({
                 {formatMoney(netWorth, userProfile?.baseCurrency)}
               </h2>
               <div className="flex items-center gap-3 pt-6">
-                <span className="flex items-center gap-2 text-emerald-400 font-black bg-emerald-400/10 px-4 py-2 rounded-2xl text-xs border border-emerald-400/20 shadow-success group/tip relative">
+                <span 
+                  className="flex items-center gap-2 text-emerald-400 font-black bg-emerald-400/10 px-4 py-2 rounded-2xl text-xs border border-emerald-400/20 shadow-success relative"
+                  onMouseEnter={() => setActiveTooltip('growth')}
+                  onMouseLeave={() => setActiveTooltip(null)}
+                >
                   <ArrowUpRight className="w-4 h-4" />
                   +2.4% Growth Pace
-                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-40 p-2 bg-slate-900 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-400 opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-50">
-                    Calculated from your current assets and historical data.
-                  </div>
+                  {activeTooltip === 'growth' && (
+                    <div className="absolute left-0 bottom-full mb-2 w-48 p-3 bg-slate-900 border border-slate-800 rounded-2xl text-[10px] font-bold text-slate-300 shadow-2xl z-[60] backdrop-blur-xl">
+                      Calculated from your current assets and historical data.
+                    </div>
+                  )}
                 </span>
                 
                 {/* Data Freshness Badge */}
@@ -254,11 +268,17 @@ export default function WealthOverview({
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Spending Pace</p>
-                  <div className="group relative">
-                    <Info className="w-2.5 h-2.5 text-slate-500 cursor-help" />
-                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-40 p-2 bg-slate-900 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                      Your recent spending trend based on available data.
-                    </div>
+                  <div className="relative">
+                    <Info 
+                      className="w-2.5 h-2.5 text-slate-500 cursor-help"
+                      onMouseEnter={() => setActiveTooltip('spending')}
+                      onMouseLeave={() => setActiveTooltip(null)}
+                    />
+                    {activeTooltip === 'spending' && (
+                      <div className="absolute right-0 bottom-full mb-2 w-48 p-3 bg-slate-900 border border-slate-800 rounded-2xl text-[10px] font-bold text-slate-300 shadow-2xl z-[60] backdrop-blur-xl">
+                        Your recent spending trend based on available data.
+                      </div>
+                    )}
                   </div>
                 </div>
                 <p className="text-3xl font-black text-rose-500 font-display truncate">{formatMoney(monthlyExpenses, userProfile?.baseCurrency)}</p>
@@ -338,6 +358,39 @@ export default function WealthOverview({
             </div>
           )}
         </section>
+
+        {/* GOALS PREVIEW (Compact) */}
+        {goals.length > 0 && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="md:col-span-1 p-6 rounded-[2.5rem] bg-white dark:bg-white/5 border border-slate-100 dark:border-white/10 flex flex-col justify-between"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-500">
+                <Target className="w-4 h-4" />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Goal Progress</span>
+            </div>
+            
+            <div>
+              <div className="flex items-baseline justify-between mb-2">
+                <h4 className="text-sm font-black text-slate-900 dark:text-white truncate max-w-[120px]">{goals[0].name}</h4>
+                <span className="text-xs font-black text-indigo-500">{assessGoalProgress(goals[0]).progress}%</span>
+              </div>
+              <div className="h-1.5 w-full bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden">
+                <div className="h-full bg-indigo-500" style={{ width: `${assessGoalProgress(goals[0]).progress}%` }} />
+              </div>
+            </div>
+
+            <button 
+              onClick={() => onAddGoal()}
+              className="mt-4 text-[10px] font-black uppercase tracking-widest text-indigo-500 hover:text-indigo-600 transition-colors flex items-center gap-2"
+            >
+              Manage {goals.length} Goals <ArrowRight className="w-3 h-3" />
+            </button>
+          </motion.div>
+        )}
 
         {/* Recent Activity (1x2) */}
         <section className="lg:row-span-2 glass-card rounded-[3rem] p-8 shadow-premium flex flex-col">

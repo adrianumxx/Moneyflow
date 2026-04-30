@@ -98,7 +98,7 @@ export default function App() {
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'groups', icon: Users, label: 'Groups' },
     { id: 'palantir', icon: Globe, label: 'Palantir' },
-    { id: 'sync', icon: Link, label: 'Sync Hub' },
+    { id: 'sync', icon: Link, label: 'Connect' },
     { id: 'ledger', icon: History, label: 'Ledger' },
     { id: 'forecast', icon: TrendingUp, label: 'Forecast' },
     { id: 'settings', icon: SettingsIcon, label: 'Settings' }
@@ -1003,9 +1003,17 @@ export default function App() {
                 onSelectGroup={setSelectedGroupId}
                 user={user}
                 onAddGroup={() => setIsCreateModalOpen(true)}
+                onAddAsset={() => setIsAddAssetModalOpen(true)}
+                onAddTransaction={() => setIsAddTransactionModalOpen(true)}
+                onConnectBank={() => setIsConnectBankOpen(true)}
+                onNavigateToTab={(tab) => setActiveTab(tab)}
                 userProfile={userProfile || undefined}
                 theme={theme}
                 transactions={transactions}
+                assets={assets}
+                bankAccounts={bankAccounts}
+                connectedAccounts={connectedAccounts}
+                goals={goals}
                 onNavigateToLedger={() => setActiveTab('ledger')}
               />
             </motion.div>
@@ -1083,6 +1091,21 @@ export default function App() {
                   setEditingTransaction(tx);
                   setIsAddTransactionModalOpen(true);
                 }}
+                userProfile={userProfile || undefined}
+              />
+            </motion.div>
+          ) : activeTab === 'goals' ? (
+            <motion.div
+              key="goals"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto"
+            >
+              <GoalsView 
+                goals={goals}
+                onAddGoal={() => setIsAddGoalModalOpen(true)}
                 userProfile={userProfile || undefined}
               />
             </motion.div>
@@ -1201,7 +1224,7 @@ export default function App() {
               }`}
             >
               <Link className={`w-5 h-5 ${(activeTab === 'sync' && !selectedGroupId) ? 'stroke-indigo-500' : ''}`} />
-              <span className="text-xs font-black uppercase tracking-tight">Sync</span>
+              <span className="text-xs font-black uppercase tracking-tight">Connect</span>
             </button>
             <button
               onClick={() => {
@@ -1217,6 +1240,21 @@ export default function App() {
             >
               <Receipt className={`w-5 h-5 ${(activeTab === 'ledger' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
               <span className="text-xs font-black uppercase tracking-tight">Ledger</span>
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('goals');
+                setSelectedGroupId(null);
+                setIsSidebarOpen(false);
+              }}
+              className={`flex-1 flex flex-col items-center gap-1.5 py-2 transition-all ${
+                activeTab === 'goals' && !selectedGroupId
+                  ? 'text-indigo-600 dark:text-indigo-400 scale-110' 
+                  : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
+              }`}
+            >
+              <Target className={`w-5 h-5 ${(activeTab === 'goals' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
+              <span className="text-xs font-black uppercase tracking-tight">Goals</span>
             </button>
           </div>
         </div>

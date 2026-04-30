@@ -214,10 +214,10 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
               </div>
               <div className="space-y-1">
                 <h3 className="text-2xl sm:text-4xl font-black tracking-tight text-white font-display flex items-center gap-3">
-                  Moneyflow <span className="text-zinc-500">Sync</span>
-                  <span className="hidden sm:inline text-[10px] bg-white/10 text-zinc-400 px-2 py-1 rounded-md tracking-widest uppercase">Sandbox</span>
+                  Connect <span className="text-zinc-500">Account</span>
+                  <span className="hidden sm:inline text-[10px] bg-white/10 text-zinc-400 px-2 py-1 rounded-md tracking-widest uppercase">Secure link</span>
                 </h3>
-                <p className="text-zinc-500 text-sm font-medium">Simulate sync with major institutions.</p>
+                <p className="text-zinc-500 text-sm font-medium">Link your institution safely to Moneyflow.</p>
               </div>
             </div>
             <button onClick={onClose} className="p-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl transition-all group">
@@ -306,8 +306,8 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                         <ShieldCheck className="w-6 h-6 text-indigo-400" />
                       </div>
                       <div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-wider">Security Verified</h4>
-                        <p className="text-[10px] text-zinc-500 font-medium mt-1">Your actual credentials are never stored. Secure sandbox environment.</p>
+                        <h4 className="text-sm font-black text-white uppercase tracking-wider">Read-only connection</h4>
+                        <p className="text-[10px] text-zinc-500 font-medium mt-1">Moneyflow cannot move money or see your password. You can disconnect anytime.</p>
                       </div>
                     </div>
                     <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-zinc-400 group-hover:text-white group-hover:translate-x-1 transition-all">
@@ -351,9 +351,9 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                 </div>
 
                 <div className="space-y-4">
-                  <h4 className="text-2xl font-black text-white tracking-tight">Access Authorization Required</h4>
+                  <h4 className="text-2xl font-black text-white tracking-tight">Connect with {selectedBank.name}</h4>
                   <p className="text-zinc-500 font-medium text-sm leading-relaxed">
-                    To provide real-time wealth intelligence, Moneyflow needs your permission to securely access the following data from <span className="text-white font-bold">{selectedBank.name}</span>:
+                    You’ll continue with your bank to approve read-only access. Moneyflow cannot move money or see your bank password.
                   </p>
                 </div>
 

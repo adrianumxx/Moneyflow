@@ -80,14 +80,14 @@ export const PROVIDER_REGISTRY: Provider[] = [
   },
   {
     providerId: 'custom_api',
-    providerName: 'Custom Neural API',
+    providerName: 'Custom Integration',
     providerType: 'custom_api',
     status: 'active',
     countrySupport: ['GLOBAL'],
     supportsOAuth: false,
     supportsSandbox: false,
     isDemo: false,
-    description: 'Connect to external proprietary wealth endpoints.'
+    description: 'Connect to supported external data sources when available.'
   }
 ];
 

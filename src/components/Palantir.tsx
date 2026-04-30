@@ -10,6 +10,7 @@ import { useNotifications } from '../context/NotificationContext';
 import { Asset, Liability, FinancialGoal as Goal, UserProfile, Transaction, BankAccount, ConnectedInstitution, ConnectedAccount, CryptoWallet, InvestmentAccount, Income } from '../types';
 import { authenticatedFetch } from '../utils/api';
 import { formatMoney } from '../utils/format';
+import { assessDataQuality } from '../utils/dataQuality';
 
 interface PalantirProps {
   assets?: Asset[];
@@ -170,6 +171,16 @@ export default function Palantir({
   const pulseDuration = isActionRequired ? 1 : 4;
   const rotateDurationOuter = isActionRequired ? 10 : 40;
   const rotateDurationInner = isActionRequired ? 8 : 30;
+
+  const dataQuality = assessDataQuality({
+    assetsCount: assets?.length || 0,
+    liabilitiesCount: liabilities?.length || 0,
+    transactionsCount: transactions?.length || 0,
+    bankAccountsCount: bankAccounts?.length || 0,
+    connectedAccountsCount: connectedAccounts?.length || 0,
+    goalsCount: goals?.length || 0,
+    lastSyncedAt: connectedAccounts?.length && connectedAccounts.length > 0 ? new Date().toISOString() : null
+  });
   
   if (isActionRequired) {
     orbColors.glow = 'shadow-[0_0_80px_rgba(225,29,72,0.8)]';
@@ -207,6 +218,90 @@ export default function Palantir({
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getSourceLabel = (status?: string) => {
+    const map: Record<string, string> = {
+      connected_data: 'Connected data',
+      user_data: 'Manual data',
+      estimated_data: 'Estimated insight',
+      fallback_data: 'Fallback estimate',
+      live_search: 'Live intelligence',
+      model_inference: 'AI estimate',
+      cached: 'Cached',
+      fallback: 'Fallback'
+    };
+    return map[status || ''] || status?.replace('_', ' ') || 'Unknown source';
+  };
+
+  const StructuredInsightCard = ({ 
+    title, 
+    why, 
+    what, 
+    confidence, 
+    source, 
+    severity,
+    icon: Icon
+  }: { 
+    title: string; 
+    why: string; 
+    what: string; 
+    confidence?: number; 
+    source?: string;
+    severity?: 'GREEN' | 'YELLOW' | 'RED' | 'IMMEDIATE' | 'THIS WEEK' | 'THIS MONTH' | 'EXTREME' | 'HIGH' | 'MEDIUM' | 'LOW' | 'CRITICAL' | 'SAFE' | 'WARNING';
+    icon: any;
+  }) => {
+    const getSeverityColor = (s?: string) => {
+      if (!s) return 'text-slate-400';
+      if (['RED', 'EXTREME', 'CRITICAL', 'IMMEDIATE'].includes(s)) return 'text-rose-500';
+      if (['YELLOW', 'HIGH', 'WARNING', 'THIS WEEK'].includes(s)) return 'text-amber-500';
+      return 'text-emerald-500';
+    };
+
+    return (
+      <div className="bg-slate-900/40 border border-slate-800/50 rounded-2xl p-5 group hover:bg-slate-900/60 transition-all">
+        <div className="flex items-start justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center ${getSeverityColor(severity)}`}>
+              <Icon className="w-4 h-4" />
+            </div>
+            <h4 className="text-sm font-black text-white leading-tight">{title}</h4>
+          </div>
+          {confidence !== undefined && (
+            <div className="text-right">
+              <p className="text-[8px] font-black uppercase text-slate-500">Confidence</p>
+              <p className="text-[10px] font-black text-indigo-400">{confidence}%</p>
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <p className="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-1">What we see</p>
+            <p className="text-xs text-slate-300 leading-relaxed">{title}</p>
+          </div>
+          <div>
+            <p className="text-[8px] font-black uppercase tracking-widest text-slate-500 mb-1">Why it matters</p>
+            <p className="text-xs text-slate-400 leading-relaxed italic">"{why}"</p>
+          </div>
+          <div className="bg-slate-950/40 rounded-xl p-3 border border-white/5">
+            <p className="text-[8px] font-black uppercase tracking-widest text-indigo-500 mb-1">What to review</p>
+            <p className="text-xs font-bold text-slate-200">{what}</p>
+          </div>
+        </div>
+
+        <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
+          <p className="text-[8px] font-bold text-slate-600 uppercase tracking-widest">
+            Based on: <span className="text-slate-400">{getSourceLabel(source || data?.sourceStatus)}</span>
+          </p>
+          {severity && (
+            <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${getSeverityColor(severity).replace('text-', 'bg-').replace('-500', '-500/10')}`}>
+              {severity}
+            </span>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -439,6 +534,15 @@ export default function Palantir({
                     {data.narrative}
                   </p>
                   
+                  {(dataQuality.level === 'low' || dataQuality.level === 'fair') && (
+                    <div className="mt-6 p-4 bg-amber-500/5 border border-amber-500/10 rounded-2xl flex items-start gap-3">
+                      <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                      <p className="text-[11px] font-bold text-amber-500/80 leading-relaxed">
+                        Insights are based on limited data. Add transactions or connect a bank to improve reliability.
+                      </p>
+                    </div>
+                  )}
+                  
                   {/* SEMAPHORE (Integrated) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-8">
                     {data.semaphore?.map((sig, i) => (
@@ -606,27 +710,23 @@ export default function Palantir({
 
               {/* ACTION QUEUE */}
               {data.actionQueue && data.actionQueue.length > 0 && (
-                <div className="bg-indigo-950/10 border border-indigo-900/30 rounded-3xl p-6 flex flex-col h-full">
-                  <div className="flex items-center justify-between mb-4">
+                <div className="lg:col-span-3 space-y-4">
+                  <div className="flex items-center gap-2 mb-2">
                     <Zap className="w-5 h-5 text-indigo-400" />
-                    <div className="flex items-center gap-2">
-                      <span className="text-[9px] font-black uppercase tracking-widest text-indigo-500/70">Action Queue</span>
-                      <div className="group relative">
-                        <Info className="w-2.5 h-2.5 text-slate-600 cursor-help" />
-                        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-40 p-2 bg-slate-900 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                          Recommended items to review based on current signals.
-                        </div>
-                      </div>
-                    </div>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-indigo-500/70">Action Queue</span>
                   </div>
-                  <div className="space-y-3 flex-grow">
-                    {data.actionQueue.slice(0, 2).map((action, idx) => (
-                      <div key={idx} className="border-l-2 border-indigo-500/30 pl-3">
-                        <p className="text-xs font-bold text-white leading-tight">{action.title}</p>
-                        <p className="text-[10px] text-slate-400 mt-1 line-clamp-2">{action.reason}</p>
-                      </div>
-                    ))}
-                  </div>
+                  {data.actionQueue.slice(0, 3).map((action, idx) => (
+                    <StructuredInsightCard 
+                      key={idx}
+                      title={action.title}
+                      why={action.reason || "Context analysis indicates this item requires your attention."}
+                      what={action.actionSignal === 'act' ? "Review and take immediate action." : action.actionSignal === 'prepare' ? "Prepare your strategy for this outcome." : "Observe these changes closely."}
+                      confidence={action.confidenceScore}
+                      source={data.sourceStatus}
+                      severity={action.priority?.toUpperCase() as any}
+                      icon={Zap}
+                    />
+                  ))}
                 </div>
               )}
             </div>
@@ -654,15 +754,18 @@ export default function Palantir({
                         </div>
                       </div>
                     </div>
-                    <div className="space-y-4">
-                      {data.scenarios.slice(0, 3).map((s, i) => (
-                        <div key={i} className="border border-slate-800 rounded-2xl p-4 bg-slate-950/50">
-                          <div className="flex items-start justify-between gap-2 mb-1">
-                            <p className="text-sm font-bold text-white">{s.title}</p>
-                            <span className="text-[10px] font-black text-indigo-400">{s.probability}%</span>
-                          </div>
-                          <p className="text-xs text-slate-400 line-clamp-2">{s.rationale}</p>
-                        </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {data.scenarios.slice(0, 4).map((s, i) => (
+                        <StructuredInsightCard 
+                          key={i}
+                          title={s.title}
+                          why={s.rationale || "Statistical modeling suggests this scenario is gaining probability."}
+                          what={`Review impact on ${s.affectedAreas?.join(', ') || 'portfolio'}. Signal: ${s.actionSignal || 'observe'}.`}
+                          confidence={s.confidenceScore || s.probability}
+                          source="model_inference"
+                          severity={s.actionSignal?.toUpperCase() as any}
+                          icon={TrendingUp}
+                        />
                       ))}
                     </div>
                   </div>
@@ -713,26 +816,30 @@ export default function Palantir({
                         </div>
                       </div>
                     </div>
-                  <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {data.activeRisks?.slice(0, 2).map((risk, i) => (
-                      <div key={i} className="bg-rose-950/10 border border-rose-900/30 rounded-2xl p-4">
-                        <div className="flex justify-between items-start mb-1">
-                          <h4 className="text-sm font-black text-white">{risk.title}</h4>
-                          <span className="text-[9px] font-black uppercase text-rose-400">{risk.severity}</span>
-                        </div>
-                        <p className="text-xs text-slate-300 leading-relaxed">{risk.explanation}</p>
-                      </div>
+                      <StructuredInsightCard 
+                        key={i}
+                        title={risk.title}
+                        why={risk.explanation}
+                        what={`Assess risk exposure and prepare mitigation. Escalation: ${risk.escalationProbability}%`}
+                        confidence={100 - risk.escalationProbability}
+                        source="live_search"
+                        severity={risk.severity}
+                        icon={AlertTriangle}
+                      />
                     ))}
                     {data.probabilityVectors?.slice(0, 2).map((vector, i) => (
-                      <div key={i} className="bg-slate-950/50 border border-slate-800 rounded-2xl p-4">
-                        <div className="flex justify-between items-start mb-2">
-                          <h4 className="text-sm font-bold text-white">{vector.title}</h4>
-                          <span className="text-sm font-black text-indigo-400">{vector.probability}%</span>
-                        </div>
-                        <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
-                          <div className="h-full bg-indigo-500" style={{ width: `${vector.probability}%` }} />
-                        </div>
-                      </div>
+                      <StructuredInsightCard 
+                        key={i}
+                        title={vector.title}
+                        why={vector.meaning}
+                        what={`Monitor the trend in ${vector.cluster}. Affects: ${vector.affects}.`}
+                        confidence={vector.probability}
+                        source="model_inference"
+                        severity={vector.severity}
+                        icon={TrendingUp}
+                      />
                     ))}
                   </div>
                 </div>
@@ -798,16 +905,22 @@ export default function Palantir({
               {/* SIGNALS & ALPHA + EDUCATION (Side) */}
               <div className="lg:col-span-4 space-y-6">
                 {data.signalsAndAlpha && data.signalsAndAlpha.length > 0 && (
-                  <div className="bg-emerald-950/10 border border-emerald-900/30 rounded-3xl p-6">
-                    <p className="text-[10px] font-black uppercase text-emerald-500 mb-4">Opportunities</p>
-                    <div className="space-y-4">
-                      {data.signalsAndAlpha.slice(0, 2).map((signal, i) => (
-                        <div key={i}>
-                          <h4 className="text-xs font-black text-white uppercase">{signal.title}</h4>
-                          <p className="text-[11px] text-slate-300 mt-1">{signal.explanation}</p>
-                        </div>
-                      ))}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Bot className="w-5 h-5 text-amber-500" />
+                      <span className="text-[9px] font-black uppercase tracking-widest text-amber-500/70">Signals & Alpha</span>
                     </div>
+                    {data.signalsAndAlpha.slice(0, 3).map((sig, i) => (
+                      <StructuredInsightCard 
+                        key={i}
+                        title={sig.title}
+                        why={sig.explanation}
+                        what={`Strategy: Review exposure to ${sig.cluster}. Urgency: ${sig.urgency}.`}
+                        source="live_search"
+                        severity={sig.urgency as any}
+                        icon={Bot}
+                      />
+                    ))}
                   </div>
                 )}
 

@@ -17,12 +17,16 @@ import {
   ChevronRight,
   PieChart as PieChartIcon
 } from 'lucide-react';
-import { Group, Expense, BudgetType, CATEGORIES, Transaction, UserProfile } from '../types';
 import { db } from '../firebase';
 import { collection, query, onSnapshot, orderBy, limit, doc, updateDoc, deleteDoc, Timestamp, where, serverTimestamp } from 'firebase/firestore';
 import { User } from 'firebase/auth';
 import { formatMoney, getCurrencySymbol } from '../utils/format';
 import { handleFirestoreError, OperationType } from '../utils/errorHandling';
+import GuidedSetupChecklist from './GuidedSetupChecklist';
+import FirstInsightMoment from './FirstInsightMoment';
+import { Asset, Transaction, BankAccount, ConnectedAccount, FinancialGoal, UserProfile, Liability, Group, Expense, BudgetType, CATEGORIES } from '../types';
+import DataCompletenessScore from './DataCompletenessScore';
+import WeeklyMoneyBrief from './WeeklyMoneyBrief';
 
 interface DashboardProps {
   user: User;
@@ -34,8 +38,16 @@ interface DashboardProps {
   onUpdateTransaction?: (tx: any) => void;
   onDeleteTransaction?: (id: string) => void;
   onAddGroup?: () => void;
+  onAddAsset?: () => void;
+  onAddTransaction?: () => void;
+  onConnectBank?: () => void;
+  onNavigateToTab?: (tab: any) => void;
   userProfile?: UserProfile;
   theme: 'light' | 'dark';
+  assets: Asset[];
+  bankAccounts: BankAccount[];
+  connectedAccounts: ConnectedAccount[];
+  goals: FinancialGoal[];
 }
 
 interface Alert {
@@ -66,8 +78,16 @@ export default function Dashboard({
   onUpdateTransaction,
   onDeleteTransaction,
   onAddGroup,
+  onAddAsset,
+  onAddTransaction,
+  onConnectBank,
+  onNavigateToTab,
   userProfile,
-  theme 
+  theme,
+  assets,
+  bankAccounts,
+  connectedAccounts,
+  goals
 }: DashboardProps) {
   const [recentExpenses, setRecentExpenses] = useState<DashboardExpense[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -358,8 +378,44 @@ export default function Dashboard({
     return () => unsubscribes.forEach(unsub => unsub());
   }, [groups, transactions, user.uid]);
 
+  const handleSetupAction = (action: string) => {
+    switch (action) {
+      case 'ADD_ASSET': onAddAsset?.(); break;
+      case 'ADD_TX': onAddTransaction?.(); break;
+      case 'NAV_SYNC': onConnectBank?.(); break;
+      case 'NAV_INSIGHTS': onNavigateToTab?.('palantir'); break;
+      case 'NAV_SETTINGS': onNavigateToTab?.('settings'); break;
+    }
+  };
+
+  const hasAnyData = assets.length > 0 || transactions.length > 0 || bankAccounts.length > 0 || connectedAccounts.length > 0;
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 sm:space-y-14">
+      {hasAnyData && (
+        <FirstInsightMoment 
+          onReviewOverview={() => onNavigateToTab?.('wealth')}
+          onOpenInsights={() => onNavigateToTab?.('palantir')}
+        />
+      )}
+      
+      <GuidedSetupChecklist 
+        assets={assets}
+        transactions={transactions}
+        bankAccounts={bankAccounts}
+        connectedAccounts={connectedAccounts}
+        goals={goals}
+        onAction={handleSetupAction}
+      />
+
+      <WeeklyMoneyBrief 
+        assets={assets}
+        liabilities={liabilities}
+        transactions={transactions}
+        goals={goals}
+        bankAccounts={bankAccounts}
+        connectedAccounts={connectedAccounts}
+      />
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 sm:gap-8">
         <div>
           <div className="flex items-center gap-2 mb-3 sm:mb-4">
