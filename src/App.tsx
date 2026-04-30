@@ -51,7 +51,8 @@ import {
   TrendingUp,
   Settings as SettingsIcon,
   Link,
-  Bot
+  Bot,
+  Target
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Group, UserProfile, Asset, Liability, FinancialGoal, AIInsight, Transaction, BankAccount, Expense, ConnectedInstitution, ConnectedAccount, CryptoWallet, InvestmentAccount, Income } from './types';
@@ -89,6 +90,7 @@ import FeedbackModal from './components/FeedbackModal';
 import GlobalPulse from './components/GlobalPulse';
 import NeuralAdvisor from './components/NeuralAdvisor';
 import IntegrationsHub from './components/IntegrationsHub';
+import GoalsView from './components/GoalsView';
 import BetaFeedbackButton from './components/BetaFeedbackButton';
 import { handleSyncCallback, listInstitutions } from './services/syncService';
 
@@ -119,7 +121,7 @@ export default function App() {
   const [investmentAccounts, setInvestmentAccounts] = useState<InvestmentAccount[]>([]);
   const [income, setIncome] = useState<Income[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [activeTab, setActiveTab] = useState<'wealth' | 'groups' | 'forecast' | 'ledger' | 'pulse' | 'settings' | 'palantir' | 'dashboard' | 'sync'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'wealth' | 'groups' | 'forecast' | 'ledger' | 'pulse' | 'settings' | 'palantir' | 'dashboard' | 'sync' | 'goals'>('dashboard');
   const [lastError, setLastError] = useState<string | null>(null);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -1014,6 +1016,7 @@ export default function App() {
                 bankAccounts={bankAccounts}
                 connectedAccounts={connectedAccounts}
                 goals={goals}
+                liabilities={liabilities}
                 onNavigateToLedger={() => setActiveTab('ledger')}
               />
             </motion.div>

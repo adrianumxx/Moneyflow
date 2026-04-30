@@ -38,8 +38,8 @@ describe('goalInsights engine', () => {
     const goal: Partial<FinancialGoal> = {
       currentAmount: 200,
       targetAmount: 1000,
-      createdAt: createdAt.toISOString() as any,
-      deadline: deadline.toISOString() as any
+      createdAt: { toDate: () => createdAt } as any,
+      deadline: { toDate: () => deadline } as any
     };
     
     const insight = assessGoalProgress(goal as any);
@@ -48,7 +48,7 @@ describe('goalInsights engine', () => {
   });
 
   it('never leaks sensitive identifiers', () => {
-    const goal: Partial<FinancialGoal> = {
+    const goal: any = {
         id: 'confidential-id',
         userId: 'secret-user',
         currentAmount: 100,

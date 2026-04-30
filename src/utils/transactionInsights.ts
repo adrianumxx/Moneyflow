@@ -14,7 +14,7 @@ export function summarizeMonthlySpending(transactions: Transaction[]): number {
   
   return transactions
     .filter(t => {
-      const d = new Date(t.date || t.bookingDate || '');
+      const d = t.date?.toDate ? t.date.toDate() : new Date(t.date as any);
       return d >= startOfMonth && (t.amount || 0) < 0;
     })
     .reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
@@ -25,7 +25,7 @@ export function summarizeIncomeVsExpense(transactions: Transaction[]): { income:
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   
   const currentMonthTxs = transactions.filter(t => {
-    const d = new Date(t.date || t.bookingDate || '');
+    const d = t.date?.toDate ? t.date.toDate() : new Date(t.date as any);
     return d >= startOfMonth;
   });
 
@@ -45,7 +45,7 @@ export function detectLargeTransactions(transactions: Transaction[], threshold: 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   return transactions
     .filter(t => {
-      const d = new Date(t.date || t.bookingDate || '');
+      const d = t.date?.toDate ? t.date.toDate() : new Date(t.date as any);
       return d >= thirtyDaysAgo && Math.abs(t.amount || 0) >= threshold;
     })
     .sort((a, b) => Math.abs(b.amount || 0) - Math.abs(a.amount || 0))
@@ -62,7 +62,7 @@ export function detectRecurringCandidates(transactions: Transaction[]): Array<{ 
     if (!groups[key]) {
       groups[key] = { amount: Math.abs(t.amount || 0), dates: [] };
     }
-    groups[key].dates.push(new Date(t.date || t.bookingDate || ''));
+    groups[key].dates.push(t.date?.toDate ? t.date.toDate() : new Date(t.date as any));
   });
 
   return Object.entries(groups)

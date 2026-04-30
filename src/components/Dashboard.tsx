@@ -48,6 +48,7 @@ interface DashboardProps {
   bankAccounts: BankAccount[];
   connectedAccounts: ConnectedAccount[];
   goals: FinancialGoal[];
+  liabilities: Liability[];
 }
 
 interface Alert {
@@ -87,7 +88,8 @@ export default function Dashboard({
   assets,
   bankAccounts,
   connectedAccounts,
-  goals
+  goals,
+  liabilities
 }: DashboardProps) {
   const [recentExpenses, setRecentExpenses] = useState<DashboardExpense[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -405,6 +407,7 @@ export default function Dashboard({
         bankAccounts={bankAccounts}
         connectedAccounts={connectedAccounts}
         goals={goals}
+        liabilities={liabilities}
         onAction={handleSetupAction}
       />
 

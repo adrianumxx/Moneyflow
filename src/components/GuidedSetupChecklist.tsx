@@ -11,11 +11,12 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Asset, Transaction, BankAccount, ConnectedAccount, FinancialGoal } from '../types';
+import { Asset, Transaction, BankAccount, ConnectedAccount, FinancialGoal, Liability } from '../types';
 import DataCompletenessScore from './DataCompletenessScore';
 
 interface GuidedSetupProps {
   assets: Asset[];
+  liabilities: Liability[];
   transactions: Transaction[];
   bankAccounts: BankAccount[];
   connectedAccounts: ConnectedAccount[];
@@ -29,6 +30,7 @@ export default function GuidedSetupChecklist({
   bankAccounts,
   connectedAccounts,
   goals,
+  liabilities,
   onAction
 }: GuidedSetupProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -96,6 +98,8 @@ export default function GuidedSetupChecklist({
   const isMostlyComplete = assets.length > 0 && (bankAccounts.length > 0 || connectedAccounts.length > 0);
 
   const effectiveCollapsed = isMostlyComplete || isCollapsed;
+
+  const nextAction = steps.find(s => !s.isDone);
 
   return (
     <motion.div 

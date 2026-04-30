@@ -36,10 +36,11 @@ export function assessGoalProgress(goal: FinancialGoal): GoalInsight {
   let nextAction = 'Continue your monthly contributions.';
 
   if (goal.deadline) {
-    const deadline = new Date(goal.deadline);
+    const deadline = goal.deadline.toDate();
     const now = new Date();
-    const totalDays = (deadline.getTime() - new Date(goal.createdAt || now).getTime()) / (1000 * 60 * 60 * 24);
-    const elapsedDays = (now.getTime() - new Date(goal.createdAt || now).getTime()) / (1000 * 60 * 60 * 24);
+    const createdAt = goal.createdAt?.toDate ? goal.createdAt.toDate() : now;
+    const totalDays = (deadline.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
+    const elapsedDays = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24);
     
     const expectedProgress = (elapsedDays / totalDays) * 100;
     

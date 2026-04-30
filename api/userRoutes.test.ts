@@ -42,13 +42,13 @@ describe('User Routes - Purge Dry Run', () => {
   });
 
   const getHandler = (method: string, path: string) => {
-    const route = router.stack.find(s => s.route.path === path && s.route.methods[method]);
+    const route = (router as any).stack.find((s: any) => s.route && s.route.path === path && s.route.methods[method.toLowerCase()]);
     return route.route.stack[0].handle;
   };
 
   it('should return counts and profile status for an authenticated user', async () => {
     const handler = getHandler('post', '/purge/dry-run');
-    await handler(req, res as any);
+    await handler(req, res as any, vi.fn());
 
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
       profileExists: true,
@@ -60,7 +60,7 @@ describe('User Routes - Purge Dry Run', () => {
   it('should return 401 if req.user is missing', async () => {
     req.user = undefined;
     const handler = getHandler('post', '/purge/dry-run');
-    await handler(req, res as any);
+    await handler(req, res as any, vi.fn());
 
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
@@ -70,7 +70,7 @@ describe('User Routes - Purge Dry Run', () => {
 
   it('should not contain sensitive strings in the response', async () => {
     const handler = getHandler('post', '/purge/dry-run');
-    await handler(req, res as any);
+    await handler(req, res as any, vi.fn());
 
     const jsonResponse = vi.mocked(res.json).mock.calls[0][0];
     const bodyStr = JSON.stringify(jsonResponse);
@@ -84,7 +84,7 @@ describe('User Routes - Purge Dry Run', () => {
     it('should return 400 if confirmText is missing or wrong', async () => {
       const handler = getHandler('post', '/purge');
       req.body = { confirmText: 'WRONG' };
-      await handler(req, res as any);
+      await handler(req, res as any, vi.fn());
 
       expect(res.status).toHaveBeenCalledWith(400);
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ error: 'Invalid confirmation text' }));
@@ -93,7 +93,7 @@ describe('User Routes - Purge Dry Run', () => {
     it('should return safe counts upon successful erasure', async () => {
       const handler = getHandler('post', '/purge');
       req.body = { confirmText: 'DELETE' };
-      await handler(req, res as any);
+      await handler(req, res as any, vi.fn());
 
       expect(res.json).toHaveBeenCalledWith(expect.objectContaining({
         success: true,

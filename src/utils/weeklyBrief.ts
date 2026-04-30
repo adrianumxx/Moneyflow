@@ -22,7 +22,7 @@ export function generateWeeklyBrief(
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   
   const recentTransactions = transactions.filter(t => {
-    const date = new Date(t.date);
+    const date = t.date?.toDate ? t.date.toDate() : new Date(t.date as any);
     return date >= sevenDaysAgo;
   });
 

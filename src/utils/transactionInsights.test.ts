@@ -11,7 +11,7 @@ describe('transactionInsights', () => {
   const now = new Date();
   const dateStr = now.toISOString().split('T')[0];
   
-  const mockTransactions: Transaction[] = [
+  const mockTransactions: any[] = [
     { id: '1', amount: -100, date: dateStr, description: 'Grocery', category: 'food' },
     { id: '2', amount: -100, date: dateStr, description: 'Grocery', category: 'food' },
     { id: '3', amount: 2000, date: dateStr, description: 'Salary', category: 'income' },
