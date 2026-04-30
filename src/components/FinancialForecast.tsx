@@ -390,7 +390,7 @@ function AnalysisCard({ title, value, subtitle, icon, color, currency }: { title
         </div>
       </div>
       <div>
-        <p className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</p>
+        <div className="text-sm font-medium text-slate-500 dark:text-slate-400">{title}</div>
         <p className="text-xl font-bold text-slate-900 dark:text-white mt-1">
           {formatMoney(value, currency)}
         </p>
@@ -436,10 +436,10 @@ function SimulationCard({ title, value, isEditable, onSimulate, originalValue, i
         )}
       </div>
       <div>
-        <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+        <div className="text-sm font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
           {title} 
           <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900 px-1 rounded text-indigo-600">SIMULATED</span>
-        </p>
+        </div>
         
         {isEditing ? (
           <div className="flex items-center mt-1 gap-2">
