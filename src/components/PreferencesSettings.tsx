@@ -4,7 +4,9 @@ import { Globe, ShieldCheck, Download, Trash2, AlertTriangle, X, FileText } from
 import { AnimatePresence, motion } from 'motion/react';
 import { useNotifications } from '../context/NotificationContext';
 import LegalPages from './LegalPages.js';
+import BetaFeedbackButton from './BetaFeedbackButton';
 import { getSystemStatus } from '../services/systemService.js';
+import { getPurgeDryRun, purgeUserData, PurgeDryRunResponse } from '../services/userService';
 
 import { prepareExportBundle } from '../utils/dataExport';
 
@@ -30,6 +32,9 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
   const [isDiagnosticsLoading, setIsDiagnosticsLoading] = useState(false);
   const [systemStatus, setSystemStatus] = useState<any>(null);
   const [purgeInput, setPurgeInput] = useState('');
+  const [dryRunData, setDryRunData] = useState<PurgeDryRunResponse | null>(null);
+  const [isDryRunLoading, setIsDryRunLoading] = useState(false);
+  const [isPurging, setIsPurging] = useState(false);
 
   const fetchDiagnostics = async () => {
     setIsDiagnosticsLoading(true);
@@ -70,6 +75,38 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
   const changeLanguage = (lng: string) => {
     i18n.changeLanguage(lng);
     localStorage.setItem('appLanguage', lng);
+  };
+
+  const handleDryRun = async () => {
+    setIsDryRunLoading(true);
+    try {
+      const data = await getPurgeDryRun();
+      setDryRunData(data);
+    } catch (e: any) {
+      showNotification('Audit Failed', e.message, 'error');
+    } finally {
+      setIsDryRunLoading(false);
+    }
+  };
+
+  const handlePurge = async () => {
+    if (purgeInput !== 'DELETE') return;
+    setIsPurging(true);
+    try {
+      const result = await purgeUserData(purgeInput);
+      showNotification('Data Erased', `Successfully deleted ${result.deletedDocumentsCount} records. Please refresh or sign in again.`, 'success');
+      closePurgeModal();
+    } catch (e: any) {
+      showNotification('Erasure Failed', e.message, 'error');
+    } finally {
+      setIsPurging(false);
+    }
+  };
+
+  const closePurgeModal = () => {
+    setIsPurgeModalOpen(false);
+    setPurgeInput('');
+    setDryRunData(null);
   };
 
   return (
@@ -165,6 +202,8 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
             </button>
           </div>
 
+          <BetaFeedbackButton section="Trust Center" />
+
           <div className="p-6 bg-slate-50 dark:bg-zinc-950/50 rounded-3xl border border-slate-100 dark:border-zinc-800">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 mb-3">Data Integrity</h3>
             <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
@@ -226,7 +265,7 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsPurgeModalOpen(false)}
+              onClick={closePurgeModal}
               className="absolute inset-0 bg-slate-950/80 backdrop-blur-md"
             />
             <motion.div
@@ -239,14 +278,65 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
                 <div className="w-12 h-12 bg-rose-500/10 rounded-2xl flex items-center justify-center text-rose-500">
                   <AlertTriangle className="w-6 h-6" />
                 </div>
-                <button onClick={() => setIsPurgeModalOpen(false)} className="p-2 text-slate-400 hover:text-slate-600">
+                <button onClick={closePurgeModal} className="p-2 text-slate-400 hover:text-slate-600">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase italic mb-4">Delete All Data</h2>
-              <div className="space-y-4 text-sm text-slate-500 font-medium leading-relaxed mb-8">
+              <div className="space-y-4 text-sm text-slate-500 font-medium leading-relaxed mb-6">
                 <p>This action is <span className="text-rose-500 font-bold">irreversible</span>. Once initiated, all indexed assets, transactions, and liability records will be permanently erased from your profile.</p>
+                
+                {!dryRunData && !isDryRunLoading && (
+                  <button 
+                    onClick={handleDryRun}
+                    className="w-full py-3 bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-600 dark:text-slate-400 hover:border-indigo-500 transition-all"
+                  >
+                    Review what will be deleted
+                  </button>
+                )}
+
+                {isDryRunLoading && (
+                  <div className="py-4 text-center">
+                    <div className="w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Auditing paths...</p>
+                  </div>
+                )}
+
+                {dryRunData && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-indigo-500/5 border border-indigo-500/20 rounded-2xl p-4 space-y-3"
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Erasure Audit Preview</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[10px] font-bold">
+                      <div className="flex justify-between border-b border-indigo-500/10 pb-1">
+                        <span className="text-slate-400 uppercase">Profile</span>
+                        <span className="text-slate-900 dark:text-white">{dryRunData.profileExists ? '1' : '0'}</span>
+                      </div>
+                      {Object.entries(dryRunData.collectionCounts).map(([key, count]) => (
+                        <div key={key} className="flex justify-between border-b border-indigo-500/10 pb-1">
+                          <span className="text-slate-400 uppercase truncate pr-2">{key.replace(/([A-Z])/g, ' $1')}</span>
+                          <span className="text-slate-900 dark:text-white">{count}</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between border-b border-indigo-500/10 pb-1">
+                        <span className="text-slate-400 uppercase">Owned Groups</span>
+                        <span className="text-slate-900 dark:text-white">{dryRunData.groupsImpactSummary.ownedGroupsCount}</span>
+                      </div>
+                    </div>
+                    
+                    <p className="text-[9px] text-indigo-500/70 font-bold italic">
+                      Note: Shared groups will remain; you will be removed as a member. This preview does not delete anything.
+                    </p>
+                  </motion.div>
+                )}
+
                 <ul className="list-disc pl-5 space-y-2 text-xs">
                   <li>Strategic insights and historical forecasts will be wiped.</li>
                   <li>Connected institutions must be revoked manually in the Sync Hub.</li>
@@ -266,15 +356,18 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
               </div>
 
               <button 
-                onClick={() => {
-                  showNotification('Account Erasure', 'Data deletion is not connected yet. You can export your data now; full deletion will be available before public launch.', 'info');
-                  setIsPurgeModalOpen(false);
-                  setPurgeInput('');
-                }}
-                disabled={purgeInput !== 'DELETE'}
-                className="w-full py-4 bg-rose-500 disabled:bg-slate-200 dark:disabled:bg-white/5 text-white disabled:text-slate-400 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-rose-500/20 transition-all active:scale-[0.98]"
+                onClick={handlePurge}
+                disabled={purgeInput !== 'DELETE' || isPurging}
+                className="w-full py-4 bg-rose-500 disabled:bg-slate-200 dark:disabled:bg-white/5 text-white disabled:text-slate-400 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-rose-500/20 transition-all active:scale-[0.98] flex items-center justify-center gap-2"
               >
-                Delete All Financial Records
+                {isPurging ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Erasing Data...
+                  </>
+                ) : (
+                  'Delete All Financial Records'
+                )}
               </button>
             </motion.div>
           </div>

@@ -89,6 +89,7 @@ import FeedbackModal from './components/FeedbackModal';
 import GlobalPulse from './components/GlobalPulse';
 import NeuralAdvisor from './components/NeuralAdvisor';
 import IntegrationsHub from './components/IntegrationsHub';
+import BetaFeedbackButton from './BetaFeedbackButton';
 import { handleSyncCallback, listInstitutions } from './services/syncService';
 
 export default function App() {
@@ -908,6 +909,9 @@ export default function App() {
           />
           <div className="absolute top-1 right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse shadow-lg" />
         </motion.button>
+
+        {/* Beta Feedback Button (Floating) */}
+        <BetaFeedbackButton variant="floating" section="App Shell" />
 
         {/* Neural Advisor Assistant (Conversational Chat) */}
         <NeuralAdvisor 

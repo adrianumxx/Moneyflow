@@ -222,6 +222,19 @@ export default function WealthOverview({
                     Calculated from your current assets and historical data.
                   </div>
                 </span>
+                
+                {/* Data Freshness Badge */}
+                <div className="flex items-center gap-2 px-3 py-2 bg-white/5 rounded-2xl border border-white/10">
+                  <div className={`w-1.5 h-1.5 rounded-full ${
+                    userProfile?.uid?.startsWith('demo-') ? 'bg-amber-400' :
+                    bankAccounts.length > 0 ? 'bg-indigo-400 animate-pulse' : 'bg-slate-400'
+                  }`} />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-white/70">
+                    {userProfile?.uid?.startsWith('demo-') ? 'Demo Data' :
+                     bankAccounts.length > 0 ? 'Live Data' : 'Manual Data'}
+                  </span>
+                </div>
+
                 <div className="h-10 w-[1px] bg-white/10 mx-2 hidden sm:block" />
                 <div className="hidden sm:flex flex-col">
                   <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Live Sync</span>

@@ -11,6 +11,7 @@ import { UserProfile } from '../types';
 import { PROVIDER_REGISTRY, Provider } from '../utils/connectors';
 import { createSyncSession, disconnectInstitution, syncAccounts } from '../services/syncService';
 import { useNotifications } from '../context/NotificationContext';
+import { formatRelativeTime } from '../utils/format';
 
 const FALLBACK_ICONS: Record<string, any> = {
   bank: Building2,
@@ -127,7 +128,7 @@ export default function IntegrationsHub({ userId, userProfile, connectedInstitut
                     <div>
                       <h4 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">{inst.providerName}</h4>
                       <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                        Last Synced: {inst.lastSyncedAt ? (typeof inst.lastSyncedAt === 'object' && 'toDate' in inst.lastSyncedAt ? inst.lastSyncedAt.toDate().toLocaleDateString() : new Date(inst.lastSyncedAt).toLocaleDateString()) : 'Pending'}
+                        Last Synced: {inst.lastSyncedAt ? formatRelativeTime(typeof inst.lastSyncedAt === 'object' && 'toDate' in inst.lastSyncedAt ? inst.lastSyncedAt.toDate() : inst.lastSyncedAt) : 'Pending'}
                       </p>
                     </div>
                   </div>

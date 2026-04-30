@@ -130,8 +130,39 @@ const syncLimiter = rateLimit({
 // PROTECTED ROUTES (Require Firebase ID Token)
 import geminiRoutes from './geminiRoutes.js';
 import syncRoutes from './syncRoutes.js';
+import userRoutes from './userRoutes.js';
+
+/**
+ * Data Erasure Rate Limiter
+ * Limits audit requests to prevent intelligence gathering/scraping via error messages or counts.
+ * Limit: 5 requests per hour per IP.
+ */
+const purgeLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, 
+  max: 5, 
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Data audit limit reached. Please try again in an hour.' }
+});
+
+/**
+ * Destructive Purge Rate Limiter
+ * Heavy restriction on data erasure.
+ * Limit: 1 request per 24 hours per IP.
+ */
+const destructivePurgeLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000, 
+  max: 1, 
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Data erasure already requested today. Please try again later.' }
+});
+
 app.use('/api/gemini', geminiLimiter, authMiddleware, geminiRoutes);
 app.use('/api/sync', syncLimiter, authMiddleware, syncRoutes);
+app.use('/api/user/purge/dry-run', purgeLimiter); 
+app.post('/api/user/purge', destructivePurgeLimiter); 
+app.use('/api/user', authMiddleware, userRoutes);
 
 /**
  * Production Health Endpoint

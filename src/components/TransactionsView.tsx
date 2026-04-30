@@ -168,6 +168,10 @@ export default function TransactionsView({
                             <span className="bg-slate-100 dark:bg-white/10 px-2.5 py-0.5 rounded-lg shrink-0">
                               {tx.category}
                             </span>
+                            <span className="hidden sm:inline opacity-30">•</span>
+                            <span className={`px-2 py-0.5 rounded-lg shrink-0 ${tx.providerId ? 'bg-indigo-500/10 text-indigo-500' : 'bg-slate-500/10 text-slate-500'}`}>
+                              {tx.providerId ? 'Bank Sync' : 'Manual'}
+                            </span>
                           </div>
                         </div>
 

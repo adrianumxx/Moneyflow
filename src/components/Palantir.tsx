@@ -227,6 +227,23 @@ export default function Palantir({
             </span>
             Intelligence Engine Active • {isLoading ? "Analyzing global news & trends..." : "Live Market Signals"}
           </p>
+          
+          <div className="flex items-center gap-2 mt-2">
+            {data?.dataQuality && (
+              <span className={`text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg border ${
+                data.dataQuality === 'connected_data' ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' :
+                data.dataQuality === 'user_data' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                'bg-amber-500/10 text-amber-500 border-amber-500/20'
+              }`}>
+                {data.dataQuality.replace('_', ' ')}
+              </span>
+            )}
+            {data?.sourceStatus && (
+              <span className="text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-lg bg-white/5 text-slate-500 border border-white/10">
+                Source: {data.sourceStatus.replace('_', ' ')}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
