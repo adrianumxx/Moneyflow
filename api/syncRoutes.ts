@@ -2,7 +2,7 @@ import { Router, Response } from 'express';
 import { AuthenticatedRequest } from './authMiddleware.js';
 import { getBackendProviderById } from './connectorProviders.js';
 import { createRequisitionSession, getInstitutionList, getRequisition, getAccountMetadata, getAccountBalances, getAccountTransactions } from './providers/gocardless.js';
-import { db } from './firebaseAdmin.js';
+import admin, { db } from './firebaseAdmin.js';
 
 const router = Router();
 const getDb = () => db;
