@@ -1,5 +1,7 @@
 # Moneyflow Wealth OS - QA & Compliance Checklist
 
+**Note**: All manual and automated tests must align with [PROJECT_SECURITY_RULES.md](./PROJECT_SECURITY_RULES.md).
+
 ## 1. Automated Stability & Integrity
 - [ ] `npm run build` - Production bundle build status.
 - [ ] `npx tsc --noEmit` - TypeScript type safety across all layers.
@@ -11,6 +13,7 @@
 - [ ] **Privacy Check**: Data Export JSON does NOT contain tokens or API keys.
 - [ ] **Revocation Check**: Revoking an institution stops sync but preserves history.
 - [ ] **Availability Check**: `GET /api/health` returns status: "ok" and valid timestamp.
+- [ ] **Diagnostics Check**: `GET /api/system/status` (authenticated) returns all configuration booleans.
 
 ## 3. Financial Intelligence (Palantir)
 - [ ] **API Resilience**: Palantir Dashboard renders fallback if API fails.

@@ -8,6 +8,10 @@ This contains everything you need to run your app locally.
 
 View your app in AI Studio: https://ai.studio/apps/dab2599e-26b6-4818-9f19-8a0dba2273ca
 
+## Security & Compliance
+
+Security and environment rules are defined in [PROJECT_SECURITY_RULES.md](docs/PROJECT_SECURITY_RULES.md) and must be followed before every production change.
+
 ## Run Locally
 
 **Prerequisites:**  Node.js

@@ -4,6 +4,7 @@ import { Globe, ShieldCheck, Download, Trash2, AlertTriangle, X, FileText } from
 import { AnimatePresence, motion } from 'motion/react';
 import { useNotifications } from '../context/NotificationContext';
 import LegalPages from './LegalPages.js';
+import { getSystemStatus } from '../services/systemService.js';
 
 import { prepareExportBundle } from '../utils/dataExport';
 
@@ -26,7 +27,27 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
   const { showNotification } = useNotifications();
   const [isPurgeModalOpen, setIsPurgeModalOpen] = useState(false);
   const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
+  const [isDiagnosticsLoading, setIsDiagnosticsLoading] = useState(false);
+  const [systemStatus, setSystemStatus] = useState<any>(null);
   const [purgeInput, setPurgeInput] = useState('');
+
+  const fetchDiagnostics = async () => {
+    setIsDiagnosticsLoading(true);
+    try {
+      const status = await getSystemStatus();
+      setSystemStatus(status);
+    } catch (e) {
+      showNotification('Diagnostics Failed', 'Could not reach neural backbone.', 'error');
+    } finally {
+      setIsDiagnosticsLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (isLegalModalOpen && !systemStatus) {
+      fetchDiagnostics();
+    }
+  }, [isLegalModalOpen]);
 
   const handleExportData = () => {
     const exportBundle = prepareExportBundle(exportData);
@@ -183,7 +204,7 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
               </div>
 
               <div className="max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
-                <LegalPages />
+                <LegalPages systemStatus={systemStatus} />
               </div>
 
               <button 

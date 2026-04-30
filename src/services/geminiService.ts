@@ -307,6 +307,110 @@ export interface PalantirIntelligence {
   }>;
 }
 
+export const FALLBACK_PALANTIR_DATA: PalantirIntelligence = {
+  orb: {
+    confidenceScore: 68,
+    statusLine: "Volatility rising. Focus on stable yields.",
+    state: "caution",
+    activeRisksCount: 3
+  },
+  narrative: "Global markets are experiencing a temporary contraction due to hawkish central bank rhetoric. While equity volatility is elevated, safe-harbor assets remain attractive. This is not a panic scenario, but a time for strategic patience. Ensure your savings are generating real yield and avoid unnecessary debt expansion in the short term.",
+  semaphore: [
+    { category: 'savings', state: 'GREEN', explanation: 'High rates make cash holding profitable.' },
+    { category: 'business_costs', state: 'YELLOW', explanation: 'Supply chains are stable, but credit is tight.' },
+    { category: 'investment_climate', state: 'YELLOW', explanation: 'Selective opportunities exist, broad indices are risky.' },
+    { category: 'borrowing', state: 'RED', explanation: 'Mortgage and loan rates remain restrictively high.' }
+  ],
+  metrics: [
+    { id: 'cost_of_money', value: '5.25%', explanation: 'Borrowing costs are currently elevated due to central bank positioning.', alertState: 'RED' },
+    { id: 'purchasing_power', value: '3.1%', explanation: 'What cost 100 units in January now costs 103.10 due to inflation.', alertState: 'YELLOW' },
+    { id: 'market_mood', value: 42, explanation: 'Fear is present. Historically from here, markets can be volatile.', alertState: 'YELLOW', trend: 'down' },
+    { id: 'energy_cost', value: '84.50', explanation: 'Fuel and logistics trending UP this week.', alertState: 'YELLOW', trend: 'up' },
+    { id: 'safe_harbor', value: '4.8%', explanation: 'Doing nothing earns you yield — beating inflation comfortably.', alertState: 'GREEN' },
+    { id: 'global_stability', value: 65, explanation: 'The world is tense but contained right now.', alertState: 'YELLOW' }
+  ],
+  probabilityVectors: [
+    { title: 'Energy Supply Shock', probability: 45, severity: 'HIGH', meaning: 'Gas prices could surge significantly next month.', affects: 'Everyone', cluster: 'Energy / Minerals' }
+  ],
+  signalsAndAlpha: [
+    { title: 'AI INFRASTRUCTURE MONOPOLIES', explanation: 'Capital is flowing to companies building the physical data centers for AI.', urgency: 'THIS MONTH', type: 'STRUCTURAL', cluster: 'AI Infrastructure' }
+  ],
+  activeRisks: [
+    { title: 'Commercial Real Estate Debt', severity: 'HIGH', explanation: 'Regional banks hold significant debt. Could trigger a localized credit freeze.', escalationProbability: 60, cluster: 'Macro Finance' }
+  ],
+  educationalInsight: {
+    concept: 'Yield Curve Inversion',
+    explanation: 'When short-term bonds pay more than long-term bonds. It usually means investors expect the economy to slow down soon. It is considered one of the most reliable recession indicators.',
+    relevanceToday: 'The curve has been inverted for some time, signaling structural stress.'
+  },
+  yieldOptimizer: {
+    detectedInefficiency: "Optimization Potential: Uninvested cash losing purchasing power to inflation.",
+    actionableStrategy: "Consider rotating a portion of idle cash to an MMF (Money Market Fund).",
+    estimatedAnnualAlpha: 570,
+    confidenceScore: 88
+  },
+  taxShield: {
+    riskLevel: 'WARNING',
+    description: 'Fiscal Awareness: You are approaching a higher tax bracket.',
+    taxOptimizationAction: 'Consider contributions to a pension fund to potentially lower taxable income.'
+  },
+  negotiator: {
+    targetExpense: 'Utility Bills',
+    currentMarketRate: 'Declining vs last year',
+    potentialSavings: 312
+  },
+  blackSwan: {
+    runwayMonths: 4.2,
+    survivalAssessment: 'You have approximately 4.2 months of liquid runway. Consider reaching 6 months for optimal security.'
+  },
+  arbitrageFinder: {
+    inefficientDebt: 'High-interest debt',
+    idleAsset: 'Low-yield savings',
+    arbitrageSpread: 4.5,
+    action: 'Consider a potential efficiency gap strategy by paying down debt with idle savings.'
+  },
+  newsFeed: [
+    { id: '1', category: 'MACRO', source: 'Financial Times', headline: 'Central Banks Hold Rates Steady', impactScore: 8, meaning: 'Borrowing costs are expected to remain stable for now.', escalationProbability: 20, affects: 'Borrowers', trend: 'neutral', aiSummary: 'Banks are waiting for more data before cutting rates.', url: '#' }
+  ],
+  scenarios: [],
+  geopoliticalRings: {
+    world: { title: 'Global', summary: 'Macroeconomic stabilization in progress.', riskScore: 40, opportunityScore: 50, impactScore: 45, confidenceScore: 70, actionSignal: 'observe' }
+  },
+  actionQueue: [],
+  intelligenceFeed: [],
+  dataQuality: 'fallback_data',
+  sourceStatus: 'fallback'
+};
+
+/**
+ * Deep merges API response with fallback structure to ensure partial responses don't crash the UI.
+ */
+function safeMergePalantirIntelligence(partial: any): PalantirIntelligence {
+  const base = { ...FALLBACK_PALANTIR_DATA };
+  
+  if (!partial || typeof partial !== 'object') return base;
+
+  return {
+    ...base,
+    ...partial,
+    orb: partial.orb ? { ...base.orb, ...partial.orb } : base.orb,
+    semaphore: Array.isArray(partial.semaphore) ? partial.semaphore : base.semaphore,
+    metrics: Array.isArray(partial.metrics) ? partial.metrics : base.metrics,
+    probabilityVectors: Array.isArray(partial.probabilityVectors) ? partial.probabilityVectors : base.probabilityVectors,
+    signalsAndAlpha: Array.isArray(partial.signalsAndAlpha) ? partial.signalsAndAlpha : base.signalsAndAlpha,
+    activeRisks: Array.isArray(partial.activeRisks) ? partial.activeRisks : base.activeRisks,
+    newsFeed: Array.isArray(partial.newsFeed) ? partial.newsFeed : base.newsFeed,
+    scenarios: Array.isArray(partial.scenarios) ? partial.scenarios : base.scenarios,
+    actionQueue: Array.isArray(partial.actionQueue) ? partial.actionQueue : base.actionQueue,
+    intelligenceFeed: Array.isArray(partial.intelligenceFeed) ? partial.intelligenceFeed : base.intelligenceFeed,
+    geopoliticalRings: partial.geopoliticalRings ? { ...base.geopoliticalRings, ...partial.geopoliticalRings } : base.geopoliticalRings,
+    missingData: Array.isArray(partial.missingData) ? partial.missingData : (base.missingData || []),
+    // Preserve live metadata if present, else use fallback markers
+    dataQuality: partial.dataQuality || 'fallback_data',
+    sourceStatus: partial.sourceStatus || 'fallback'
+  };
+}
+
 export async function getPalantirIntelligence(
   userId: string,
   localTime?: string, 
@@ -357,88 +461,15 @@ export async function getPalantirIntelligence(
     const parsed = await response.json();
     
     if (parsed && parsed.orb) {
-      localStorage.setItem(cacheKey, JSON.stringify({ data: parsed, timestamp: Date.now() }));
-      logPalantirMemory(userId, parsed.narrative).catch(console.error);
-      return parsed as PalantirIntelligence;
+      const merged = safeMergePalantirIntelligence(parsed);
+      localStorage.setItem(cacheKey, JSON.stringify({ data: merged, timestamp: Date.now() }));
+      logPalantirMemory(userId, merged.narrative).catch(console.error);
+      return merged;
     }
     
     throw new Error("EMPTY");
   } catch (error) {
     console.warn("Using strategic buffer fallback context.");
-    // High-fidelity fallback structure
-    return {
-      orb: {
-        confidenceScore: 68,
-        statusLine: "Volatility rising. Focus on stable yields.",
-        state: "caution",
-        activeRisksCount: 3
-      },
-      narrative: "Global markets are experiencing a temporary contraction due to hawkish central bank rhetoric. While equity volatility is elevated, safe-harbor assets remain attractive. This is not a panic scenario, but a time for strategic patience. Ensure your savings are generating real yield and avoid unnecessary debt expansion in the short term.",
-      semaphore: [
-        { category: 'savings', state: 'GREEN', explanation: 'High rates make cash holding profitable.' },
-        { category: 'business_costs', state: 'YELLOW', explanation: 'Supply chains are stable, but credit is tight.' },
-        { category: 'investment_climate', state: 'YELLOW', explanation: 'Selective opportunities exist, broad indices are risky.' },
-        { category: 'borrowing', state: 'RED', explanation: 'Mortgage and loan rates remain restrictively high.' }
-      ],
-      metrics: [
-        { id: 'cost_of_money', value: '5.25%', explanation: 'Borrowing costs are currently elevated due to central bank positioning.', alertState: 'RED' },
-        { id: 'purchasing_power', value: '3.1%', explanation: 'What cost 100 units in January now costs 103.10 due to inflation.', alertState: 'YELLOW' },
-        { id: 'market_mood', value: 42, explanation: 'Fear is present. Historically from here, markets can be volatile.', alertState: 'YELLOW', trend: 'down' },
-        { id: 'energy_cost', value: '84.50', explanation: 'Fuel and logistics trending UP this week.', alertState: 'YELLOW', trend: 'up' },
-        { id: 'safe_harbor', value: '4.8%', explanation: 'Doing nothing earns you yield — beating inflation comfortably.', alertState: 'GREEN' },
-        { id: 'global_stability', value: 65, explanation: 'The world is tense but contained right now.', alertState: 'YELLOW' }
-      ],
-      probabilityVectors: [
-        { title: 'Energy Supply Shock', probability: 45, severity: 'HIGH', meaning: 'Gas prices could surge significantly next month.', affects: 'Everyone', cluster: 'Energy / Minerals' }
-      ],
-      signalsAndAlpha: [
-        { title: 'AI INFRASTRUCTURE MONOPOLIES', explanation: 'Capital is flowing to companies building the physical data centers for AI.', urgency: 'THIS MONTH', type: 'STRUCTURAL', cluster: 'AI Infrastructure' }
-      ],
-      activeRisks: [
-        { title: 'Commercial Real Estate Debt', severity: 'HIGH', explanation: 'Regional banks hold significant debt. Could trigger a localized credit freeze.', escalationProbability: 60, cluster: 'Macro Finance' }
-      ],
-      educationalInsight: {
-        concept: 'Yield Curve Inversion',
-        explanation: 'When short-term bonds pay more than long-term bonds. It usually means investors expect the economy to slow down soon. It is considered one of the most reliable recession indicators.',
-        relevanceToday: 'The curve has been inverted for some time, signaling structural stress.'
-      },
-      yieldOptimizer: {
-        detectedInefficiency: "Optimization Potential: Uninvested cash losing purchasing power to inflation.",
-        actionableStrategy: "Consider rotating a portion of idle cash to an MMF (Money Market Fund).",
-        estimatedAnnualAlpha: 570,
-        confidenceScore: 88
-      },
-      taxShield: {
-        riskLevel: 'WARNING',
-        description: 'Fiscal Awareness: You are approaching a higher tax bracket.',
-        taxOptimizationAction: 'Consider contributions to a pension fund to potentially lower taxable income.'
-      },
-      negotiator: {
-        targetExpense: 'Utility Bills',
-        currentMarketRate: 'Declining vs last year',
-        potentialSavings: 312
-      },
-      blackSwan: {
-        runwayMonths: 4.2,
-        survivalAssessment: 'You have approximately 4.2 months of liquid runway. Consider reaching 6 months for optimal security.'
-      },
-      arbitrageFinder: {
-        inefficientDebt: 'High-interest debt',
-        idleAsset: 'Low-yield savings',
-        arbitrageSpread: 4.5,
-        action: 'Consider a potential efficiency gap strategy by paying down debt with idle savings.'
-      },
-      newsFeed: [
-        { id: '1', category: 'MACRO', source: 'Financial Times', headline: 'Central Banks Hold Rates Steady', impactScore: 8, meaning: 'Borrowing costs are expected to remain stable for now.', escalationProbability: 20, affects: 'Borrowers', trend: 'neutral', aiSummary: 'Banks are waiting for more data before cutting rates.', url: '#' }
-      ],
-      scenarios: [],
-      geopoliticalRings: {
-        world: { title: 'Global', summary: 'Macroeconomic stabilization in progress.', riskScore: 40, opportunityScore: 50, impactScore: 45, confidenceScore: 70, actionSignal: 'observe' }
-      },
-      actionQueue: [],
-      intelligenceFeed: [],
-      dataQuality: 'fallback_data',
-      sourceStatus: 'fallback'
-    };
+    return FALLBACK_PALANTIR_DATA;
   }
 }

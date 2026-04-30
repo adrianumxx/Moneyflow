@@ -82,16 +82,39 @@ describe('geminiService', () => {
         json: async () => ({
           orb: { confidenceScore: 100, state: 'stable' },
           narrative: 'Minimal response',
-          // Missing all arrays
+          // Missing all other fields
         })
       } as any);
 
       const result = await getPalantirIntelligence('test-user');
+      
+      // Live fields preserved
       expect(result.orb.confidenceScore).toBe(100);
-      // Service should ideally return fallback or merge with defaults if partial
-      // Currently it returns whatever API gives if it has an orb.
-      // If the API returns a partial, components should handle it, 
-      // but the fallback path is now safe.
+      expect(result.narrative).toBe('Minimal response');
+      
+      // Missing arrays defaulted safely from FALLBACK_PALANTIR_DATA
+      expect(Array.isArray(result.semaphore)).toBe(true);
+      expect(result.semaphore.length).toBeGreaterThan(0);
+      expect(Array.isArray(result.scenarios)).toBe(true);
+      expect(Array.isArray(result.actionQueue)).toBe(true);
+      
+      // Source status should reflect fallback merge if not provided
+      expect(result.sourceStatus).toBe('fallback');
+    });
+
+    it('preserves live dataQuality and sourceStatus if provided by API', async () => {
+      vi.mocked(api.authenticatedFetch).mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          orb: { confidenceScore: 90, state: 'stable' },
+          dataQuality: 'connected_data',
+          sourceStatus: 'live_search'
+        })
+      } as any);
+
+      const result = await getPalantirIntelligence('test-user');
+      expect(result.dataQuality).toBe('connected_data');
+      expect(result.sourceStatus).toBe('live_search');
     });
   });
 });

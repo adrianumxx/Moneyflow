@@ -147,6 +147,22 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+/**
+ * System Diagnostics Endpoint (Protected)
+ * Returns configuration status without exposing secrets.
+ */
+app.get('/api/system/status', authMiddleware, (req, res) => {
+  res.json({
+    firebaseAdminConfigured: !!(process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY),
+    geminiConfigured: !!process.env.GEMINI_API_KEY,
+    gocardlessConfigured: !!(process.env.GOCARDLESS_SECRET_ID && process.env.GOCARDLESS_SECRET_KEY),
+    stripeConfigured: !!(process.env.STRIPE_SECRET_KEY && process.env.STRIPE_WEBHOOK_SECRET),
+    newsProviderEnabled: !!process.env.NEWS_PROVIDER,
+    appUrlConfigured: !!process.env.APP_URL,
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
 app.post('/api/create-checkout-session', authMiddleware, async (req: AuthenticatedRequest, res) => {
   const userId = req.user?.uid;
   const { userEmail } = req.body;

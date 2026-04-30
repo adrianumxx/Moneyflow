@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shield, FileText, AlertCircle, Scale, Trash2, Database, Globe, Lock } from 'lucide-react';
+import { Shield, FileText, AlertCircle, Scale, Trash2, Database, Globe, Lock, Activity } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface LegalSectionProps {
@@ -22,7 +22,7 @@ const LegalSection = ({ title, icon: Icon, children }: LegalSectionProps) => (
   </div>
 );
 
-export default function LegalPages() {
+export default function LegalPages({ systemStatus }: { systemStatus?: any }) {
   return (
     <div className="space-y-8 py-4">
       <div className="p-6 bg-amber-500/10 border border-amber-500/20 rounded-[2rem] flex gap-4 items-start mb-8">
@@ -64,6 +64,30 @@ export default function LegalPages() {
           **Deletion:** You can request account deletion. Note that while UI-level disconnection is available, full backend data purging is a planned beta feature and is not yet fully automated.
         </p>
       </LegalSection>
+
+      <div className="p-6 bg-slate-900 rounded-3xl border border-white/5 space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-[10px] font-black uppercase tracking-widest text-indigo-400">System Diagnostics (Beta)</h3>
+          <Activity className="w-4 h-4 text-indigo-400" />
+        </div>
+        
+        <div className="grid grid-cols-2 gap-3">
+          {Object.entries(systemStatus || {}).map(([key, value]) => (
+            key !== 'environment' && (
+              <div key={key} className="flex items-center gap-2">
+                <div className={`w-1.5 h-1.5 rounded-full ${value ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                <span className="text-[9px] font-bold text-slate-400 uppercase truncate">
+                  {key.replace(/([A-Z])/g, ' $1').trim()}
+                </span>
+              </div>
+            )
+          ))}
+        </div>
+        
+        {!systemStatus && (
+          <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest animate-pulse">Syncing with Neural Backbone...</p>
+        )}
+      </div>
 
       <div className="pt-8 border-t border-slate-200 dark:border-white/10 text-center">
         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
