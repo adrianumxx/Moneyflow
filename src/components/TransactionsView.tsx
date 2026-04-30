@@ -113,7 +113,7 @@ export default function TransactionsView({
              <select 
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="px-6 py-4 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl font-bold appearance-none outline-none focus:ring-4 focus:ring-indigo-500/10 min-w-[140px]"
+              className="px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-white/10 rounded-2xl font-bold appearance-none outline-none focus:ring-4 focus:ring-indigo-500/10 min-w-[140px] dark:text-white cursor-pointer"
             >
               <option value="all">All Transactions</option>
               <option value="income">Income</option>
@@ -122,7 +122,7 @@ export default function TransactionsView({
             <select 
               value={catFilter}
               onChange={(e) => setCatFilter(e.target.value)}
-              className="px-6 py-4 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl font-bold appearance-none outline-none focus:ring-4 focus:ring-indigo-500/10 min-w-[140px]"
+              className="px-6 py-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-white/10 rounded-2xl font-bold appearance-none outline-none focus:ring-4 focus:ring-indigo-500/10 min-w-[140px] dark:text-white cursor-pointer"
             >
               <option value="all">All Categories</option>
               {categories.map(c => (

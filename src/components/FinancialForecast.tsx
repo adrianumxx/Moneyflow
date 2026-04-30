@@ -174,7 +174,7 @@ export default function FinancialForecast({
             <select 
               value={projectionYears} 
               onChange={(e) => setProjectionYears(Number(e.target.value))}
-              className="px-6 py-4 bg-slate-100 dark:bg-white/5 rounded-2xl text-sm font-black border-none focus:ring-2 focus:ring-indigo-500 transition-all outline-none text-slate-700 dark:text-white"
+              className="px-6 py-4 bg-slate-100 dark:bg-slate-900 rounded-2xl text-sm font-black border-none focus:ring-2 focus:ring-indigo-500 transition-all outline-none text-slate-700 dark:text-white appearance-none cursor-pointer"
             >
               <option value={1}>1 Year Horizon</option>
               <option value={3}>3 Year Stated</option>

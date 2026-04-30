@@ -142,11 +142,11 @@ export default function WealthOverview({
   const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4'];
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className="space-y-12 pb-10">
       {/* Dynamic Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-2">
         <div className="flex flex-col gap-1">
-          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Wealth Dashboard</h2>
+          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Your Financial Overview</h2>
           <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Strategic Portfolio Insights</p>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
@@ -165,7 +165,7 @@ export default function WealthOverview({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:auto-rows-min xl:auto-rows-[180px]">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:auto-rows-min xl:auto-rows-[220px]">
         {/* HERO CARD: Net Worth (Large 2x2) */}
         <motion.section 
           initial={{ opacity: 0, scale: 0.95 }}
@@ -295,7 +295,7 @@ export default function WealthOverview({
             <div className="relative z-10 h-full flex flex-col pt-2">
                <div className="flex flex-col mb-6 shrink-0">
                  <div className="flex items-center justify-between mb-1">
-                   <h2 className="text-sm font-black uppercase tracking-[0.2em]">Today's Overview</h2>
+                   <h2 className="text-sm font-black uppercase tracking-[0.2em]">{t('Today\'s Overview')}</h2>
                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.8)]" />
                  </div>
                  <p className="text-[9px] text-white/60 font-medium leading-tight">
@@ -363,7 +363,7 @@ export default function WealthOverview({
             )}
           </div>
           <button className="mt-8 w-full py-3 bg-slate-100 dark:bg-white/5 text-slate-500 dark:text-slate-400 rounded-2xl text-[9px] font-black uppercase tracking-widest hover:text-indigo-500 transition-all">
-            Full Ledger
+            View all transactions
           </button>
         </section>
 

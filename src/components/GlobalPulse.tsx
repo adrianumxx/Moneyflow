@@ -4,10 +4,10 @@ import { Zap, Activity, Cpu, ShieldCheck } from 'lucide-react';
 
 const MESSAGES = [
   "Analyzing global market trends...",
-  "Synchronizing neural endpoints...",
+  "Synchronizing data endpoints...",
   "Cross-referencing ledger integrity...",
   "Optimizing wealth trajectory...",
-  "Neural core: 100% active",
+  "Intelligence core: 100% active",
   "Securing transaction streams...",
   "Detecting portfolio opportunities..."
 ];
@@ -29,7 +29,7 @@ export default function GlobalPulse() {
           <div className="relative">
             <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
           </div>
-          <span className="text-[8px] font-black uppercase tracking-[0.2em] text-indigo-500">Neural Link</span>
+          <span className="text-[8px] font-black uppercase tracking-[0.2em] text-indigo-500">Live Data</span>
         </div>
         
         <div className="h-4 w-[1px] bg-indigo-500/20" />

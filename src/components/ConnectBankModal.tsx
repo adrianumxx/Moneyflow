@@ -642,7 +642,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                      }}
                      className="w-full py-4 bg-white/5 text-zinc-400 rounded-[2rem] font-black uppercase tracking-widest text-[10px] hover:text-white transition-all border border-white/5"
                    >
-                     Open Palantir Intelligence
+                     Review Insights
                    </button>
                  </div>
               </motion.div>
@@ -691,7 +691,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                             )}
                           </div>
                           <div className="text-left">
-                            <h5 className="font-black text-white uppercase tracking-wider text-xs">{inst.name}</h5>
+                            <h5 className="font-black text-white uppercase tracking-wider text-xs truncate max-w-[180px]">{inst.name}</h5>
                             <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">{inst.bic || 'No BIC'}</p>
                           </div>
                         </div>

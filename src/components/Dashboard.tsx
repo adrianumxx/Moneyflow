@@ -363,7 +363,7 @@ export default function Dashboard({
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 sm:gap-8">
         <div>
           <div className="flex items-center gap-2 mb-3 sm:mb-4">
-             <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">Financial Overview</span>
+             <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">Moneyflow Overview</span>
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-slate-800 dark:text-white mb-2 sm:mb-4 font-display leading-none">
             Welcome, <span className="text-indigo-600 dark:text-indigo-400">{user.displayName?.split(' ')[0]}</span>
@@ -375,7 +375,7 @@ export default function Dashboard({
           className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-8 py-4 sm:py-5 addictive-gradient text-white rounded-[1.5rem] sm:rounded-[2rem] font-black text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-indigo-600/20"
         >
           <Plus className="w-5 h-5 bg-white/20 rounded-lg p-1" />
-          {groups.length === 0 ? 'Create your first group' : 'Establish New Group'}
+          {groups.length === 0 ? 'Create your first group' : 'Create Group'}
         </button>
       </header>
 
@@ -488,7 +488,7 @@ export default function Dashboard({
                 onClick={onNavigateToLedger}
                 className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-500 transition-colors"
               >
-                Full History
+                View all transactions
               </button>
             </div>
             <div className="glass-card rounded-[2rem] sm:rounded-[3rem] border border-slate-100 dark:border-white/5 shadow-premium overflow-hidden">

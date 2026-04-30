@@ -308,7 +308,7 @@ export default function IntegrationsHub({ userId, userProfile, connectedInstitut
                       </button>
                       <button className="p-6 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-3xl flex flex-col items-center gap-4 hover:border-indigo-500/50 transition-all group opacity-50 cursor-not-allowed">
                         <ExternalLink className="w-8 h-8 text-slate-400" />
-                        <span className="text-xs font-black uppercase tracking-widest">Desktop Sync</span>
+                        <span className="text-xs font-black uppercase tracking-widest">Continue on this device</span>
                       </button>
                     </div>
 

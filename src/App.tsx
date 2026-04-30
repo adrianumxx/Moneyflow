@@ -146,7 +146,7 @@ export default function App() {
   const triggerAdvice = () => {
     const messages = [
       "I've analyzed your latest flows: Your savings rate is up by 2% this week. Keep it up!",
-      "Neural Sync is active. Connect your primary bank to enable deep liquidity flows.",
+      "Live Data is active. Connect your primary bank to enable deep liquidity flows.",
       "Pattern detected: Your housing expenses are stable. Would you like to see a 12-month forecast?",
       "Opportunity: Based on your liquidity, you could reach your next goal 2 months faster with a minor adjustment."
     ];
@@ -260,7 +260,7 @@ export default function App() {
           if (response.success) {
             setAdvisorState({
               visible: true,
-              message: `Neural Link Verified: ${response.status === 'LN' ? 'Linked & Authorized' : 'Authorization pending.'}`,
+              message: `Live Data Verified: ${response.status === 'LN' ? 'Linked & Authorized' : 'Authorization pending.'}`,
               actionLabel: "View Accounts"
             });
           } else {
@@ -898,7 +898,7 @@ export default function App() {
           onClick={triggerAdvice}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          className="fixed bottom-24 lg:bottom-10 right-6 z-40 w-14 h-14 lg:w-16 lg:h-16 bg-white/10 dark:bg-slate-900/40 backdrop-blur-xl border border-indigo-500/30 rounded-full flex items-center justify-center shadow-2xl group overflow-hidden"
+          className="fixed bottom-28 lg:bottom-10 right-6 z-40 w-14 h-14 lg:w-16 lg:h-16 bg-white/10 dark:bg-slate-900/40 backdrop-blur-xl border border-indigo-500/30 rounded-full flex items-center justify-center shadow-2xl group overflow-hidden"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-fuchsia-600/20 group-hover:opacity-100 opacity-0 transition-opacity" />
           <img 
@@ -1152,7 +1152,7 @@ export default function App() {
               }`}
             >
               <Users className={`w-5 h-5 ${(activeTab === 'groups' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
-              <span className="text-xs font-black uppercase tracking-tight">Circles</span>
+              <span className="text-xs font-black uppercase tracking-tight">Groups</span>
             </button>
             <button
               onClick={() => {
@@ -1182,7 +1182,7 @@ export default function App() {
               }`}
             >
               <Globe className={`w-5 h-5 ${(activeTab === 'palantir' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
-              <span className="text-xs font-black uppercase tracking-tight">Palantir</span>
+              <span className="text-xs font-black uppercase tracking-tight">Insights</span>
             </button>
             <button
               onClick={() => {
@@ -1333,13 +1333,13 @@ export default function App() {
             headStyles: { fillColor: [244, 63, 94] }
           });
           
-          // 4. Quick Scan Extended Analysis
+          // 4. Today's Overview Extended Analysis
           currentY = (doc as any).lastAutoTable.finalY + 15;
           if (currentY > 250) { doc.addPage(); currentY = 20; }
-
+          
           doc.setFontSize(14);
-          doc.setTextColor(30, 41, 59);
-          doc.text('4. DEEP CONTEXT ANALYSIS (QUICK SCAN EXPANDED)', 14, currentY);
+          doc.setTextColor(99, 102, 241); // indigo-500
+          doc.text('4. DEEP CONTEXT ANALYSIS (TODAY\'S OVERVIEW EXPANDED)', 14, currentY);
           
           currentY += 10;
           cfoData.quickScanAnalysis.forEach(item => {
