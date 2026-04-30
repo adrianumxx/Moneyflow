@@ -37,7 +37,7 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
       const status = await getSystemStatus();
       setSystemStatus(status);
     } catch (e) {
-      showNotification('Diagnostics Failed', 'Could not reach neural backbone.', 'error');
+      showNotification('Diagnostics Failed', 'Could not reach backbone services.', 'error');
     } finally {
       setIsDiagnosticsLoading(false);
     }
@@ -115,7 +115,7 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
           <div className="p-6 bg-slate-50 dark:bg-zinc-950/50 rounded-3xl border border-slate-100 dark:border-zinc-800">
             <h3 className="text-xs font-black uppercase tracking-widest text-indigo-500 mb-3">AI Context Usage</h3>
             <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-              Intelligence engines like Palantir utilize your aggregated financial context (assets, liabilities, and transactions) to generate predictive insights and risk models. Your data is analyzed locally within our Neural Core to ensure privacy-first intelligence.
+              Our intelligence engine utilizes your aggregated financial context (assets, liabilities, and transactions) to generate insights and risk models. Your data is analyzed securely to ensure privacy-first intelligence.
             </p>
           </div>
 
@@ -142,13 +142,13 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
           <div className="p-6 bg-rose-500/5 dark:bg-rose-500/5 rounded-3xl border border-rose-500/10 dark:border-rose-500/20 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="space-y-1">
               <h3 className="text-xs font-black uppercase tracking-widest text-rose-500">Data Erasure</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Permanently purge all financial records from the Neural Core.</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Permanently remove all financial records from your profile.</p>
             </div>
             <button 
               onClick={() => setIsPurgeModalOpen(true)}
               className="px-6 py-3 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
             >
-              <Trash2 className="w-4 h-4" /> Purge Financial Data
+              <Trash2 className="w-4 h-4" /> Delete Financial Data
             </button>
           </div>
 
@@ -244,11 +244,11 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
                 </button>
               </div>
 
-              <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase italic mb-4">Permanent Purge</h2>
+              <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase italic mb-4">Delete All Data</h2>
               <div className="space-y-4 text-sm text-slate-500 font-medium leading-relaxed mb-8">
                 <p>This action is <span className="text-rose-500 font-bold">irreversible</span>. Once initiated, all indexed assets, transactions, and liability records will be permanently erased from your profile.</p>
                 <ul className="list-disc pl-5 space-y-2 text-xs">
-                  <li>Neural insights and historical forecasts will be wiped.</li>
+                  <li>Strategic insights and historical forecasts will be wiped.</li>
                   <li>Connected institutions must be revoked manually in the Sync Hub.</li>
                   <li>We recommend downloading your data archive before proceeding.</li>
                 </ul>
@@ -267,14 +267,14 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
 
               <button 
                 onClick={() => {
-                  showNotification('Purge Engine Offline', 'Backend purge routes are currently being secured. Please try again later.', 'info');
+                  showNotification('Account Erasure', 'Data deletion is not connected yet. You can export your data now; full deletion will be available before public launch.', 'info');
                   setIsPurgeModalOpen(false);
                   setPurgeInput('');
                 }}
                 disabled={purgeInput !== 'DELETE'}
                 className="w-full py-4 bg-rose-500 disabled:bg-slate-200 dark:disabled:bg-white/5 text-white disabled:text-slate-400 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-rose-500/20 transition-all active:scale-[0.98]"
               >
-                Erase All Financial Records
+                Delete All Financial Records
               </button>
             </motion.div>
           </div>

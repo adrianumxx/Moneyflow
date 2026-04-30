@@ -109,7 +109,7 @@ export default function CFOReportModal({ isOpen, onClose, onSend }: CFOReportMod
               ) : (
                 <>
                   <div className="space-y-4 mb-10">
-                    <h2 className="text-4xl font-black tracking-tighter text-slate-800 dark:text-white font-display leading-[0.9]">Smart Financial Report</h2>
+                    <h2 className="text-4xl font-black tracking-tighter text-slate-800 dark:text-white font-display leading-[0.9]">Financial Report</h2>
                     <p className="text-slate-500 font-medium text-lg">Detailed summary of your assets, debts, and projected growth.</p>
                   </div>
 
@@ -150,7 +150,7 @@ export default function CFOReportModal({ isOpen, onClose, onSend }: CFOReportMod
                       ) : (
                         <>
                           <Send className="w-6 h-6" />
-                          <span>Get My Report</span>
+                          <span>Create My Wealth Plan</span>
                         </>
                       )}
                     </button>

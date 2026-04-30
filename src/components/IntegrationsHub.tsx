@@ -57,7 +57,7 @@ export default function IntegrationsHub({ userId, userProfile, connectedInstitut
     const response = await createSyncSession(provider.providerId);
     
     if (!response.success) {
-      showNotification('Handshake Error', response.error || 'Neural Core could not verify this provider.', 'error');
+      showNotification('Connection Error', response.error || 'The service is temporarily unavailable.', 'error');
       return;
     }
 
@@ -74,7 +74,7 @@ export default function IntegrationsHub({ userId, userProfile, connectedInstitut
     try {
       const response = await disconnectInstitution(institutionId);
       if (response.success) {
-        showNotification('Neural Bridge Revoked', 'Access disconnected. Historical records preserved.', 'success');
+        showNotification('Connection Revoked', 'Access disconnected. Historical records preserved.', 'success');
         // Note: Real state update would come from onSnapshot in parent, but we can notify user immediately
       } else {
         throw new Error(response.error || 'Revocation failed');
@@ -88,7 +88,7 @@ export default function IntegrationsHub({ userId, userProfile, connectedInstitut
     <div className="min-h-screen bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-slate-200 pb-24 lg:pb-12 pt-6 lg:pt-8 px-4 sm:px-6 max-w-7xl mx-auto font-sans selection:bg-indigo-500/30">
       <div className="mb-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
         <div className="space-y-2">
-          <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white font-display">Neural Connector</h1>
+          <h1 className="text-4xl font-black tracking-tight text-slate-900 dark:text-white font-display">Secure Sync</h1>
           <p className="text-slate-500 dark:text-slate-400 max-w-xl text-sm font-medium">
             Synchronize your global assets in seconds. Real-time encryption with bank-grade protocol security.
           </p>
@@ -111,7 +111,7 @@ export default function IntegrationsHub({ userId, userProfile, connectedInstitut
              <div className="w-8 h-8 bg-emerald-500/10 rounded-xl flex items-center justify-center text-emerald-500">
                <RefreshCw className="w-4 h-4" />
              </div>
-             <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Active Neural Bridges</h2>
+             <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Connected Accounts</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
              {connectedInstitutions.map((inst) => (
@@ -137,7 +137,7 @@ export default function IntegrationsHub({ userId, userProfile, connectedInstitut
                         showNotification('Sync Initiated', `Querying ${inst.providerName} for latest balances...`, 'info');
                         const res = await syncAccounts(inst.id);
                         if (res.success) {
-                          showNotification('Sync Complete', `Successfully updated ${res.accounts?.length || 0} accounts.`, 'success');
+                          showNotification('Sync Complete', `Your bank is connected. Moneyflow can now use your balances to improve your overview and insights.`, 'success');
                         } else {
                           showNotification('Sync Failed', res.error || 'Connection failed', 'error');
                         }
@@ -152,7 +152,7 @@ export default function IntegrationsHub({ userId, userProfile, connectedInstitut
                         showNotification('Transaction Sync', `Fetching ledger items from ${inst.providerName}. This may take a moment...`, 'info');
                         const res = await syncAccounts(inst.id, { syncTransactions: true });
                         if (res.success) {
-                          showNotification('Sync Complete', `Successfully ingested transaction history.`, 'success');
+                          showNotification('Sync Complete', `Transactions synced. Your spending and cash flow insights are now more complete.`, 'success');
                         } else {
                           showNotification('Sync Failed', res.error || 'Connection failed', 'error');
                         }
@@ -164,7 +164,7 @@ export default function IntegrationsHub({ userId, userProfile, connectedInstitut
                     </button>
                     <button 
                       onClick={() => handleDisconnect(inst.id)}
-                      title="Disconnect Neural Bridge"
+                      title="Disconnect Bank"
                       className="p-3 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all"
                     >
                       <X className="w-4 h-4" />
@@ -174,7 +174,7 @@ export default function IntegrationsHub({ userId, userProfile, connectedInstitut
              ))}
           </div>
           <p className="mt-4 text-[9px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed max-w-2xl italic">
-            Note: Disconnecting stops future neural synchronizations. Historical financial records already indexed in your ledger are preserved for continuous analysis.
+            Note: Disconnecting stops future synchronizations. Historical financial records already indexed are preserved for continuous analysis.
           </p>
         </div>
       )}
@@ -268,8 +268,8 @@ export default function IntegrationsHub({ userId, userProfile, connectedInstitut
                 {connectionStep === 'intro' && connectingProvider.providerType === 'crypto_wallet' && (
                   <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full">
                     <div className="mb-6">
-                      <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Web3 Pulse Sync</h2>
-                      <p className="text-slate-500 text-sm font-medium">Scan any public address to index its value into your Wealth OS.</p>
+                      <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mb-2">Sync Web3 Wallet</h2>
+                      <p className="text-slate-500 text-sm font-medium">Add a public address to track its value in your dashboard.</p>
                     </div>
                     <CryptoConnector userId={userId} />
                     <button 
@@ -295,7 +295,7 @@ export default function IntegrationsHub({ userId, userProfile, connectedInstitut
                     
                     <div className="space-y-2">
                       <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Connect {connectingProvider.providerName}</h2>
-                      <p className="text-slate-500 text-sm font-medium">To synchronize your assets, we recommend using our <span className="text-indigo-600 dark:text-indigo-400">Magic Link</span> for mobile handover.</p>
+                      <p className="text-slate-500 text-sm font-medium">To synchronize your assets, we recommend using a <span className="text-indigo-600 dark:text-indigo-400">Secure Link</span> for mobile handover.</p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -358,7 +358,7 @@ export default function IntegrationsHub({ userId, userProfile, connectedInstitut
                       onClick={() => setConnectionStep('success')}
                       className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl flex items-center justify-center gap-2"
                     >
-                      Establish Neural Bridge
+                      Establish Connection
                     </button>
                   </motion.div>
                 )}
@@ -371,8 +371,8 @@ export default function IntegrationsHub({ userId, userProfile, connectedInstitut
                     </div>
                     
                     <div className="space-y-2">
-                      <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight">Scan for Magic Handover</h3>
-                      <p className="text-slate-500 text-xs font-medium px-4">Open your phone camera to securely authorize {connectingProvider.providerName} within our mobile encrypted sandbox.</p>
+                      <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase italic tracking-tight">Secure Link Handover</h3>
+                      <p className="text-slate-500 text-xs font-medium px-4">Open your phone camera to securely authorize {connectingProvider.providerName} on your mobile device.</p>
                     </div>
 
                     <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3 text-left">
@@ -399,7 +399,7 @@ export default function IntegrationsHub({ userId, userProfile, connectedInstitut
                     
                     <div className="space-y-2">
                       <h2 className="text-3xl font-black text-slate-900 dark:text-white uppercase italic">Connection Verified</h2>
-                      <p className="text-slate-500 text-sm font-medium">Your {connectingProvider.providerName} assets are now streaming to the Neural Core.</p>
+                      <p className="text-slate-500 text-sm font-medium">Your {connectingProvider.providerName} assets are now being synchronized.</p>
                     </div>
 
                     <button 

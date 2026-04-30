@@ -86,14 +86,14 @@ export default function TransactionsView({
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
         <div>
-          <h2 className="text-3xl sm:text-5xl font-black font-display tracking-tighter text-slate-900 dark:text-white leading-none mb-4">Financial Ledger</h2>
-          <p className="text-slate-500 font-medium text-lg leading-relaxed max-w-xl">Every transaction audited and searchable. Precise control over your cash flow.</p>
+          <h2 className="text-3xl sm:text-5xl font-black font-display tracking-tighter text-slate-900 dark:text-white leading-none mb-4">Transactions</h2>
+          <p className="text-slate-500 font-medium text-lg leading-relaxed max-w-xl">Searchable history of all your transactions. Precise control over your cash flow.</p>
         </div>
         <button 
           onClick={onAddTransaction}
           className="flex items-center gap-3 px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-950 rounded-2xl text-sm font-black shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
         >
-          <Plus className="w-5 h-5" /> New Entry
+          <Plus className="w-5 h-5" /> Add Transaction
         </button>
       </div>
 
@@ -115,7 +115,7 @@ export default function TransactionsView({
               onChange={(e) => setFilter(e.target.value)}
               className="px-6 py-4 bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/10 rounded-2xl font-bold appearance-none outline-none focus:ring-4 focus:ring-indigo-500/10 min-w-[140px]"
             >
-              <option value="all">All Flows</option>
+              <option value="all">All Transactions</option>
               <option value="income">Income</option>
               <option value="expense">Expense</option>
             </select>

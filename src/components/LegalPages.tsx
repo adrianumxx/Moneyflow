@@ -28,7 +28,7 @@ export default function LegalPages({ systemStatus }: { systemStatus?: any }) {
       <div className="p-6 bg-amber-500/10 border border-amber-500/20 rounded-[2rem] flex gap-4 items-start mb-8">
         <AlertCircle className="w-6 h-6 text-amber-500 shrink-0" />
         <div className="space-y-1">
-          <p className="text-xs font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">Beta Version Disclosure</p>
+          <p className="text-xs font-black uppercase tracking-widest text-amber-600 dark:text-amber-400">Beta Notice</p>
           <p className="text-[11px] text-amber-700 dark:text-amber-500/80 font-medium leading-relaxed">
             Moneyflow is currently in **Public Beta**. Features are subject to change. While we prioritize security, users should not rely solely on beta features for critical financial decisions.
           </p>
@@ -40,7 +40,7 @@ export default function LegalPages({ systemStatus }: { systemStatus?: any }) {
           Moneyflow provides financial tracking and AI-driven insights for informational purposes only. **This is not financial, investment, legal, or tax advice.**
         </p>
         <p>
-          Our AI "Neural Core" analyzes your data to identify patterns, but results may be incomplete or inaccurate. You remain 100% responsible for all financial decisions, including investments, transfers, and tax filings.
+          Our intelligence engine analyzes your data to identify patterns, but results may be incomplete or inaccurate. You remain 100% responsible for all financial decisions, including investments, transfers, and tax filings.
         </p>
       </LegalSection>
 
@@ -53,7 +53,7 @@ export default function LegalPages({ systemStatus }: { systemStatus?: any }) {
         </p>
       </LegalSection>
 
-      <LegalSection title="Your Rights & Sovereignty" icon={Lock}>
+      <LegalSection title="Your Data Rights" icon={Lock}>
         <p>
           **Revocation:** You can revoke any bank connection at any time via the Integrations Hub. This stops future synchronization immediately.
         </p>

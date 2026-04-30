@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowRight, X, Send, Loader2 } from 'lucide-react';
-import { chatWithNeuralPartner } from '../services/geminiService';
+import { chatWithAIAssistant } from '../services/geminiService';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -26,7 +26,7 @@ interface NeuralAdvisorProps {
 
 export default function NeuralAdvisor({ isVisible, onClose, context, language = 'en', initialMessage }: NeuralAdvisorProps) {
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: `Welcome to the Neural Core. I am your Strategic Partner. How can I help you optimize your wealth today, ${context.userDisplayName || 'User'}?` }
+    { role: 'assistant', content: `Hello, I'm your AI Assistant. How can I help you optimize your wealth today, ${context.userDisplayName || 'User'}?` }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -50,10 +50,10 @@ export default function NeuralAdvisor({ isVisible, onClose, context, language = 
     setIsLoading(true);
 
     try {
-      const response = await chatWithNeuralPartner(userMessage, context, language);
+      const response = await chatWithAIAssistant(userMessage, context, language);
       setMessages(prev => [...prev, { role: 'assistant', content: response }]);
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Errore di connessione. Riprova.' }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Connection error. Please try again.' }]);
     } finally {
       setIsLoading(false);
     }
@@ -80,11 +80,11 @@ export default function NeuralAdvisor({ isVisible, onClose, context, language = 
             <div className="p-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-indigo-600/5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 relative flex items-center justify-center rounded-full overflow-hidden border border-indigo-500/30 shadow-lg shadow-indigo-500/20">
-                  <img src="/assets/ai_assistant.png" alt="Neural Partner" className="w-full h-full object-cover scale-110" />
+                  <img src="/assets/ai_assistant.png" alt="AI Assistant" className="w-full h-full object-cover scale-110" />
                 </div>
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-indigo-500">Neural Partner</p>
-                  <p className="text-[10px] font-bold text-slate-900 dark:text-white">Connessione Attiva</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-indigo-500">AI Assistant</p>
+                  <p className="text-[10px] font-bold text-slate-900 dark:text-white">Active</p>
                 </div>
               </div>
               <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full transition-colors text-slate-400">
@@ -114,7 +114,7 @@ export default function NeuralAdvisor({ isVisible, onClose, context, language = 
                 <div className="flex justify-start">
                   <div className="bg-slate-100 dark:bg-white/5 p-4 rounded-2xl rounded-tl-none flex items-center gap-2">
                     <Loader2 className="w-4 h-4 text-indigo-500 animate-spin" />
-                    <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Neural Thinking...</span>
+                    <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Analyzing your data...</span>
                   </div>
                 </div>
               )}
@@ -129,7 +129,7 @@ export default function NeuralAdvisor({ isVisible, onClose, context, language = 
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                  placeholder="Chiedi al tuo socio..."
+                  placeholder="Ask a question about your finances..."
                   className="w-full bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl pl-5 pr-12 py-3 text-xs focus:border-indigo-500 outline-none transition-all dark:text-white"
                 />
                 <button
@@ -142,7 +142,7 @@ export default function NeuralAdvisor({ isVisible, onClose, context, language = 
               </div>
                <div className="mt-2 space-y-1 text-center">
                   <p className="text-[8px] text-slate-400 uppercase tracking-[0.2em] font-black">
-                    Powered by Neural Core Gemini 1.5 Pro
+                    Intelligence Core v1.5 (Beta)
                   </p>
                   <p className="text-[7px] text-slate-500 uppercase tracking-widest font-bold px-4 leading-tight">
                     Informational purposes only. Not financial advice. AI models may occasionally produce inaccuracies.

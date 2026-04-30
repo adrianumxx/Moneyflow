@@ -149,13 +149,21 @@ export default function FinancialForecast({
             <div className="p-2 addictive-gradient rounded-xl shadow-lg shadow-indigo-500/20">
               <Calculator className="w-5 h-5 text-white" />
             </div>
-            <p className="text-indigo-400 text-[10px] font-black uppercase tracking-[0.4em]">Proprietary Forecast Engine</p>
+            <p className="text-indigo-400 text-[10px] font-black uppercase tracking-[0.4em]">Forecast Engine</p>
           </div>
-          <h2 className="text-4xl font-black font-display tracking-tight text-slate-800 dark:text-white">
-            Wealth Trajectory
-          </h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-4xl font-black font-display tracking-tight text-slate-800 dark:text-white">
+              Future Growth
+            </h2>
+            <div className="group relative">
+              <Info className="w-4 h-4 text-slate-400 cursor-help" />
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-56 p-3 bg-slate-900 border border-slate-800 rounded-xl text-[10px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
+                Shows possible outcomes, not predictions. Based on your current data and selected rate.
+              </div>
+            </div>
+          </div>
           <p className="text-slate-500 text-sm mt-1 max-w-md font-medium">
-            Advanced algorithmic simulation of your future capital based on multi-variable flows.
+            Projection based on your current spending and savings.
           </p>
         </div>
 
@@ -176,7 +184,15 @@ export default function FinancialForecast({
           </div>
 
           <div className="flex flex-col gap-1">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 pl-2">Yield expectation</span>
+            <div className="flex items-center gap-2 pl-2">
+              <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Expected Growth</span>
+              <div className="group relative">
+                <Info className="w-2.5 h-2.5 text-slate-400 cursor-help" />
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 p-2 bg-slate-900 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                  Calculated from your current assets and historical data.
+                </div>
+              </div>
+            </div>
             <div className="flex items-center gap-2 px-6 py-4 bg-slate-100 dark:bg-white/5 rounded-2xl">
               <TrendingUp className="w-4 h-4 text-emerald-500" />
               <input 
@@ -212,7 +228,17 @@ export default function FinancialForecast({
           currency={userProfile?.baseCurrency}
         />
         <AnalysisCard 
-          title="Burn Rate" 
+          title={
+            <div className="flex items-center gap-2">
+              <span>Monthly Spending</span>
+              <div className="group relative">
+                <Info className="w-2.5 h-2.5 text-rose-400/50 cursor-help" />
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-40 p-2 bg-slate-900 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                  Your recent spending trend based on available data.
+                </div>
+              </div>
+            </div>
+          }
           value={analysis.totalMonthlyExpenses} 
           subtitle={`${formatMoney(analysis.monthlyDebtPayments, userProfile?.baseCurrency)} recurring debt`}
           icon={<TrendingDown className="w-5 h-5 text-rose-500" />}
@@ -220,9 +246,9 @@ export default function FinancialForecast({
           currency={userProfile?.baseCurrency}
         />
         <AnalysisCard 
-          title="Capital Surplus" 
+          title="Monthly Surplus" 
           value={analysis.monthlySurplus} 
-          subtitle={`${((analysis.monthlySurplus / (analysis.effectiveIncome || 1)) * 100).toFixed(1)}% efficiency`}
+          subtitle={`${((analysis.monthlySurplus / (analysis.effectiveIncome || 1)) * 100).toFixed(1)}% savings rate`}
           icon={<PiggyBank className="w-5 h-5 text-emerald-500" />}
           color="emerald"
           currency={userProfile?.baseCurrency}
@@ -243,7 +269,7 @@ export default function FinancialForecast({
         
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
           <div>
-            <h3 className="text-xl sm:text-2xl font-black font-display tracking-tight text-slate-800 dark:text-white">Growth Simulation</h3>
+            <h3 className="text-xl sm:text-2xl font-black font-display tracking-tight text-slate-800 dark:text-white">Projection</h3>
             <p className="text-xs sm:text-sm text-slate-500 font-medium tracking-tight">Compound growth visualization over {projectionYears} years</p>
           </div>
           <div className="flex flex-wrap gap-4 sm:gap-6">
@@ -335,9 +361,9 @@ export default function FinancialForecast({
             <Sparkles className="w-6 h-6 text-white" />
           </div>
           <div className="text-sm">
-            <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Algorithmic Forecast Summary</p>
+            <p className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Forecast Summary</p>
             <p className="font-medium text-base sm:text-lg tracking-tight leading-relaxed">
-              Based on your momentum, your net worth is trajectorying towards <span className="font-black text-white underline decoration-white/30 underline-offset-4">{formatMoney(projectionData[projectionData.length-1].netWorth, userProfile?.baseCurrency)}</span> by the end of this period.
+              Based on your momentum, your net worth is on track towards <span className="font-black text-white underline decoration-white/30 underline-offset-4">{formatMoney(projectionData[projectionData.length-1].netWorth, userProfile?.baseCurrency)}</span> by the end of this period.
             </p>
           </div>
         </motion.div>

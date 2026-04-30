@@ -363,19 +363,19 @@ export default function Dashboard({
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 sm:gap-8">
         <div>
           <div className="flex items-center gap-2 mb-3 sm:mb-4">
-             <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">Financial Intelligence Hub</span>
+             <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">Financial Overview</span>
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-slate-800 dark:text-white mb-2 sm:mb-4 font-display leading-none">
             Welcome, <span className="text-indigo-600 dark:text-indigo-400">{user.displayName?.split(' ')[0]}</span>
           </h1>
-          <p className="text-slate-500 font-medium text-base sm:text-lg tracking-tight">Managing {groups.length} active wealth circles across your global portfolio.</p>
+          <p className="text-slate-500 font-medium text-base sm:text-lg tracking-tight">Managing {groups.length} active groups across your portfolio.</p>
         </div>
         <button 
           onClick={() => onAddGroup?.()}
           className="w-full sm:w-auto flex items-center justify-center gap-3 px-6 sm:px-8 py-4 sm:py-5 addictive-gradient text-white rounded-[1.5rem] sm:rounded-[2rem] font-black text-sm hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-indigo-600/20"
         >
           <Plus className="w-5 h-5 bg-white/20 rounded-lg p-1" />
-          Establish New Circle
+          {groups.length === 0 ? 'Create your first group' : 'Establish New Group'}
         </button>
       </header>
 
@@ -396,7 +396,7 @@ export default function Dashboard({
             <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/10 backdrop-blur-xl rounded-xl sm:rounded-2xl flex items-center justify-center mb-6 sm:mb-10 border border-white/10">
               <Users className="w-6 sm:w-7 h-6 sm:h-7 text-white" />
             </div>
-            <p className="text-[9px] sm:text-[10px] font-black text-indigo-300 uppercase tracking-[0.3em] mb-2 leading-none">Strategic Circles</p>
+            <p className="text-[9px] sm:text-[10px] font-black text-indigo-300 uppercase tracking-[0.3em] mb-2 leading-none">Your Groups</p>
             <p className="text-4xl sm:text-5xl font-black text-white font-display tracking-tighter">{groups.length}</p>
           </div>
         </button>
@@ -413,7 +413,7 @@ export default function Dashboard({
             <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/10 backdrop-blur-xl rounded-xl sm:rounded-2xl flex items-center justify-center mb-6 sm:mb-10 border border-white/10">
               <Receipt className="w-6 sm:w-7 h-6 sm:h-7 text-white" />
             </div>
-            <p className="text-[9px] sm:text-[10px] font-black text-emerald-100 uppercase tracking-[0.3em] mb-2 leading-none">Recent Flows</p>
+            <p className="text-[9px] sm:text-[10px] font-black text-emerald-100 uppercase tracking-[0.3em] mb-2 leading-none">Transactions</p>
             <p className="text-4xl sm:text-5xl font-black text-white font-display tracking-tighter">{recentExpenses.length}</p>
           </div>
         </button>
@@ -430,7 +430,7 @@ export default function Dashboard({
             <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/10 backdrop-blur-xl rounded-xl sm:rounded-2xl flex items-center justify-center mb-6 sm:mb-10 border border-white/10">
               <TrendingUp className="w-6 sm:w-7 h-6 sm:h-7 text-white" />
             </div>
-            <p className="text-[9px] sm:text-[10px] font-black text-rose-100 uppercase tracking-[0.3em] mb-2 leading-none">Critical Alerts</p>
+            <p className="text-[9px] sm:text-[10px] font-black text-rose-100 uppercase tracking-[0.3em] mb-2 leading-none">Notifications</p>
             <p className="text-4xl sm:text-5xl font-black text-white font-display tracking-tighter">{alerts.length}</p>
           </div>
         </button>
@@ -455,7 +455,7 @@ export default function Dashboard({
               className="relative w-full max-w-md bg-white dark:bg-slate-900 border-t sm:border border-white/20 rounded-t-[2.5rem] sm:rounded-[3.5rem] shadow-premium overflow-hidden outline-none p-8 sm:p-10"
             >
               <div className="w-12 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full mx-auto mb-6 sm:hidden" />
-              <h3 className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white mb-6 sm:mb-8 font-display tracking-tighter">Navigate Circle</h3>
+              <h3 className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white mb-6 sm:mb-8 font-display tracking-tighter">Select Group</h3>
               <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar no-scrollbar">
                 {groups.map(group => (
                   <button
@@ -483,12 +483,12 @@ export default function Dashboard({
         <div className="lg:col-span-2 space-y-8 sm:space-y-10">
           <section>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-800 dark:text-white font-display">Transaction Stream</h2>
+              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-800 dark:text-white font-display">Recent Activity</h2>
               <button 
                 onClick={onNavigateToLedger}
                 className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-500 transition-colors"
               >
-                Digital Audit
+                Full History
               </button>
             </div>
             <div className="glass-card rounded-[2rem] sm:rounded-[3rem] border border-slate-100 dark:border-white/5 shadow-premium overflow-hidden">
@@ -497,7 +497,7 @@ export default function Dashboard({
                   <div className="w-14 h-14 sm:w-16 sm:h-16 bg-slate-50 dark:bg-white/5 rounded-xl sm:rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 border border-slate-100 dark:border-white/10 shadow-inner">
                     <Receipt className="w-7 sm:w-8 h-7 sm:h-8 text-slate-300 dark:text-slate-600" />
                   </div>
-                  <p className="text-slate-400 font-bold tracking-tight text-sm">Precision ledger empty. Awaiting first transaction flow.</p>
+                  <p className="text-slate-400 font-bold tracking-tight text-sm">No recent activity detected.</p>
                 </div>
               ) : (
                 <div className="divide-y divide-slate-100 dark:divide-white/5">
@@ -559,7 +559,7 @@ export default function Dashboard({
         <div className="space-y-12">
           <section>
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-black tracking-tight text-slate-800 dark:text-white font-display">Optimization Feed</h2>
+              <h2 className="text-2xl font-black tracking-tight text-slate-800 dark:text-white font-display">Suggestions</h2>
             </div>
             <div className="space-y-6">
               {alerts.length === 0 ? (
@@ -570,8 +570,8 @@ export default function Dashboard({
                   <div className="w-16 h-16 bg-emerald-400/10 rounded-[1.5rem] flex items-center justify-center mx-auto mb-6 shadow-inner border border-emerald-400/10">
                     <TrendingDown className="w-8 h-8 text-emerald-500" />
                   </div>
-                  <p className="text-slate-800 dark:text-white font-black tracking-tight mb-1">Optimal Efficiency</p>
-                  <p className="text-slate-400 text-[11px] font-medium px-4">All budgets are currently performing within projected bounds.</p>
+                  <p className="text-slate-800 dark:text-white font-black tracking-tight mb-1">Looking Good</p>
+                  <p className="text-slate-400 text-[11px] font-medium px-4">All groups are currently within their budget limits.</p>
                 </div>
               ) : (
                 alerts.map(alert => (
@@ -592,7 +592,7 @@ export default function Dashboard({
                         <TrendingUp className={`w-7 h-7 ${alert.type === 'warning' ? 'text-rose-600' : 'text-white'}`} />
                       </div>
                       <div className="space-y-2">
-                         <p className={`text-[10px] font-black uppercase tracking-widest ${alert.type === 'warning' ? 'text-rose-400' : 'text-indigo-200'}`}>Critical Notification</p>
+                         <p className={`text-[10px] font-black uppercase tracking-widest ${alert.type === 'warning' ? 'text-rose-400' : 'text-indigo-200'}`}>Notification</p>
                          <p className={`text-sm font-bold leading-relaxed ${alert.type === 'warning' ? 'text-rose-900 dark:text-rose-100' : 'text-white'}`}>{alert.message}</p>
                       </div>
                     </div>
@@ -614,10 +614,10 @@ export default function Dashboard({
                   </div>
                   <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-300">Moneyflow AI</span>
                 </div>
-                <h4 className="text-xl font-black font-display tracking-tight mb-2">Automated Savings Protocol</h4>
-                <p className="text-slate-400 text-xs leading-relaxed mb-6">Optimization ready for your household circle. Potential {formatMoney(420, userProfile?.baseCurrency)} monthly yield improvement detected.</p>
+                <h4 className="text-xl font-black font-display tracking-tight mb-2">Savings Opportunity</h4>
+                <p className="text-slate-400 text-xs leading-relaxed mb-6">Optimization ready for your household group. Potential {formatMoney(420, userProfile?.baseCurrency)} monthly improvement detected.</p>
                 <div className="flex items-center gap-2 text-indigo-400 text-[10px] font-black uppercase tracking-widest group-hover:gap-4 transition-all">
-                  Review Intelligence <ChevronRight className="w-4 h-4" />
+                  View Suggestion <ChevronRight className="w-4 h-4" />
                 </div>
               </div>
             </div>

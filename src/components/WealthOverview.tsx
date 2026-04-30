@@ -139,7 +139,7 @@ export default function WealthOverview({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-2">
         <div className="flex flex-col gap-1">
           <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Wealth Dashboard</h2>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">AI-Powered Portfolio Insights</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Strategic Portfolio Insights</p>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
            <div className="flex-1 md:flex-none px-5 py-2.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 flex items-center justify-center md:justify-start gap-3 shadow-sm">
@@ -177,8 +177,16 @@ export default function WealthOverview({
                     <ShieldCheck className="w-6 h-6 text-indigo-400" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-300">{t('Total Net Worth')}</span>
-                    <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest italic leading-none">Verified Assets Hub</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-300">Fiscal Awareness</span>
+                      <div className="group relative">
+                        <Info className="w-2.5 h-2.5 text-slate-500 cursor-help" />
+                        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 p-2 bg-slate-900 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                          Highlights areas that may be worth reviewing with a qualified advisor.
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-[8px] font-bold text-slate-500 uppercase tracking-widest italic leading-none">Total Assets</span>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -199,14 +207,17 @@ export default function WealthOverview({
                 {formatMoney(netWorth, userProfile?.baseCurrency)}
               </h2>
               <div className="flex items-center gap-3 pt-6">
-                <span className="flex items-center gap-2 text-emerald-400 font-black bg-emerald-400/10 px-4 py-2 rounded-2xl text-xs border border-emerald-400/20 shadow-success">
+                <span className="flex items-center gap-2 text-emerald-400 font-black bg-emerald-400/10 px-4 py-2 rounded-2xl text-xs border border-emerald-400/20 shadow-success group/tip relative">
                   <ArrowUpRight className="w-4 h-4" />
-                  +2.4% Growth
+                  +2.4% Growth Pace
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-40 p-2 bg-slate-900 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-400 opacity-0 group-hover/tip:opacity-100 transition-opacity pointer-events-none z-50">
+                    Calculated from your current assets and historical data.
+                  </div>
                 </span>
                 <div className="h-10 w-[1px] bg-white/10 mx-2 hidden sm:block" />
                 <div className="hidden sm:flex flex-col">
-                  <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Neural Link</span>
-                  <span className="text-white text-[10px] font-bold">Active Stream</span>
+                  <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Live Sync</span>
+                  <span className="text-white text-[10px] font-bold">Active</span>
                 </div>
               </div>
             </div>
@@ -220,7 +231,15 @@ export default function WealthOverview({
                 </div>
               </div>
               <div className="space-y-1">
-                <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">{t('Burn Rate (30d)')}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Spending Pace</p>
+                  <div className="group relative">
+                    <Info className="w-2.5 h-2.5 text-slate-500 cursor-help" />
+                    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-40 p-2 bg-slate-900 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                      Your recent spending trend based on available data.
+                    </div>
+                  </div>
+                </div>
                 <p className="text-3xl font-black text-rose-500 font-display truncate">{formatMoney(monthlyExpenses, userProfile?.baseCurrency)}</p>
                 <div className="h-1 w-full bg-rose-500/10 rounded-full overflow-hidden">
                   <div className="h-full bg-rose-500 w-[25%] rounded-full shadow-[0_0_15px_rgba(244,63,94,0.3)]" />
@@ -242,12 +261,18 @@ export default function WealthOverview({
           </div>
 
           {!insights.length && !isGenerating && (
-            <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4">
+            <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-6">
               <Bot className="w-16 h-16 mb-6 text-white/80 drop-shadow-xl animate-bounce" />
-              <h2 className="text-3xl font-black uppercase tracking-tight">{t('Analisi Portafoglio')}</h2>
-              <p className="text-white/80 text-[10px] mt-4 font-black uppercase tracking-[0.3em] bg-white/10 px-4 py-2 rounded-full border border-white/20">
-                {t('Tap to Scan')}
+              <h2 className="text-2xl font-black uppercase tracking-tight leading-tight">{t('Add your first asset')}</h2>
+              <p className="text-white/70 text-[10px] mt-4 font-bold uppercase tracking-widest leading-relaxed">
+                Moneyflow becomes more useful as your data gets more complete. Start by adding an asset or connecting a bank.
               </p>
+              <button 
+                onClick={(e) => { e.stopPropagation(); onAddAsset(); }}
+                className="mt-8 text-white font-black uppercase tracking-[0.3em] bg-white/10 hover:bg-white/20 px-6 py-3 rounded-full border border-white/20 transition-all text-[10px]"
+              >
+                {t('Add Asset')}
+              </button>
             </div>
           )}
 
@@ -260,13 +285,18 @@ export default function WealthOverview({
 
           {insights.length > 0 && !isGenerating && (
             <div className="relative z-10 h-full flex flex-col pt-2">
-               <div className="flex items-center justify-between mb-6 shrink-0">
-                 <h2 className="text-sm font-black uppercase tracking-[0.2em]">{t('Quick Scan')}</h2>
-                 <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.8)]" />
+               <div className="flex flex-col mb-6 shrink-0">
+                 <div className="flex items-center justify-between mb-1">
+                   <h2 className="text-sm font-black uppercase tracking-[0.2em]">Today's Overview</h2>
+                   <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.8)]" />
+                 </div>
+                 <p className="text-[9px] text-white/60 font-medium leading-tight">
+                   A quick summary of what changed, what needs attention, and what to review next.
+                 </p>
                </div>
                
                <div className="flex-1 space-y-3 overflow-y-auto pr-2 custom-scrollbar mb-4 max-h-[320px]">
-                 {insights.map(insight => (
+                 {insights.slice(0, 3).map(insight => (
                    <div key={insight.id} className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/10">
                      <div className="flex items-center gap-2 mb-2">
                         <span className={`w-2 h-2 rounded-full ${insight.type === 'warning' ? 'bg-rose-400' : insight.type === 'opportunity' ? 'bg-emerald-400' : 'bg-indigo-400'}`} />
@@ -282,16 +312,16 @@ export default function WealthOverview({
                  className="shrink-0 w-full py-4 bg-white text-indigo-900 rounded-2xl text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-slate-100 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl"
                >
                   <FileText className="w-5 h-5" />
-                  {t('Full Analysis')}
+                  Review Insights
                </button>
             </div>
           )}
         </section>
 
-        {/* Tactical Ledger (1x2) */}
+        {/* Recent Activity (1x2) */}
         <section className="lg:row-span-2 glass-card rounded-[3rem] p-8 shadow-premium flex flex-col">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-800 dark:text-white">Active Flows</h3>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-800 dark:text-white">Recent Activity</h3>
             <div className="p-2 bg-indigo-500/10 rounded-xl">
               <Receipt className="w-4 h-4 text-indigo-500" />
             </div>
@@ -320,7 +350,7 @@ export default function WealthOverview({
             {transactions.length === 0 && (
               <div className="h-full flex flex-col items-center justify-center text-center opacity-40">
                 <Landmark className="w-10 h-10 mb-4" />
-                <p className="text-[10px] font-black uppercase tracking-widest">No Active Flows</p>
+                <p className="text-[10px] font-black uppercase tracking-widest">No Recent Activity</p>
               </div>
             )}
           </div>
@@ -332,7 +362,7 @@ export default function WealthOverview({
         {/* Portfolio DNA (1x2) */}
         <section className="lg:row-span-2 glass-card rounded-[3rem] p-8 shadow-premium flex flex-col overflow-hidden">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-800 dark:text-white">Sector Weights</h3>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-800 dark:text-white">Allocation</h3>
             <div className="flex items-center gap-1.5 p-1 bg-slate-100 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10 cursor-help" title="Data fed dynamically from Sync, Ledger & Manual sources.">
               <div className="w-5 h-5 rounded flex items-center justify-center bg-emerald-500/20 text-emerald-600 dark:text-emerald-400" title="API Sync (Open Banking)"><Radio className="w-3 h-3" /></div>
               <div className="w-5 h-5 rounded flex items-center justify-center text-slate-400" title="Ledger Imports"><Receipt className="w-3 h-3" /></div>
@@ -360,8 +390,8 @@ export default function WealthOverview({
               </RePieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">DNA</span>
-              <span className="text-sm font-black text-slate-800 dark:text-white">{assetData.length} Slices</span>
+              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Portfolio</span>
+              <span className="text-sm font-black text-slate-800 dark:text-white">{assetData.length} Categories</span>
             </div>
           </div>
           <div className="flex-1 space-y-2 overflow-y-auto no-scrollbar">
@@ -381,11 +411,11 @@ export default function WealthOverview({
           {/* Intelligence Indicators */}
           <div className="mt-6 pt-6 border-t border-slate-100 dark:border-white/5 grid grid-cols-3 gap-2">
              <div className="text-center">
-                <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Burn Rate</p>
+                <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Daily Spend</p>
                 <p className="text-xs font-black text-rose-500">{formatMoney(monthlyExpenses / 30, userProfile?.baseCurrency)}/d</p>
              </div>
              <div className="text-center border-x border-slate-100 dark:border-white/5">
-                <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Runway</p>
+                <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Est. Runway</p>
                 <p className="text-xs font-black text-indigo-500">
                   {monthlyExpenses > 0 ? (totalAssets / monthlyExpenses).toFixed(1) : '∞'} m
                 </p>
@@ -402,7 +432,7 @@ export default function WealthOverview({
         {/* Strategic Target (1x1) */}
         <section className="glass-card rounded-[3rem] p-8 shadow-premium flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-800 dark:text-white">Next Goal</h3>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-slate-800 dark:text-white">Current Goal</h3>
             <Target className="w-4 h-4 text-emerald-500" />
           </div>
           <div>
@@ -434,7 +464,7 @@ export default function WealthOverview({
         {/* Wealth Velocity (1x1) */}
         <section className="glass-card rounded-[3rem] p-8 shadow-premium flex flex-col justify-between bg-zinc-900 dark:bg-[#020617] text-white">
            <div className="flex items-center justify-between mb-4">
-            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/50">Wealth Velocity</h3>
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/50">Growth Pace</h3>
             <Zap className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="flex flex-col h-full justify-end">
@@ -447,14 +477,14 @@ export default function WealthOverview({
                
                return (
                  <>
-                   <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">Monthly Acceleration</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">Monthly Savings</p>
                    <p className={`text-3xl font-black font-display tracking-tighter ${isPositive ? 'text-emerald-400' : 'text-rose-400'}`}>
                      {isPositive ? '+' : ''}{formatMoney(velocity, userProfile?.baseCurrency)}<span className="text-sm">/mo</span>
                    </p>
                    {yearsToMillion ? (
                       <div className="mt-4 p-3 bg-white/5 rounded-xl border border-white/10">
                         <p className="text-[10px] font-bold text-white/60">
-                          Trajectory: <strong className="text-white text-xs">~{yearsToMillion} years</strong> to {formatMoney(1000000, userProfile?.baseCurrency)} at current speed.
+                          At your current pace, this goal is long-term. Consider setting a nearer milestone.
                         </p>
                       </div>
                    ) : isPositive && netWorth >= 1000000 ? (
@@ -466,7 +496,7 @@ export default function WealthOverview({
                    ) : (
                       <div className="mt-4 p-3 bg-rose-500/10 rounded-xl border border-rose-500/20">
                         <p className="text-[10px] font-bold text-rose-400">
-                          Velocity negative. Wealth is bleeding.
+                          Spending is currently above income.
                         </p>
                       </div>
                    )}

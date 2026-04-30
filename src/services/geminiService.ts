@@ -3,7 +3,7 @@ import { Timestamp, collection, addDoc, query, orderBy, limit, getDocs, serverTi
 import { db } from "../firebase";
 import { authenticatedFetch } from "../utils/api";
 
-export async function chatWithNeuralPartner(
+export async function chatWithAIAssistant(
   query: string,
   context: {
     assets: any[];
@@ -14,7 +14,7 @@ export async function chatWithNeuralPartner(
     userDisplayName?: string;
     baseCurrency?: string;
   },
-  language: string = 'it'
+  language: string = 'en'
 ): Promise<string> {
   try {
     const response = await authenticatedFetch('/api/gemini/chat', {
@@ -27,7 +27,7 @@ export async function chatWithNeuralPartner(
     return aiResponse;
   } catch (error) {
     console.error("Chat Error:", error);
-    return "Mi scuso, ho difficoltà a connettermi al Neural Core in questo momento. Riprova tra poco.";
+    return "I apologize, I'm having trouble connecting to the assistant right now. Please try again soon.";
   }
 }
 
@@ -469,7 +469,7 @@ export async function getPalantirIntelligence(
     
     throw new Error("EMPTY");
   } catch (error) {
-    console.warn("Using strategic buffer fallback context.");
+    console.warn("Intelligence engine is using strategic buffer fallback.");
     return FALLBACK_PALANTIR_DATA;
   }
 }

@@ -80,11 +80,11 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
 
   const simulateConnection = async () => {
     setIsLoading(true);
-    showNotification('Secure Link Initiated', `Opening encrypted tunnel to ${selectedBank.name}...`, 'info');
+    showNotification('Secure Link Initiated', `Connecting to ${selectedBank.name}...`, 'info');
     await new Promise(resolve => setTimeout(resolve, 2000));
     setStep('handshake');
     setIsLoading(false);
-    showNotification('Handshake Required', 'Please confirm the identity request on your mobile device.', 'push', selectedBank.name);
+    showNotification('Confirmation Required', 'Please confirm the request on your mobile device.', 'push', selectedBank.name);
   };
 
   const completeHandshake = async () => {
@@ -92,19 +92,19 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
     await new Promise(resolve => setTimeout(resolve, 3000));
     setStep('selection');
     setIsLoading(false);
-    showNotification('Identity Verified', 'Credentials confirmed via OIDC Handshake.', 'success', 'Security Core');
+    showNotification('Identity Verified', 'Credentials confirmed via secure link.', 'success', 'Security Center');
   };
 
   const finalizeConnection = async () => {
     setIsLoading(true);
-    showNotification('Parsing Ledger', 'Extracting and categorizing transaction data...', 'info');
+    showNotification('Syncing History', 'Organizing your transaction history...', 'info');
     await new Promise(resolve => setTimeout(resolve, 2000));
     
     try {
       // 1. Backend Handshake Bridge (Foundation)
       const handshake = await handleSyncCallback(selectedBank.id, 'auth_stub_' + Date.now());
       if (!handshake.success) {
-        showNotification('Connection Refused', handshake.error || 'Neural Core could not verify the provider handshake.', 'error');
+        showNotification('Connection Refused', handshake.error || 'Could not verify the bank connection.', 'error');
         setIsLoading(false);
         return;
       }
@@ -174,7 +174,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
         }
       }
 
-      showNotification('Ledger Synced', `Successfully linked ${selectedAccounts.length} accounts.`, 'success', 'Wealth OS');
+      showNotification('History Synced', `Successfully linked ${selectedAccounts.length} accounts.`, 'success', 'Moneyflow');
       setStep('success');
     } catch (error) {
       console.error("Error connecting bank:", error);
@@ -214,7 +214,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
               </div>
               <div className="space-y-1">
                 <h3 className="text-2xl sm:text-4xl font-black tracking-tight text-white font-display flex items-center gap-3">
-                  Moneyflow <span className="text-zinc-500">Connect</span>
+                  Moneyflow <span className="text-zinc-500">Sync</span>
                   <span className="hidden sm:inline text-[10px] bg-white/10 text-zinc-400 px-2 py-1 rounded-md tracking-widest uppercase">Sandbox</span>
                 </h3>
                 <p className="text-zinc-500 text-sm font-medium">Simulate sync with major institutions.</p>
@@ -306,8 +306,8 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                         <ShieldCheck className="w-6 h-6 text-indigo-400" />
                       </div>
                       <div>
-                        <h4 className="text-sm font-black text-white uppercase tracking-wider">Security Core Verified</h4>
-                        <p className="text-[10px] text-zinc-500 font-medium mt-1">Your actual credentials are never stored. Demo Sandbox Verification.</p>
+                        <h4 className="text-sm font-black text-white uppercase tracking-wider">Security Verified</h4>
+                        <p className="text-[10px] text-zinc-500 font-medium mt-1">Your actual credentials are never stored. Secure sandbox environment.</p>
                       </div>
                     </div>
                     <div className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-zinc-400 group-hover:text-white group-hover:translate-x-1 transition-all">
@@ -351,7 +351,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                 </div>
 
                 <div className="space-y-4">
-                  <h4 className="text-2xl font-black text-white tracking-tight">Sync Authorization Required</h4>
+                  <h4 className="text-2xl font-black text-white tracking-tight">Access Authorization Required</h4>
                   <p className="text-zinc-500 font-medium text-sm leading-relaxed">
                     To provide real-time wealth intelligence, Moneyflow needs your permission to securely access the following data from <span className="text-white font-bold">{selectedBank.name}</span>:
                   </p>
@@ -379,7 +379,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                   <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl flex items-start gap-3">
                     <ShieldCheck className="w-5 h-5 text-indigo-500 shrink-0 mt-0.5" />
                     <p className="text-[10px] text-indigo-400 font-bold leading-tight">
-                      Neural Handover active. You will be redirected to <span className="text-white">{selectedGoCardlessInst?.name}</span> to securely authorize the connection.
+                      Secure connection active. You will be redirected to <span className="text-white">{selectedGoCardlessInst?.name}</span> to authorize the connection.
                     </p>
                   </div>
                 )}
@@ -414,7 +414,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                     disabled={isLoading}
                     className="flex-[2] py-5 addictive-gradient text-white rounded-[2rem] font-black uppercase tracking-widest text-[10px] hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-indigo-600/20 disabled:opacity-50"
                   >
-                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : `Authorize via ${selectedBank?.name}`}
+                    {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : `Authorize via ${selectedBank?.name}`}
                   </button>
                 </div>
               </motion.div>
@@ -448,8 +448,8 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                 </div>
 
                 <div className="space-y-4 max-w-sm mx-auto">
-                  <h4 className="text-2xl font-black text-white tracking-tight">Authenticating Handshake</h4>
-                  <p className="text-zinc-500 font-medium">We're opening a demo connection flow to your institution. Please wait while we establish a sandbox connection.</p>
+                  <h4 className="text-2xl font-black text-white tracking-tight">Verifying Connection</h4>
+                  <p className="text-zinc-500 font-medium">We're opening a secure demo connection to your institution. Please wait.</p>
                 </div>
 
                 <div className="flex flex-col gap-4 max-w-sm mx-auto">
@@ -461,7 +461,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                     {isLoading ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" /> 
-                        Performing Handshake...
+                        Verifying Connection...
                       </>
                     ) : (
                       <>
@@ -502,8 +502,8 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <h4 className="text-2xl font-black text-white tracking-tight uppercase">Check your phone</h4>
-                    <p className="text-zinc-500 text-xs font-medium tracking-wide">CONFIRM THE ACCESS REQUEST IN THE {selectedBank.name.toUpperCase()} APP</p>
+                    <h4 className="text-2xl font-black text-white tracking-tight uppercase">Verify Access</h4>
+                    <p className="text-zinc-500 text-xs font-medium tracking-wide">CONFIRM THE REQUEST IN THE {selectedBank.name.toUpperCase()} APP</p>
                   </div>
                 </div>
 
@@ -527,7 +527,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                   >
                     {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "I've confirmed on my phone"}
                   </button>
-                  <p className="text-[10px] text-zinc-600 font-medium uppercase tracking-[0.2em] animate-pulse">Waiting for handshake... (3DES Layer 4 active)</p>
+                  <p className="text-[10px] text-zinc-600 font-medium uppercase tracking-[0.2em] animate-pulse">Waiting for confirmation... (Secure SSL Active)</p>
                 </div>
               </motion.div>
             )}
@@ -541,7 +541,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                 className="space-y-8"
               >
                 <div className="space-y-2">
-                  <h4 className="text-2xl font-black text-white tracking-tight">Select Portfolios to Sync</h4>
+                  <h4 className="text-2xl font-black text-white tracking-tight">Select Accounts to Sync</h4>
                   <p className="text-zinc-500 font-medium text-sm">We found multiple accounts associated with your credentials.</p>
                 </div>
 
@@ -608,9 +608,9 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                 </div>
 
                 <div className="space-y-4">
-                  <h4 className="text-4xl font-black text-white tracking-tight">Sync Complete</h4>
+                  <h4 className="text-4xl font-black text-white tracking-tight">Your bank is connected</h4>
                   <p className="text-zinc-500 font-medium max-w-sm mx-auto">
-                    Your {selectedBank.name} accounts are now fueling your Wealth OS. Our AI is parsing your transaction history and building your financial profile.
+                    Moneyflow can now use your balances to improve your overview and insights. We are building your financial profile in the background.
                   </p>
                 </div>
 
@@ -629,12 +629,22 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
                   </div>
                 </div>
 
-                <button
-                  onClick={onClose}
-                  className="w-full max-w-sm py-6 bg-white text-zinc-950 rounded-[2rem] font-black uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-[0.98] transition-all"
-                >
-                  View My Strategic Wealth Overview
-                </button>
+                <div className="flex flex-col gap-3 max-w-sm mx-auto">
+                   <button
+                     onClick={onClose}
+                     className="w-full py-6 bg-white text-zinc-950 rounded-[2rem] font-black uppercase tracking-widest text-xs hover:scale-[1.02] active:scale-[0.98] transition-all"
+                   >
+                     Review Wealth Overview
+                   </button>
+                   <button
+                     onClick={() => {
+                       onClose();
+                     }}
+                     className="w-full py-4 bg-white/5 text-zinc-400 rounded-[2rem] font-black uppercase tracking-widest text-[10px] hover:text-white transition-all border border-white/5"
+                   >
+                     Open Palantir Intelligence
+                   </button>
+                 </div>
               </motion.div>
             )}
             {step === 'gocardless_list' && (

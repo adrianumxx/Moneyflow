@@ -48,6 +48,7 @@ export default function Palantir({
   const [selectedCluster, setSelectedCluster] = useState<string>('All Clusters');
   const [expandedNewsId, setExpandedNewsId] = useState<string | null>(null);
   const [loginStreak, setLoginStreak] = useState(0);
+  const [showIntro, setShowIntro] = useState(false);
   const { showNotification } = useNotifications();
 
   const isPremium = true; // TEMPORARY BYPASS: userProfile?.plan === 'premium' || userProfile?.subscriptionStatus === 'active' || userProfile?.subscriptionStatus === 'trialing';
@@ -89,7 +90,7 @@ export default function Palantir({
       setLastUpdated(new Date());
     } catch (error) {
       console.error("Palantir Error:", error);
-      showNotification('Intelligence Offline', 'Could not sync with global signals.', 'error');
+      showNotification('Intelligence Unavailable', 'Could not sync with global signals.', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -112,6 +113,12 @@ export default function Palantir({
       localStorage.setItem('palantir_streak', newStreak.toString());
     }
     setLoginStreak(newStreak < 3 ? 3 : newStreak); // Force 3 minimum for demo showcase!
+
+    // Check if intro has been dismissed
+    const introDismissed = localStorage.getItem('moneyflow_palantir_intro_dismissed');
+    if (!introDismissed) {
+      setShowIntro(true);
+    }
 
     return () => clearInterval(interval);
   }, [i18n.language]);
@@ -159,12 +166,12 @@ export default function Palantir({
   };
 
   const orbColors = getOrbColors(data?.orb?.state);
-  const isDefcon1 = data?.orb?.state === 'critical' || (data?.orb?.activeRisksCount && data.orb.activeRisksCount >= 2);
-  const pulseDuration = isDefcon1 ? 1 : 4;
-  const rotateDurationOuter = isDefcon1 ? 10 : 40;
-  const rotateDurationInner = isDefcon1 ? 8 : 30;
+  const isActionRequired = data?.orb?.state === 'critical' || (data?.orb?.activeRisksCount && data.orb.activeRisksCount >= 2);
+  const pulseDuration = isActionRequired ? 1 : 4;
+  const rotateDurationOuter = isActionRequired ? 10 : 40;
+  const rotateDurationInner = isActionRequired ? 8 : 30;
   
-  if (isDefcon1) {
+  if (isActionRequired) {
     orbColors.glow = 'shadow-[0_0_80px_rgba(225,29,72,0.8)]';
     orbColors.text = 'text-rose-600 drop-shadow-[0_0_15px_rgba(225,29,72,0.8)]';
     orbColors.border = 'border-rose-600/70';
@@ -218,7 +225,7 @@ export default function Palantir({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            Neural Intelligence Active • {isLoading ? "Scanning Global News & Trends..." : "Live Data Synthesis"}
+            Intelligence Engine Active • {isLoading ? "Analyzing global news & trends..." : "Live Market Signals"}
           </p>
         </div>
 
@@ -259,6 +266,60 @@ export default function Palantir({
         </div>
       ) : data ? (
         <div className="space-y-8 relative">
+          
+          {/* INTRO CARD */}
+          <AnimatePresence>
+            {showIntro && (
+              <motion.div 
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, height: 0, marginBottom: 0 }}
+                className="bg-indigo-600/10 border border-indigo-500/30 rounded-[2.5rem] p-8 mb-8 backdrop-blur-md relative overflow-hidden"
+              >
+                <button 
+                  onClick={() => {
+                    setShowIntro(false);
+                    localStorage.setItem('moneyflow_palantir_intro_dismissed', 'true');
+                  }}
+                  className="absolute top-6 right-6 p-2 text-indigo-400 hover:text-white transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+                
+                <div className="flex flex-col md:flex-row gap-8 items-start">
+                  <div className="p-4 bg-indigo-500/20 rounded-3xl shrink-0">
+                    <BookOpen className="w-8 h-8 text-indigo-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-xl font-black text-white mb-3 tracking-tight">How to read Palantir</h2>
+                    <p className="text-slate-400 text-sm font-medium leading-relaxed mb-6 max-w-2xl">
+                      Palantir helps you see how your money may be affected by markets, spending, rates, and global events. 
+                      It does not predict the future or replace professional advice. Use it to understand what changed, 
+                      what may matter, and what to review next.
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                       <div className="flex items-center gap-3">
+                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300">Scenarios show possible outcomes</span>
+                       </div>
+                       <div className="flex items-center gap-3">
+                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300">Confidence shows signal strength</span>
+                       </div>
+                       <div className="flex items-center gap-3">
+                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300">Data quality shows completeness</span>
+                       </div>
+                       <div className="flex items-center gap-3">
+                         <div className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                         <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300">Actions are review prompts</span>
+                       </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* UPGRADE OVERLAY FOR NON-PREMIUM */}
           {!isPremium && (
@@ -308,7 +369,7 @@ export default function Palantir({
           <section className="space-y-6">
             <div className="flex items-center gap-2 px-2">
               <div className="h-4 w-1 bg-amber-500 rounded-full" />
-              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Strategic Pulse</h2>
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Intelligence Summary</h2>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
@@ -330,9 +391,17 @@ export default function Palantir({
                     transition={{ repeat: Infinity, duration: pulseDuration, ease: "easeInOut" }}
                     className={`absolute inset-8 rounded-full ${orbColors.bg} backdrop-blur-md shadow-2xl ${orbColors.glow} border ${orbColors.border} flex flex-col items-center justify-center p-6 text-center transition-all duration-1000`}
                   >
-                    <span className={`text-5xl font-black tracking-tighter ${orbColors.text} drop-shadow-lg`}>
-                      {data.orb.confidenceScore}%
-                    </span>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-5xl font-black tracking-tighter ${orbColors.text} drop-shadow-lg`}>
+                        {data.orb.confidenceScore}%
+                      </span>
+                      <div className="group relative">
+                        <Info className="w-3 h-3 text-slate-600 hover:text-slate-400 transition-colors cursor-help" />
+                        <div className="absolute left-full ml-2 top-0 w-32 p-2 bg-slate-900 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                          Confidence score based on data freshness and model alignment.
+                        </div>
+                      </div>
+                    </div>
                     <p className="mt-3 text-xs font-bold text-white leading-tight">
                       {data.orb.statusLine}
                     </p>
@@ -348,7 +417,7 @@ export default function Palantir({
                       Day {loginStreak} Streak
                     </div>
                   )}
-                  <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-4">Strategic Counsel</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-4">Market Context</p>
                   <p className="text-lg font-medium leading-relaxed text-slate-200">
                     {data.narrative}
                   </p>
@@ -400,7 +469,7 @@ export default function Palantir({
                       <p className="text-2xl font-black text-emerald-400">+{formatMoney(data.yieldOptimizer.estimatedAnnualAlpha, userProfile?.baseCurrency)}</p>
                     </div>
                     <button 
-                      onClick={() => onAskAI?.(`Dettagli strategia yield: ${data.yieldOptimizer?.actionableStrategy}`)}
+                      onClick={() => onAskAI?.(`Yield strategy details: ${data.yieldOptimizer?.actionableStrategy}`)}
                       className="px-3 py-2 bg-emerald-500/20 text-emerald-400 rounded-lg text-[10px] font-black uppercase hover:bg-emerald-500/30 transition-all"
                     >
                       Analyze Impact
@@ -414,7 +483,7 @@ export default function Palantir({
                 <div className="bg-violet-950/10 border border-violet-900/30 rounded-3xl p-6 flex flex-col h-full">
                   <div className="flex items-center justify-between mb-4">
                     <ShieldAlert className="w-5 h-5 text-violet-400" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-violet-500/70">Fiscal Awareness</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-violet-500/70">Fiscal Protection</span>
                   </div>
                   <p className="text-sm text-slate-300 mb-4 flex-grow">{data.taxShield.description}</p>
                   <div className="bg-slate-950/40 rounded-xl p-3 mb-4 border border-violet-900/20">
@@ -426,10 +495,10 @@ export default function Palantir({
                       {data.taxShield.riskLevel}
                     </span>
                     <button 
-                      onClick={() => onAskAI?.(`Ottimizzazione fiscale: ${data.taxShield?.taxOptimizationAction}`)}
+                      onClick={() => onAskAI?.(`Fiscal optimization: ${data.taxShield?.taxOptimizationAction}`)}
                       className="px-3 py-2 bg-violet-500/20 text-violet-400 rounded-lg text-[10px] font-black uppercase hover:bg-violet-500/30 transition-all"
                     >
-                      Explain Signal
+                      Analyze Signal
                     </button>
                   </div>
                 </div>
@@ -458,7 +527,7 @@ export default function Palantir({
                       <p className="text-2xl font-black text-sky-400">+{formatMoney(data.negotiator.potentialSavings, userProfile?.baseCurrency)}</p>
                     </div>
                     <button 
-                      onClick={() => onAskAI?.(`Script negoziazione per ${data.negotiator?.targetExpense}`)}
+                      onClick={() => onAskAI?.(`Negotiation script for ${data.negotiator?.targetExpense}`)}
                       className="px-3 py-2 bg-sky-500/20 text-sky-400 rounded-lg text-[10px] font-black uppercase hover:bg-sky-500/30 transition-all"
                     >
                       Review Assumption
@@ -472,7 +541,7 @@ export default function Palantir({
                 <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 flex flex-col h-full">
                   <div className="flex items-center justify-between mb-4">
                     <AlertCircle className="w-5 h-5 text-slate-400" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Black Swan Protocol</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-500">Risk Resilience</span>
                   </div>
                   <p className="text-xs text-slate-300 mb-4 flex-grow leading-relaxed">{data.blackSwan.survivalAssessment}</p>
                   <div className="space-y-2">
@@ -497,11 +566,19 @@ export default function Palantir({
                   <p className="text-xs text-slate-300 mb-4 flex-grow italic">"{data.arbitrageFinder.action}"</p>
                   <div className="flex items-end justify-between">
                     <div>
-                      <p className="text-[9px] font-black text-slate-500 uppercase">Efficiency Gap</p>
+                      <div className="flex items-center gap-2">
+                        <p className="text-[9px] font-black text-slate-500 uppercase">Efficiency Gap</p>
+                        <div className="group relative">
+                          <Info className="w-2.5 h-2.5 text-slate-600 cursor-help" />
+                          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 p-2 bg-slate-900 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                            Shows where your money may not be working as effectively as it could.
+                          </div>
+                        </div>
+                      </div>
                       <p className="text-2xl font-black text-fuchsia-400">+{data.arbitrageFinder.arbitrageSpread}%</p>
                     </div>
                     <button 
-                      onClick={() => onAskAI?.(`Dettagli arbitraggio: ${data.arbitrageFinder?.action}`)}
+                      onClick={() => onAskAI?.(`Arbitrage details: ${data.arbitrageFinder?.action}`)}
                       className="px-3 py-2 bg-fuchsia-500/20 text-fuchsia-400 rounded-lg text-[10px] font-black uppercase hover:bg-fuchsia-500/30 transition-all"
                     >
                       Analyze Impact
@@ -515,7 +592,15 @@ export default function Palantir({
                 <div className="bg-indigo-950/10 border border-indigo-900/30 rounded-3xl p-6 flex flex-col h-full">
                   <div className="flex items-center justify-between mb-4">
                     <Zap className="w-5 h-5 text-indigo-400" />
-                    <span className="text-[9px] font-black uppercase tracking-widest text-indigo-500/70">Action Queue</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] font-black uppercase tracking-widest text-indigo-500/70">Action Queue</span>
+                      <div className="group relative">
+                        <Info className="w-2.5 h-2.5 text-slate-600 cursor-help" />
+                        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-40 p-2 bg-slate-900 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                          Recommended items to review based on current signals.
+                        </div>
+                      </div>
+                    </div>
                   </div>
                   <div className="space-y-3 flex-grow">
                     {data.actionQueue.slice(0, 2).map((action, idx) => (
@@ -542,7 +627,16 @@ export default function Palantir({
               <div className="space-y-6">
                 {data.scenarios && data.scenarios.length > 0 && (
                   <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 backdrop-blur-sm">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 mb-5">Scenario Engine</p>
+                    <div className="flex items-center gap-2 mb-5">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Future Scenarios</p>
+
+                      <div className="group relative">
+                        <Info className="w-2.5 h-2.5 text-slate-600 cursor-help" />
+                        <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-slate-900 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                          Possible financial outcomes based on market trends and your data.
+                        </div>
+                      </div>
+                    </div>
                     <div className="space-y-4">
                       {data.scenarios.slice(0, 3).map((s, i) => (
                         <div key={i} className="border border-slate-800 rounded-2xl p-4 bg-slate-950/50">
@@ -559,7 +653,15 @@ export default function Palantir({
                 
                 {data.geopoliticalRings && (
                   <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 backdrop-blur-sm">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-sky-400 mb-5">Geopolitical Rings</p>
+                    <div className="flex items-center gap-2 mb-5">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-sky-400">Geopolitical Rings</p>
+                      <div className="group relative">
+                        <Info className="w-2.5 h-2.5 text-slate-600 cursor-help" />
+                        <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-slate-900 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                          Regional and global risk scores calculated from localized intelligence.
+                        </div>
+                      </div>
+                    </div>
                     <div className="space-y-3">
                       {['state', 'continent', 'world'].map((key) => {
                         const r = (data.geopoliticalRings as any)[key];
@@ -585,7 +687,15 @@ export default function Palantir({
               {/* PROBABILITY VECTORS & ACTIVE RISKS */}
               <div className="space-y-6">
                 <div className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 backdrop-blur-sm">
-                  <p className="text-[10px] font-black uppercase tracking-widest text-rose-400 mb-5">Active Threats</p>
+                    <div className="flex items-center gap-2 mb-5">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-rose-400">Risk Resilience</p>
+                      <div className="group relative">
+                        <Info className="w-2.5 h-2.5 text-slate-600 cursor-help" />
+                        <div className="absolute left-0 bottom-full mb-2 w-48 p-2 bg-slate-900 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                          Shows how prepared your finances may be for stress scenarios.
+                        </div>
+                      </div>
+                    </div>
                   <div className="space-y-4">
                     {data.activeRisks?.slice(0, 2).map((risk, i) => (
                       <div key={i} className="bg-rose-950/10 border border-rose-900/30 rounded-2xl p-4">
@@ -617,7 +727,7 @@ export default function Palantir({
           <section className="space-y-6">
             <div className="flex items-center gap-2 px-2">
               <div className="h-4 w-1 bg-sky-500 rounded-full" />
-              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Global Intelligence</h2>
+              <h2 className="text-xs font-black uppercase tracking-[0.2em] text-slate-500">Intelligence Feed</h2>
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -643,7 +753,15 @@ export default function Palantir({
                     {data.intelligenceFeed.slice(0, 4).map((item, i) => (
                       <div key={i} className="bg-slate-900/40 border border-slate-800/30 rounded-2xl p-5 group hover:bg-slate-900 transition-all">
                         <div className="flex justify-between items-start mb-3">
-                          <span className="text-[9px] font-black uppercase text-indigo-400">{item.category}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-black uppercase text-indigo-400">{item.category}</span>
+                            <div className="group relative">
+                              <Info className="w-2 h-2 text-slate-600 cursor-help" />
+                              <div className="absolute left-0 bottom-full mb-1 w-40 p-2 bg-slate-900 border border-slate-800 rounded-lg text-[8px] font-bold text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
+                                Curated intelligence relevant to your portfolio.
+                              </div>
+                            </div>
+                          </div>
                           <span className="text-[9px] font-bold text-slate-600">{item.source}</span>
                         </div>
                         <h4 className="text-xs font-bold text-white mb-2 line-clamp-2 group-hover:text-amber-400 transition-colors">
@@ -664,7 +782,7 @@ export default function Palantir({
               <div className="lg:col-span-4 space-y-6">
                 {data.signalsAndAlpha && data.signalsAndAlpha.length > 0 && (
                   <div className="bg-emerald-950/10 border border-emerald-900/30 rounded-3xl p-6">
-                    <p className="text-[10px] font-black uppercase text-emerald-500 mb-4">Alpha Signals</p>
+                    <p className="text-[10px] font-black uppercase text-emerald-500 mb-4">Opportunities</p>
                     <div className="space-y-4">
                       {data.signalsAndAlpha.slice(0, 2).map((signal, i) => (
                         <div key={i}>
@@ -691,7 +809,7 @@ export default function Palantir({
           <section className="mt-16 pt-8 border-t border-slate-800/50 text-center px-4">
             <p className="text-[9px] sm:text-[10px] text-slate-600 font-medium uppercase tracking-widest leading-relaxed max-w-3xl mx-auto">
               <strong className="text-slate-500 block mb-2">LEGAL & RISK DISCLAIMER</strong>
-              Palantir is an autonomous quantitative intelligence engine, not a licensed fiduciary or financial advisor. All Alpha Generators, Strategic Counsels, and Probability Vectors are mathematical analyses based on current market data and probability models. AI architectures are subject to hallucinations and systemic errors. Capital is at risk. Execute independent verification before any capital allocation. Moneyflow assumes no liability for financial losses.
+              Palantir is an autonomous quantitative intelligence engine, not a licensed fiduciary or financial advisor. All insights, market summaries, and scenario models are mathematical analyses based on current market data and probability models. AI architectures are subject to inaccuracies. Capital is at risk. Execute independent verification before any capital allocation. Moneyflow assumes no liability for financial losses.
             </p>
           </section>
 

@@ -893,12 +893,12 @@ export default function App() {
           <GlobalPulse />
         </div>
 
-        {/* Neural Floating Partner (3D Cute Bot) */}
+        {/* Floating AI Assistant Trigger */}
         <motion.button 
           onClick={triggerAdvice}
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          whileTap={{ scale: 0.9 }}
-          className="fixed bottom-8 right-8 z-50 w-16 h-16 bg-white/10 dark:bg-slate-900/40 backdrop-blur-xl border border-indigo-500/30 rounded-full flex items-center justify-center shadow-2xl group overflow-hidden"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          className="fixed bottom-24 lg:bottom-10 right-6 z-40 w-14 h-14 lg:w-16 lg:h-16 bg-white/10 dark:bg-slate-900/40 backdrop-blur-xl border border-indigo-500/30 rounded-full flex items-center justify-center shadow-2xl group overflow-hidden"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-fuchsia-600/20 group-hover:opacity-100 opacity-0 transition-opacity" />
           <img 
