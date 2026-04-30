@@ -5,9 +5,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { auth, db, signIn, signUpWithEmail, logInWithEmail, logOut } from './firebase';
+import { auth, db, signIn, signInRedirect, getRedirectResult, signUpWithEmail, logInWithEmail, logOut } from './firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
+import { getFriendlyAuthError } from './utils/authErrors';
 import { 
   collection, 
   query, 
@@ -187,11 +188,30 @@ export default function App() {
   const handleGoogleSignIn = async () => {
     setAuthError('');
     setAuthLoading(true);
+    
+    // Check for mobile or embedded browsers to prefer redirect
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
     try {
-      await signIn();
+      if (isMobile) {
+        await signInRedirect();
+      } else {
+        await signIn();
+      }
     } catch (err: any) {
       console.error("Google Sign-In Error:", err);
-      setAuthError(err.message || 'Could not connect to Google. Please check your connection.');
+      
+      // If popup was blocked or failed, try redirect as fallback even on desktop
+      if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+        try {
+          await signInRedirect();
+          return; // Redirect will happen, don't clear loading
+        } catch (redirErr) {
+          setAuthError(getFriendlyAuthError(redirErr));
+        }
+      } else {
+        setAuthError(getFriendlyAuthError(err));
+      }
       setAuthLoading(false);
     }
   };
@@ -207,13 +227,7 @@ export default function App() {
         await logInWithEmail(authEmail, authPassword);
       }
     } catch (err: any) {
-      if (err.code === 'auth/email-already-in-use') {
-        setAuthError('Email is already registered. Please log in.');
-      } else if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-        setAuthError('Invalid email or password.');
-      } else {
-        setAuthError(err.message || 'Authentication failed. Please try again or create an account.');
-      }
+      setAuthError(getFriendlyAuthError(err));
     } finally {
       setAuthLoading(false);
     }
@@ -243,8 +257,20 @@ export default function App() {
   }, [financialData, user]);
 
   useEffect(() => {
-    console.log("Auth Guard: Initializing...");
-    // No more getRedirectResult needed as we are back to Popup
+    // Handle redirect result on mount
+    const checkRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          console.log("Auth: Redirect sign-in success");
+        }
+      } catch (err: any) {
+        console.error("Redirect Auth Error:", err);
+        setAuthError(getFriendlyAuthError(err));
+      }
+    };
+    checkRedirect();
+    
     (window as any).openCreateGroupModal = () => setIsCreateModalOpen(true);
     return () => {
       delete (window as any).openCreateGroupModal;
@@ -473,48 +499,48 @@ export default function App() {
         </div>
 
         <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
           className="max-w-md w-full glass-card p-10 sm:p-14 rounded-[3.5rem] shadow-premium relative z-10"
         >
-          <div className="w-24 h-24 bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 rounded-[2.5rem] flex items-center justify-center mx-auto mb-10 shadow-glow rotate-3">
+          <div className="w-20 h-20 bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 rounded-[2.5rem] flex items-center justify-center mx-auto mb-10 shadow-glow rotate-3">
             <motion.div
               animate={{ rotate: [-10, 10, -10] }}
               transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
             >
-              <Activity className="w-12 h-12 text-white" />
+              <Activity className="w-10 h-10 text-white" />
             </motion.div>
           </div>
           
-          <h1 className="text-5xl sm:text-6xl font-black tracking-tighter mb-4 text-slate-900 dark:text-white font-display">
-            Money<span className="text-indigo-600 dark:text-indigo-400">flow</span>
+          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter mb-4 text-slate-900 dark:text-white font-display">
+            Moneyflow
           </h1>
-          <p className="text-slate-500 dark:text-slate-400 mb-12 leading-relaxed text-lg font-medium">
-            The next-generation Wealth OS for global citizens. Secure, AI-powered, and beautiful.
+          <p className="text-slate-500 dark:text-slate-400 mb-12 leading-relaxed text-base font-medium px-4">
+            See your money clearly. Connect your accounts, track your progress, and understand what to review next.
           </p>
 
           <div className="space-y-6">
             {!isEmailView ? (
               <div className="space-y-3">
-                {authError && !isEmailView && (
-                  <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 text-xs font-bold mb-4 animate-shake">
+                {authError && (
+                  <div className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-[2rem] text-rose-600 dark:text-rose-400 text-xs font-bold mb-4 animate-shake leading-relaxed">
                     {authError}
                   </div>
                 )}
                 <button
                   onClick={handleGoogleSignIn}
                   disabled={authLoading}
-                  className="w-full py-5 addictive-gradient text-white rounded-[2rem] font-black hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4 shadow-2xl shadow-indigo-600/30 text-xl outline-none focus:ring-4 focus:ring-indigo-500/40 group disabled:opacity-70"
+                  className="w-full py-5 addictive-gradient text-white rounded-[2rem] font-black hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4 shadow-2xl shadow-indigo-600/30 text-lg outline-none focus:ring-4 focus:ring-indigo-500/40 group disabled:opacity-70"
                 >
-                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center p-1.5 shadow-sm group-hover:rotate-12 transition-transform">
+                  <div className="w-7 h-7 bg-white rounded-full flex items-center justify-center p-1.5 shadow-sm group-hover:rotate-12 transition-transform shrink-0">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-full h-full" />
                   </div>
-                  {authLoading ? 'Connecting...' : 'Get Started for Free'}
+                  {authLoading ? 'Signing in...' : 'Continue with Google'}
                 </button>
                 
                 <button
                   onClick={() => setIsEmailView(true)}
-                  className="w-full py-4 bg-white dark:bg-white/10 text-slate-600 dark:text-white rounded-[2rem] font-bold border-2 border-slate-100 dark:border-white/5 hover:border-indigo-500 transition-all text-sm"
+                  className="w-full py-4 bg-white dark:bg-white/5 text-slate-600 dark:text-zinc-400 rounded-[2rem] font-bold border-2 border-slate-100 dark:border-white/5 hover:border-indigo-500 transition-all text-sm"
                 >
                   Continue with Email
                 </button>
@@ -522,33 +548,33 @@ export default function App() {
             ) : (
               <form onSubmit={handleEmailAuth} className="space-y-4">
                 {authError && (
-                  <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 text-sm font-bold">
+                  <div className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-[2rem] text-rose-600 dark:text-rose-400 text-xs font-bold leading-relaxed">
                     {authError}
                   </div>
                 )}
                 
                 <div className="space-y-3 text-left">
                   <div>
-                    <label className="block text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1 ml-4">Email</label>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5 ml-5">Email Address</label>
                     <input 
                       type="email" 
                       value={authEmail}
                       onChange={(e) => setAuthEmail(e.target.value)}
                       required
-                      className="w-full px-5 py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/20 text-slate-900 dark:text-white transition-all font-medium"
+                      className="w-full px-6 py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 text-slate-900 dark:text-white transition-all font-medium"
                       placeholder="you@example.com"
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1 ml-4">Password</label>
+                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5 ml-5">Security Key</label>
                     <input 
                       type="password" 
                       value={authPassword}
                       onChange={(e) => setAuthPassword(e.target.value)}
                       required
                       minLength={6}
-                      className="w-full px-5 py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/20 text-slate-900 dark:text-white transition-all font-medium"
+                      className="w-full px-6 py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 text-slate-900 dark:text-white transition-all font-medium"
                       placeholder="••••••••"
                     />
                   </div>
@@ -558,23 +584,23 @@ export default function App() {
                   <button
                     type="submit"
                     disabled={authLoading}
-                    className="w-full py-4 addictive-gradient text-white rounded-[2rem] font-black hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/20 text-lg disabled:opacity-50 disabled:pointer-events-none"
+                    className="w-full py-5 addictive-gradient text-white rounded-[2rem] font-black hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/20 text-lg disabled:opacity-50 disabled:pointer-events-none"
                   >
-                    {authLoading ? 'Please wait...' : (isSignUp ? 'Create Account' : 'Sign In')}
+                    {authLoading ? 'Verifying...' : (isSignUp ? 'Create Account' : 'Sign In')}
                   </button>
                   
-                  <div className="mt-4 flex flex-col gap-2">
+                  <div className="mt-6 flex flex-col gap-3">
                     <button
                       type="button"
                       onClick={() => setIsSignUp(!isSignUp)}
-                      className="text-sm font-bold text-slate-500 hover:text-indigo-600 transition-colors"
+                      className="text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors"
                     >
-                      {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+                      {isSignUp ? 'Already have an account? Sign in' : "New to Moneyflow? Create an account"}
                     </button>
                     <button
                       type="button"
                       onClick={() => setIsEmailView(false)}
-                      className="text-sm font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                      className="text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                     >
                       Back to Google Login
                     </button>
@@ -585,7 +611,7 @@ export default function App() {
 
             <div className="flex items-center gap-3 py-2">
               <div className="flex-1 h-[1px] bg-slate-200 dark:bg-slate-800" />
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none">Or try it out</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none">Explore</span>
               <div className="flex-1 h-[1px] bg-slate-200 dark:bg-slate-800" />
             </div>
             
@@ -614,28 +640,6 @@ export default function App() {
                       ],
                       liabilities: [],
                       income: 5000
-                    },
-                    {
-                      name: 'Debt Trapped',
-                      goal: 'Financial Freedom',
-                      exp: 'Beginner',
-                      assets: [{ id: '1', name: 'Savings', type: 'savings', value: 1200, institution: 'Local Bank', createdAt: Timestamp.now(), updatedAt: Timestamp.now() }],
-                      liabilities: [
-                        { id: '1', name: 'Credit Card', type: 'debt', totalAmount: 15000, remainingAmount: 12500, monthlyPayment: 450, interestRate: 19.9, createdAt: Timestamp.now(), updatedAt: Timestamp.now() },
-                        { id: '2', name: 'Car Loan', type: 'loan', totalAmount: 25000, remainingAmount: 22000, monthlyPayment: 350, interestRate: 7.5, createdAt: Timestamp.now(), updatedAt: Timestamp.now() }
-                      ],
-                      income: 2100
-                    },
-                    {
-                      name: 'Family Saver',
-                      goal: 'Retirement',
-                      exp: 'Intermediate',
-                      assets: [
-                        { id: '1', name: 'Index Funds', type: 'investment', value: 85000, institution: 'Vanguard', createdAt: Timestamp.now(), updatedAt: Timestamp.now() },
-                        { id: '2', name: 'Home Equity', type: 'real_estate', value: 350000, institution: 'Main Home', createdAt: Timestamp.now(), updatedAt: Timestamp.now() }
-                      ],
-                      liabilities: [{ id: '1', name: 'Mortgage', type: 'mortgage', totalAmount: 300000, remainingAmount: 245000, monthlyPayment: 1400, interestRate: 3.2, createdAt: Timestamp.now(), updatedAt: Timestamp.now() }],
-                      income: 4800
                     }
                   ];
 
@@ -672,9 +676,12 @@ export default function App() {
                 className="w-full py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-[2rem] font-black hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-xl shadow-zinc-200 dark:shadow-black/20 text-sm group"
               >
                 <Zap className="w-5 h-5 text-indigo-500 group-hover:animate-pulse" />
-                <span>Inject Neural Archetype (7-Day Trial)</span>
+                <span>Try demo</span>
               </button>
-              <p className="mt-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">Random Identity Simulation</p>
+              <p className="mt-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] text-center leading-relaxed">
+                Explore with sample data.<br />
+                <span className="opacity-60">Read-only connections. No money movement.</span>
+              </p>
             </div>
           </div>
         </motion.div>

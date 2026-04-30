@@ -31,10 +31,17 @@
 ## 3. Deployment Targets (Vercel)
 Ensure all variables are set for both **Production** and **Preview** environments in the Vercel Dashboard.
 
-## 4. Final Verification
+## 4. Firebase Authentication Safeguards
+Ensure the following domains are added to **Firebase Console > Authentication > Settings > Authorized Domains**:
+- [ ] `localhost`
+- [ ] `moneyflowai.vercel.app`
+- [ ] Any active Vercel Preview/Branch domains
+
+## 5. Final Verification
 - [ ] `GET /api/health` returns `status: "ok"`
 - [ ] Unauthenticated `POST /api/sync/institutions/list` returns `401`
 - [ ] Login -> Dashboard works (verifies Firebase Client)
 - [ ] Palantir Intelligence Feed renders (verifies Gemini + GDELT)
 - [ ] Connect Bank -> List Institutions (verifies GoCardless)
 - [ ] Subscribe -> Stripe Checkout loads (verifies Stripe)
+
