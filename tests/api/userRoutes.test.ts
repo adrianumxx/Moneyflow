@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import router from './userRoutes';
+import router from '../../server/routes/userRoutes';
 import { Response } from 'express';
 
 // Mock Firebase Admin
-vi.mock('./firebaseAdmin', () => ({
+vi.mock('../../server/firebaseAdmin', () => ({
   db: {
     collection: vi.fn().mockReturnThis(),
     doc: vi.fn().mockReturnThis(),

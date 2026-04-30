@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sanitizeUserContextForAI } from './aiPrivacy';
+import { sanitizeUserContextForAI } from '../../server/aiPrivacy';
 
 describe('AI Privacy Firewall', () => {
   const mockContext = {

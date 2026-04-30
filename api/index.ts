@@ -6,7 +6,7 @@ import express from 'express';
 
 dotenv.config();
 
-import admin, { db } from './firebaseAdmin.js';
+import admin, { db } from '../server/firebaseAdmin.js';
 const stripeKey = process.env.STRIPE_SECRET_KEY || '';
 const stripe = new Stripe(stripeKey || 'sk_test_dummy_key_for_local_dev', {
   apiVersion: '2023-10-16' as any,
@@ -98,7 +98,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
 app.use(express.json());
 
 // Import Auth Middleware
-import { authMiddleware, AuthenticatedRequest } from './authMiddleware.js';
+import { authMiddleware, AuthenticatedRequest } from '../server/middleware/authMiddleware.js';
 import { rateLimit } from 'express-rate-limit';
 
 /**
@@ -128,9 +128,9 @@ const syncLimiter = rateLimit({
 });
 
 // PROTECTED ROUTES (Require Firebase ID Token)
-import geminiRoutes from './geminiRoutes.js';
-import syncRoutes from './syncRoutes.js';
-import userRoutes from './userRoutes.js';
+import geminiRoutes from '../server/routes/geminiRoutes.js';
+import syncRoutes from '../server/routes/syncRoutes.js';
+import userRoutes from '../server/routes/userRoutes.js';
 
 /**
  * Data Erasure Rate Limiter

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { authMiddleware, AuthenticatedRequest } from './authMiddleware';
+import { authMiddleware, AuthenticatedRequest } from '../../server/middleware/authMiddleware';
 import { Response, NextFunction } from 'express';
 import admin from 'firebase-admin';
 

@@ -1,9 +1,9 @@
 import express from 'express';
 import { GoogleGenAI, Type } from '@google/genai';
 import admin from 'firebase-admin';
-import { AuthenticatedRequest } from './authMiddleware.js';
-import { getRelevantNewsSignals } from './newsSources.js';
-import { sanitizeUserContextForAI } from './aiPrivacy.js';
+import { AuthenticatedRequest } from '../middleware/authMiddleware.js';
+import { getRelevantNewsSignals } from '../newsSources.js';
+import { sanitizeUserContextForAI } from '../aiPrivacy.js';
 
 const router = express.Router();
 

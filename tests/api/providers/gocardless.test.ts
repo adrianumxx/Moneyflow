@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getInstitutionList } from './gocardless';
+import { getInstitutionList } from '../../../server/providers/gocardless';
 
 // Mock global fetch
 global.fetch = vi.fn();
@@ -75,7 +75,7 @@ describe('GoCardless Provider Logic', () => {
       })
     } as any);
 
-    const result = await (await import('./gocardless')).createRequisitionSession('bank_1', 'https://app.com/callback');
+    const result = await (await import('../../../server/providers/gocardless')).createRequisitionSession('bank_1', 'https://app.com/callback');
     
     expect(result).toEqual({
       requisitionId: 'req_123',
@@ -89,7 +89,7 @@ describe('GoCardless Provider Logic', () => {
   it('createRequisitionSession throws GOCARDLESS_NOT_CONFIGURED if env missing', async () => {
     delete process.env.GOCARDLESS_SECRET_ID;
     delete process.env.GOCARDLESS_SECRET_KEY;
-    const { createRequisitionSession } = await import('./gocardless');
+    const { createRequisitionSession } = await import('../../../server/providers/gocardless');
     await expect(createRequisitionSession('bank_1', 'url')).rejects.toThrow('GOCARDLESS_NOT_CONFIGURED');
   });
 
@@ -104,7 +104,7 @@ describe('GoCardless Provider Logic', () => {
       statusText: 'Bad Request'
     } as any);
 
-    const { createRequisitionSession } = await import('./gocardless');
+    const { createRequisitionSession } = await import('../../../server/providers/gocardless');
     await expect(createRequisitionSession('bank_1', 'url')).rejects.toThrow('Could not create requisition session');
   });
 
@@ -126,7 +126,7 @@ describe('GoCardless Provider Logic', () => {
       })
     } as any);
 
-    const { getRequisition } = await import('./gocardless');
+    const { getRequisition } = await import('../../../server/providers/gocardless');
     const result = await getRequisition('req_123');
     
     expect(result).toEqual({
@@ -156,7 +156,7 @@ describe('GoCardless Provider Logic', () => {
       })
     } as any);
 
-    const { getAccountMetadata } = await import('./gocardless');
+    const { getAccountMetadata } = await import('../../../server/providers/gocardless');
     const result = await getAccountMetadata('acc_123');
     
     expect(result).toEqual({
@@ -189,7 +189,7 @@ describe('GoCardless Provider Logic', () => {
       })
     } as any);
 
-    const { getAccountBalances } = await import('./gocardless');
+    const { getAccountBalances } = await import('../../../server/providers/gocardless');
     const result = await getAccountBalances('acc_123');
     
     expect(result).toEqual({
@@ -239,7 +239,7 @@ describe('GoCardless Provider Logic', () => {
       })
     } as any);
  
-    const { getAccountTransactions } = await import('./gocardless');
+    const { getAccountTransactions } = await import('../../../server/providers/gocardless');
     const result = await getAccountTransactions('acc_123');
     
     expect(result).toHaveLength(3);
