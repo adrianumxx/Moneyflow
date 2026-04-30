@@ -54,7 +54,7 @@ export const PROVIDER_REGISTRY: Provider[] = [
     supportsOAuth: true,
     supportsSandbox: true,
     isDemo: false,
-    description: 'Institutional-grade sandbox for PSD2/Open Banking testing.'
+    description: 'Professional sandbox for PSD2/Open Banking testing.'
   },
   {
     providerId: 'coinbase_wallet',

@@ -80,10 +80,10 @@ export default function NeuralAdvisor({ isVisible, onClose, context, language = 
             <div className="p-5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-indigo-600/5">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 relative flex items-center justify-center rounded-full overflow-hidden border border-indigo-500/30 shadow-lg shadow-indigo-500/20">
-                  <img src="/assets/ai_assistant.png" alt="AI Assistant" className="w-full h-full object-cover scale-110" />
+                  <img src="/assets/ai_assistant.png" alt="AI Advisor" className="w-full h-full object-cover scale-110" />
                 </div>
                 <div>
-                  <p className="text-[9px] font-black uppercase tracking-widest text-indigo-500">AI Assistant</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-indigo-500">AI Advisor</p>
                   <p className="text-[10px] font-bold text-slate-900 dark:text-white">Active</p>
                 </div>
               </div>
@@ -142,7 +142,7 @@ export default function NeuralAdvisor({ isVisible, onClose, context, language = 
               </div>
                <div className="mt-2 space-y-1 text-center">
                   <p className="text-[8px] text-slate-400 uppercase tracking-[0.2em] font-black">
-                    Intelligence Core v1.5 (Beta)
+                    Moneyflow AI (Beta)
                   </p>
                   <p className="text-[7px] text-slate-500 uppercase tracking-widest font-bold px-4 leading-tight">
                     Informational purposes only. Not financial advice. AI models may occasionally produce inaccuracies.

@@ -535,7 +535,7 @@ export default function WealthOverview({
           </div>
         </section>
 
-        {/* Wealth Velocity (1x1) */}
+        {/* Growth Pace (1x1) */}
         <section className="glass-card rounded-[3rem] p-8 shadow-premium flex flex-col justify-between bg-zinc-900 dark:bg-[#020617] text-white">
            <div className="flex items-center justify-between mb-4">
             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-white/50">Growth Pace</h3>

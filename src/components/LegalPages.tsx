@@ -46,7 +46,7 @@ export default function LegalPages({ systemStatus }: { systemStatus?: any }) {
 
       <LegalSection title="Privacy & Data Processing" icon={Shield}>
         <p>
-          We use bank-level encryption for data in transit and at rest. Your connected bank data (via GoCardless) is used solely to generate your wealth dashboard and AI insights.
+          Your data is protected with a secure connection. Your connected bank data (via GoCardless) is used solely to generate your wealth dashboard and AI insights.
         </p>
         <p>
           **AI Processing:** To generate insights, sanitized and aggregated data (stripped of IBANs and PII) may be processed by our AI providers (Google Gemini). We never sell your personal financial data to third parties.
@@ -85,7 +85,7 @@ export default function LegalPages({ systemStatus }: { systemStatus?: any }) {
         </div>
         
         {!systemStatus && (
-          <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest animate-pulse">Syncing with Neural Backbone...</p>
+          <p className="text-[9px] text-slate-600 font-bold uppercase tracking-widest animate-pulse">Syncing with core services...</p>
         )}
       </div>
 

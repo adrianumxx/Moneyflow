@@ -100,7 +100,7 @@ export default function App() {
   const navigationItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'groups', icon: Users, label: 'Groups' },
-    { id: 'palantir', icon: Globe, label: 'Palantir' },
+    { id: 'palantir', icon: Globe, label: 'Insights' },
     { id: 'sync', icon: Link, label: 'Connect' },
     { id: 'ledger', icon: History, label: 'Ledger' },
     { id: 'forecast', icon: TrendingUp, label: 'Forecast' },
@@ -470,7 +470,7 @@ export default function App() {
         >
           <h2 className="text-white font-black tracking-[0.3em] uppercase text-[10px] mb-2">Moneyflow OS</h2>
           <p className="text-indigo-400 font-bold tracking-widest text-[9px] uppercase animate-pulse">
-            {user && !userProfile ? 'Syncing Neural Profile...' : 'Intelligence Core Initializing...'}
+            {user && !userProfile ? 'Preparing your workspace...' : 'Setting up Moneyflow...'}
           </p>
         </motion.div>
         
@@ -513,10 +513,10 @@ export default function App() {
           </div>
           
           <h1 className="text-4xl sm:text-5xl font-black tracking-tighter mb-4 text-slate-900 dark:text-white font-display">
-            Moneyflow
+            Your financial life, clearly organized.
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mb-12 leading-relaxed text-base font-medium px-4">
-            See your money clearly. Connect your accounts, track your progress, and understand what to review next.
+            Moneyflow helps you understand your accounts, spending, goals and financial signals in one private workspace.
           </p>
 
           <div className="space-y-6">
@@ -618,7 +618,7 @@ export default function App() {
             <div className="pt-2">
               <button
                 onClick={() => {
-                  const archetypes = [
+                  const demoProfiles = [
                     {
                       name: 'The Executive',
                       goal: 'Legacy Building',
@@ -632,7 +632,7 @@ export default function App() {
                     },
                     {
                       name: 'Crypto Whale',
-                      goal: 'Moon Mission',
+                      goal: 'Strategic Growth',
                       exp: 'Intermediate',
                       assets: [
                         { id: '1', name: 'Cold Wallet (BTC)', type: 'crypto', value: 850000, institution: 'Ledger', createdAt: Timestamp.now(), updatedAt: Timestamp.now() },
@@ -643,7 +643,7 @@ export default function App() {
                     }
                   ];
 
-                  const arc = archetypes[Math.floor(Math.random() * archetypes.length)];
+                  const arc = demoProfiles[Math.floor(Math.random() * demoProfiles.length)];
                   
                   const demoUser = {
                     uid: 'demo-' + arc.name.toLowerCase().replace(' ', '-'),
@@ -679,8 +679,8 @@ export default function App() {
                 <span>Try demo</span>
               </button>
               <p className="mt-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] text-center leading-relaxed">
-                Explore with sample data.<br />
-                <span className="opacity-60">Read-only connections. No money movement.</span>
+                Read-only banking connection. No money movement. Disconnect anytime.<br />
+                <span className="opacity-60">Private beta access</span>
               </p>
             </div>
           </div>
@@ -898,7 +898,7 @@ export default function App() {
             </button>
           </div>
         </div>
-        {/* Global Neural Pulse */}
+        {/* Global Market Pulse */}
         <div className="sticky top-0 z-40">
           <GlobalPulse />
         </div>
@@ -922,7 +922,7 @@ export default function App() {
         {/* Beta Feedback Button (Floating) */}
         <BetaFeedbackButton variant="floating" section="App Shell" />
 
-        {/* Neural Advisor Assistant (Conversational Chat) */}
+        {/* AI Advisor Assistant (Conversational Chat) */}
         <NeuralAdvisor 
           isVisible={advisorState.visible}
           context={{
@@ -1168,7 +1168,7 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="flex items-center justify-center min-h-[60vh] text-slate-400 font-bold uppercase tracking-widest text-[10px]"
             >
-              Intelligence Core Initializing...
+              Setting up Moneyflow...
             </motion.div>
           )}
         </AnimatePresence>
@@ -1539,9 +1539,9 @@ export default function App() {
                 <LayoutDashboard className="w-10 h-10 text-indigo-500" />
               </div>
               
-              <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-4">Neural Exploration</h2>
+              <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-4">Sample Experience</h2>
               <p className="text-slate-500 dark:text-slate-400 mb-10 leading-relaxed font-medium">
-                You are currently exploring a <span className="text-indigo-500 font-bold">Neural Archetype</span>. This is a sandbox environment with simulated data to demonstrate the Palantir's reasoning capabilities.
+                You are currently exploring a <span className="text-indigo-500 font-bold">Sample Account</span>. This is a sandbox environment with sample data to demonstrate Moneyflow's intelligence capabilities.
               </p>
               
               <button
@@ -1551,7 +1551,7 @@ export default function App() {
                 }}
                 className="w-full py-5 addictive-gradient text-white rounded-[2rem] font-black hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-indigo-600/20 text-lg"
               >
-                Enter Neural Interface
+                Start Exploring
               </button>
             </motion.div>
           </div>

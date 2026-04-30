@@ -9,7 +9,7 @@ import { Transaction } from '../types';
 
 describe('transactionInsights', () => {
   const now = new Date();
-  const dateStr = now.toISOString().split('T')[0];
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   
   const mockTransactions: any[] = [
     { id: '1', amount: -100, date: dateStr, description: 'Grocery', category: 'food' },

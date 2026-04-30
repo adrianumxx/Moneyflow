@@ -160,7 +160,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
         // 4. Create initial synchronization transactions
         const txs = [
           { amount: -250.00, description: `Provision: ${accountInfo.name} Sync`, category: 'system', type: 'expense', date: serverTimestamp() },
-          { amount: accountInfo.balance * 0.1, description: 'Initial Capital Injection', category: 'income', type: 'income', date: serverTimestamp() },
+          { amount: accountInfo.balance * 0.1, description: 'Initial Sync Adjustment', category: 'income', type: 'income', date: serverTimestamp() },
         ];
 
         for (const tx of txs) {
@@ -210,7 +210,7 @@ export default function ConnectBankModal({ isOpen, onClose, userId }: ConnectBan
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
                 <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
-                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Institutional Access</span>
+                <span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Secure Connection</span>
               </div>
               <div className="space-y-1">
                 <h3 className="text-2xl sm:text-4xl font-black tracking-tight text-white font-display flex items-center gap-3">

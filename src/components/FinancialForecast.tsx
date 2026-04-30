@@ -118,7 +118,7 @@ export default function FinancialForecast({
     for (let i = 1; i <= totalMonths; i++) {
       // Net Worth grows by surplus + asset appreciation (simulated)
       // We assume investment assets grow, but liabilities stay flat or decrease
-      // For simplicity in this High-IQ simulation:
+      // For simplicity in this strategic forecast:
       // NW_new = NW_old + Surplus + (Investments * monthlyGrowth)
       
       const investmentValue = assets.filter(a => ['investment', 'crypto', 'real_estate'].includes(a.type)).reduce((sum, a) => sum + a.value, 0);
@@ -219,7 +219,7 @@ export default function FinancialForecast({
 
       {/* Analysis Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <SimulationCard 
+        <ForecastCard 
           title="Monthly Income" 
           value={analysis.effectiveIncome}
           isEditable
@@ -400,7 +400,7 @@ function AnalysisCard({ title, value, subtitle, icon, color, currency }: { title
   );
 }
 
-function SimulationCard({ title, value, isEditable, onSimulate, originalValue, icon, currency }: { title: React.ReactNode, value: number, isEditable?: boolean, onSimulate: (val: number | null) => void, originalValue: number, icon: React.ReactNode, currency?: string }) {
+function ForecastCard({ title, value, isEditable, onSimulate, originalValue, icon, currency }: { title: React.ReactNode, value: number, isEditable?: boolean, onSimulate: (val: number | null) => void, originalValue: number, icon: React.ReactNode, currency?: string }) {
   const [inputValue, setInputValue] = useState(value.toString());
   const [isEditing, setIsEditing] = useState(false);
 
@@ -438,7 +438,7 @@ function SimulationCard({ title, value, isEditable, onSimulate, originalValue, i
       <div>
         <div className="text-sm font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
           {title} 
-          <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900 px-1 rounded text-indigo-600">SIMULATED</span>
+          <span className="text-[10px] bg-indigo-100 dark:bg-indigo-900 px-1 rounded text-indigo-600">FORECASTED</span>
         </div>
         
         {isEditing ? (

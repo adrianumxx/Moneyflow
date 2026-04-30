@@ -312,8 +312,8 @@ export default function Palantir({
         <div>
           <div className="flex items-center gap-3 mb-1">
             <Globe className="w-6 h-6 text-amber-500" />
-            <h1 className="text-2xl font-black tracking-tight text-white uppercase">Palantir</h1>
-            <span className="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/20 font-bold uppercase tracking-wider">AI Simulation</span>
+            <h1 className="text-2xl font-black tracking-tight text-white uppercase">Insights</h1>
+            <span className="text-[10px] bg-indigo-500/10 text-indigo-400 px-2 py-0.5 rounded-full border border-indigo-500/20 font-bold uppercase tracking-wider">AI Forecast</span>
           </div>
           <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
             <span className="relative flex h-2 w-2">
@@ -374,7 +374,7 @@ export default function Palantir({
              />
              <Zap className="w-8 h-8 text-amber-500 animate-pulse" />
           </div>
-          <p className="mt-8 text-xs font-black uppercase tracking-widest text-amber-500/70">Palantir is analyzing global data...</p>
+          <p className="mt-8 text-xs font-black uppercase tracking-widest text-amber-500/70">Insights are analyzing global data...</p>
         </div>
       ) : data ? (
         <div className="space-y-8 relative">
@@ -403,9 +403,9 @@ export default function Palantir({
                     <BookOpen className="w-8 h-8 text-indigo-400" />
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-xl font-black text-white mb-3 tracking-tight">How to read Palantir</h2>
+                    <h2 className="text-xl font-black text-white mb-3 tracking-tight">How to read Insights</h2>
                     <p className="text-slate-400 text-sm font-medium leading-relaxed mb-6 max-w-2xl">
-                      Palantir helps you see how your money may be affected by markets, spending, rates, and global events. 
+                      Insights help you see how your money may be affected by markets, spending, rates, and global events. 
                       It does not predict the future or replace professional advice. Use it to understand what changed, 
                       what may matter, and what to review next.
                     </p>
@@ -451,14 +451,14 @@ export default function Palantir({
 
                   <div className="mb-10 px-8">
                     <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">
-                       <span>Palantir Capacity</span>
+                       <span>Insight Capacity</span>
                        <span className="text-amber-500">94%</span>
                     </div>
                     <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden">
                        <div className="h-full w-[94%] bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.5)]" />
                     </div>
                     <p className="mt-3 text-[10px] font-black text-rose-500 uppercase tracking-widest flex items-center justify-center gap-2">
-                       <ShieldAlert className="w-3 h-3" /> Only 312 Executive spots remaining
+                       <ShieldAlert className="w-3 h-3" /> Complete your profile to unlock full analysis
                     </p>
                   </div>
 
@@ -466,7 +466,7 @@ export default function Palantir({
                     onClick={handleUpgrade}
                     className="w-full py-5 bg-amber-500 text-slate-950 font-black text-base uppercase tracking-[0.1em] rounded-2xl hover:bg-amber-400 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-amber-500/20"
                   >
-                    Unlock Palantir
+                    Unlock Insights
                   </button>
                </div>
             </div>
@@ -939,7 +939,7 @@ export default function Palantir({
           <section className="mt-16 pt-8 border-t border-slate-800/50 text-center px-4">
             <p className="text-[9px] sm:text-[10px] text-slate-600 font-medium uppercase tracking-widest leading-relaxed max-w-3xl mx-auto">
               <strong className="text-slate-500 block mb-2">LEGAL & RISK DISCLAIMER</strong>
-              Palantir is an autonomous quantitative intelligence engine, not a licensed fiduciary or financial advisor. All insights, market summaries, and scenario models are mathematical analyses based on current market data and probability models. AI architectures are subject to inaccuracies. Capital is at risk. Execute independent verification before any capital allocation. Moneyflow assumes no liability for financial losses.
+              Insights is an autonomous quantitative intelligence engine, not a licensed fiduciary or financial advisor. All insights, market summaries, and scenario models are mathematical analyses based on current market data and probability models. AI architectures are subject to inaccuracies. Capital is at risk. Execute independent verification before any capital allocation. Moneyflow assumes no liability for financial losses.
             </p>
           </section>
 

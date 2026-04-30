@@ -4,26 +4,26 @@ import { getFriendlyAuthError } from './authErrors';
 describe('getFriendlyAuthError', () => {
   it('maps popup-closed-by-user correctly', () => {
     expect(getFriendlyAuthError({ code: 'auth/popup-closed-by-user' }))
-      .toBe('Sign-in was cancelled. You can try again when you’re ready.');
+      .toBe('Sign-in was cancelled. You can try again whenever you’re ready.');
   });
 
   it('maps popup-blocked correctly', () => {
     expect(getFriendlyAuthError({ code: 'auth/popup-blocked' }))
-      .toBe('Your browser blocked the sign-in window. Please allow pop-ups and try again.');
+      .toBe('Your browser blocked the sign-in window. Please allow pop-ups or try again.');
   });
 
   it('maps unauthorized-domain correctly', () => {
     expect(getFriendlyAuthError({ code: 'auth/unauthorized-domain' }))
-      .toBe('This domain is not authorized for sign-in. Please check your Firebase settings.');
+      .toBe('This domain is not authorized for sign-in yet. Please check Firebase Authorized Domains.');
   });
 
   it('uses default message for unknown error', () => {
     expect(getFriendlyAuthError({ code: 'auth/unknown-something' }))
-      .toBe('We couldn’t complete sign-in. Please try again.');
+      .toBe('Something went wrong during sign-in. Please try again.');
   });
 
   it('handles non-object errors gracefully', () => {
     expect(getFriendlyAuthError('Random error string')).toBe('Random error string');
-    expect(getFriendlyAuthError(null)).toBe('We couldn’t complete sign-in. Please try again.');
+    expect(getFriendlyAuthError(null)).toBe('Something went wrong during sign-in. Please try again.');
   });
 });

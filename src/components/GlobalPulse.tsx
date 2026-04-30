@@ -6,9 +6,9 @@ const MESSAGES = [
   "Analyzing global market trends...",
   "Synchronizing data endpoints...",
   "Cross-referencing ledger integrity...",
-  "Optimizing wealth trajectory...",
-  "Intelligence core: 100% active",
-  "Securing transaction streams...",
+  "Optimizing financial path...",
+  "AI Advisor: Active",
+  "Securing data streams...",
   "Detecting portfolio opportunities..."
 ];
 
@@ -55,7 +55,7 @@ export default function GlobalPulse() {
           </div>
           <div className="flex items-center gap-1.5">
             <ShieldCheck className="w-3 h-3 text-indigo-400" />
-            <span className="text-[8px] font-black text-indigo-400 uppercase">Bank Grade Security</span>
+            <span className="text-[8px] font-black text-indigo-400 uppercase">Secure Connection</span>
           </div>
         </div>
       </div>

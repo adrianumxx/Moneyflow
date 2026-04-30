@@ -109,8 +109,8 @@ export default function MagicOnboarding({ userId, onComplete }: MagicOnboardingP
                 className="space-y-6"
               >
                 <div className="space-y-2">
-                  <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">Select Base Operations</h2>
-                  <p className="text-slate-400 text-sm font-medium">This centers the Palantir AI on your geopolitical zone.</p>
+                  <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">Select your location</h2>
+                  <p className="text-slate-400 text-sm font-medium">This centers the Insights AI on your region.</p>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
@@ -143,8 +143,8 @@ export default function MagicOnboarding({ userId, onComplete }: MagicOnboardingP
                 className="space-y-6"
               >
                 <div className="space-y-2">
-                  <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">What is your primary mission?</h2>
-                  <p className="text-slate-400 text-sm font-medium">Palantir AI will tailor your entire dashboard to this singular objective.</p>
+                  <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">What is your primary goal?</h2>
+                  <p className="text-slate-400 text-sm font-medium">Insights AI will tailor your entire dashboard to this singular objective.</p>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4">
@@ -177,8 +177,8 @@ export default function MagicOnboarding({ userId, onComplete }: MagicOnboardingP
                 className="space-y-6"
               >
                 <div className="space-y-2">
-                  <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">What's your financial level?</h2>
-                  <p className="text-slate-400 text-sm font-medium">This dictates how aggressively the AI communicates with you.</p>
+                  <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">What's your experience level?</h2>
+                  <p className="text-slate-400 text-sm font-medium">This helps the AI communicate with you more effectively.</p>
                 </div>
                 
                 <div className="space-y-4">
@@ -214,8 +214,8 @@ export default function MagicOnboarding({ userId, onComplete }: MagicOnboardingP
                 className="space-y-6 flex flex-col h-full"
               >
                 <div className="space-y-2">
-                  <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">Inject Initial Liquidity</h2>
-                  <p className="text-slate-400 text-sm font-medium">To activate the Neural Core, enter your primary bank or asset balance.</p>
+                  <h2 className="text-3xl font-black text-white tracking-tighter uppercase italic">Add your starting balance</h2>
+                  <p className="text-slate-400 text-sm font-medium">To activate the AI Core, enter your primary bank or asset balance.</p>
                 </div>
                 
                 <div className="bg-slate-800/50 border border-slate-700 rounded-3xl p-6 mt-4">
@@ -243,10 +243,10 @@ export default function MagicOnboarding({ userId, onComplete }: MagicOnboardingP
                     className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 disabled:opacity-50 group shadow-[0_0_30px_rgba(79,70,229,0.3)] hover:shadow-[0_0_50px_rgba(79,70,229,0.5)]"
                   >
                     {isSaving ? (
-                      <span className="animate-pulse">Initializing Palantir...</span>
+                      <span className="animate-pulse">Initializing Insights...</span>
                     ) : (
                       <>
-                        Initialize Dashboard <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                        Get Started <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                       </>
                     )}
                   </button>
