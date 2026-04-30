@@ -4,7 +4,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import express from 'express';
 
-import admin, { db } from '../server/firebaseAdmin.js';
+import admin, { getDb } from '../server/firebaseAdmin.js';
 const stripeKey = process.env.STRIPE_SECRET_KEY || '';
 const stripe = new Stripe(stripeKey || 'sk_test_dummy_key_for_local_dev', {
   apiVersion: '2023-10-16' as any,
@@ -63,7 +63,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
       const customerId = session.customer as string;
       
       if (userId) {
-        await db.collection('users').doc(userId).set({
+        await getDb().collection('users').doc(userId).set({
           stripeCustomerId: customerId,
           subscriptionStatus: 'active',
           plan: 'premium',
@@ -78,7 +78,7 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
       const customerId = subscription.customer as string;
       const status = subscription.status;
       
-      const userSnapshot = await db.collection('users').where('stripeCustomerId', '==', customerId).limit(1).get();
+      const userSnapshot = await getDb().collection('users').where('stripeCustomerId', '==', customerId).limit(1).get();
       if (!userSnapshot.empty) {
         const userDoc = userSnapshot.docs[0];
         await userDoc.ref.update({
@@ -229,7 +229,7 @@ app.post('/api/create-portal-session', authMiddleware, async (req: Authenticated
   if (!userId) return res.status(401).json({ error: 'Unauthorized: Missing UID' });
 
   try {
-    const userDoc = await db.collection('users').doc(userId).get();
+    const userDoc = await getDb().collection('users').doc(userId).get();
     const userData = userDoc.data();
     
     if (!userData?.stripeCustomerId) {

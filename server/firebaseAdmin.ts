@@ -21,7 +21,11 @@ if (!admin.apps.length) {
   }
 }
 
-const db = admin.firestore();
+export const getDb = () => {
+  if (!admin.apps.length) {
+    throw new Error('Firebase Admin not initialized. Check environment variables.');
+  }
+  return admin.firestore();
+};
 
-export { db };
 export default admin;

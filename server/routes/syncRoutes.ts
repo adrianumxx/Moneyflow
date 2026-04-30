@@ -2,10 +2,10 @@ import { Router, Response } from 'express';
 import { AuthenticatedRequest } from '../middleware/authMiddleware.js';
 import { getBackendProviderById } from '../connectorProviders.js';
 import { createRequisitionSession, getInstitutionList, getRequisition, getAccountMetadata, getAccountBalances, getAccountTransactions } from '../providers/gocardless.js';
-import admin, { db } from '../firebaseAdmin.js';
+import admin, { getDb as getFirebaseDb } from '../firebaseAdmin.js';
 
 const router = Router();
-const getDb = () => db;
+const getDb = () => getFirebaseDb();
 
 /**
  * Structured, safe logging for synchronization errors.

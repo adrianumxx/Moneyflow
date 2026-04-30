@@ -1,5 +1,5 @@
 import express from 'express';
-import { db } from '../firebaseAdmin.js';
+import { getDb } from '../firebaseAdmin.js';
 import { AuthenticatedRequest } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -17,7 +17,7 @@ router.post('/purge/dry-run', async (req: AuthenticatedRequest, res) => {
   }
 
   try {
-    const userRef = db.collection('users').doc(userId);
+    const userRef = getDb().collection('users').doc(userId);
     const userSnap = await userRef.get();
     
     const collections = [
@@ -36,8 +36,8 @@ router.post('/purge/dry-run', async (req: AuthenticatedRequest, res) => {
     }));
 
     // Groups Impact
-    const ownedGroupsSnap = await db.collection('groups').where('ownerId', '==', userId).get();
-    const membershipsSnap = await db.collection('groups').where('memberIds', 'array-contains', userId).get();
+    const ownedGroupsSnap = await getDb().collection('groups').where('ownerId', '==', userId).get();
+    const membershipsSnap = await getDb().collection('groups').where('memberIds', 'array-contains', userId).get();
 
     res.json({
       profileExists: userSnap.exists,
@@ -67,7 +67,7 @@ router.post('/purge', async (req: AuthenticatedRequest, res) => {
   if (confirmText !== 'DELETE') return res.status(400).json({ error: 'Invalid confirmation text' });
 
   try {
-    const userRef = db.collection('users').doc(userId);
+    const userRef = getDb().collection('users').doc(userId);
     const collections = [
       'assets', 'liabilities', 'goals', 'transactions', 
       'bankAccounts', 'insights', 'connectedInstitutions', 
@@ -85,7 +85,7 @@ router.post('/purge', async (req: AuthenticatedRequest, res) => {
         deletedDocsCount += snap.size;
         deletedCollections.push(col);
         // Sequential delete for safety in beta
-        const batch = db.batch();
+        const batch = getDb().batch();
         snap.docs.forEach(doc => batch.delete(doc.ref));
         await batch.commit();
       }
@@ -93,7 +93,7 @@ router.post('/purge', async (req: AuthenticatedRequest, res) => {
 
     // 2. Handle Shared Groups
     let groupsUpdatedCount = 0;
-    const groupsSnap = await db.collection('groups').where('memberIds', 'array-contains', userId).get();
+    const groupsSnap = await getDb().collection('groups').where('memberIds', 'array-contains', userId).get();
     
     for (const groupDoc of groupsSnap.docs) {
       const groupData = groupDoc.data();

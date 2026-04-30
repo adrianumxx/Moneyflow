@@ -4,7 +4,7 @@ import { Response } from 'express';
 
 // Mock Firebase Admin
 vi.mock('../../server/firebaseAdmin', () => ({
-  db: {
+  getDb: vi.fn(() => ({
     collection: vi.fn().mockReturnThis(),
     doc: vi.fn().mockReturnThis(),
     where: vi.fn().mockReturnThis(),
@@ -22,7 +22,7 @@ vi.mock('../../server/firebaseAdmin', () => ({
       }]
     }),
     delete: vi.fn().mockResolvedValue({}),
-  }
+  }))
 }));
 
 
