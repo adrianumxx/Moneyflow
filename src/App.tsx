@@ -978,6 +978,7 @@ export default function App() {
                 }}
                 onConnectBank={() => setIsConnectBankOpen(true)}
                 onAddGoal={() => setIsAddGoalModalOpen(true)}
+                onAddAsset={() => setIsAddAssetModalOpen(true)}
                 onGenerateReport={() => {
                   setIsCFOReportOpen(true);
                 }}

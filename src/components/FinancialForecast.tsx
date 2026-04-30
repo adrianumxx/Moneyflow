@@ -21,7 +21,8 @@ import {
   AlertCircle,
   PiggyBank,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Info
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Asset, Liability, Transaction, BankAccount, UserProfile } from '../types';
@@ -373,7 +374,7 @@ export default function FinancialForecast({
   );
 }
 
-function AnalysisCard({ title, value, subtitle, icon, color, currency }: { title: string, value: number, subtitle: string, icon: React.ReactNode, color: string, currency?: string }) {
+function AnalysisCard({ title, value, subtitle, icon, color, currency }: { title: React.ReactNode, value: number, subtitle: string, icon: React.ReactNode, color: string, currency?: string }) {
   const colorMap: Record<string, string> = {
     indigo: 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400',
     rose: 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400',
@@ -399,7 +400,7 @@ function AnalysisCard({ title, value, subtitle, icon, color, currency }: { title
   );
 }
 
-function SimulationCard({ title, value, isEditable, onSimulate, originalValue, icon, currency }: { title: string, value: number, isEditable?: boolean, onSimulate: (val: number | null) => void, originalValue: number, icon: React.ReactNode, currency?: string }) {
+function SimulationCard({ title, value, isEditable, onSimulate, originalValue, icon, currency }: { title: React.ReactNode, value: number, isEditable?: boolean, onSimulate: (val: number | null) => void, originalValue: number, icon: React.ReactNode, currency?: string }) {
   const [inputValue, setInputValue] = useState(value.toString());
   const [isEditing, setIsEditing] = useState(false);
 

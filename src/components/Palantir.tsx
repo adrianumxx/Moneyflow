@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Globe, Zap, ShieldAlert, Lock, RefreshCw, AlertTriangle, 
-  TrendingUp, TrendingDown, Minus, BookOpen, AlertCircle, CheckCircle2, Info, ArrowRight, Bot
+  TrendingUp, TrendingDown, Minus, BookOpen, AlertCircle, CheckCircle2, Info, ArrowRight, Bot, X
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { getPalantirIntelligence, PalantirIntelligence, PalantirNewsItem } from '../services/geminiService';

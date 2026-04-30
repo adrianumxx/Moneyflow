@@ -12,13 +12,14 @@ import {
   Link2,
   FileText,
   Radio,
-  Pencil
+  Pencil,
+  ArrowRight
 } from 'lucide-react';
 import { Asset, Liability, FinancialGoal, AIInsight, Transaction, BankAccount, UserProfile } from '../types';
 import { formatMoney } from '../utils/format';
 import { PieChart as RePieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { generateFinancialInsights } from '../services/geminiService';
-import { Loader2, Landmark, Receipt, Zap, Bot } from 'lucide-react';
+import { Loader2, Landmark, Receipt, Zap, Bot, Info } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 import { 
   calculateTotalAssets, 
@@ -39,6 +40,7 @@ interface WealthOverviewProps {
   onInsightsGenerated: (newInsights: AIInsight[]) => void;
   onConnectBank: () => void;
   onAddGoal: () => void;
+  onAddAsset: () => void;
   onGenerateReport: () => void;
   userProfile?: UserProfile;
   theme: 'light' | 'dark';
@@ -68,6 +70,7 @@ export default function WealthOverview({
   onInsightsGenerated, 
   onConnectBank,
   onAddGoal,
+  onAddAsset,
   onGenerateReport,
   userProfile,
   theme 
