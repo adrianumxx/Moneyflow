@@ -89,7 +89,7 @@ import FeedbackModal from './components/FeedbackModal';
 import GlobalPulse from './components/GlobalPulse';
 import NeuralAdvisor from './components/NeuralAdvisor';
 import IntegrationsHub from './components/IntegrationsHub';
-import BetaFeedbackButton from './BetaFeedbackButton';
+import BetaFeedbackButton from './components/BetaFeedbackButton';
 import { handleSyncCallback, listInstitutions } from './services/syncService';
 
 export default function App() {
