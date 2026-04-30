@@ -94,6 +94,16 @@ describe('Firestore Security Rules', () => {
         displayName: 'Hacked by Bob'
       }));
     });
+
+    it('denies user from setting sensitive fields during creation', async () => {
+      const eve = testEnv.authenticatedContext('eve');
+      await assertFails(setDoc(doc(eve.firestore(), 'users/eve'), {
+        uid: 'eve',
+        email: 'eve@example.com',
+        plan: 'premium',
+        subscriptionStatus: 'active'
+      }));
+    });
   });
 
   describe('User Profile Isolation', () => {
@@ -249,6 +259,74 @@ describe('Firestore Security Rules', () => {
     it('enforces membership for subcollection access (expenses)', async () => {
       const bob = testEnv.authenticatedContext('bob');
       await assertFails(getDoc(doc(bob.firestore(), 'groups/g1/expenses/e1')));
+    });
+  });
+
+  describe('Connector Architecture subcollections', () => {
+    it('enforces ownerId integrity and schema for connectedInstitutions', async () => {
+      const alice = testEnv.authenticatedContext('alice');
+      const path = 'users/alice/connectedInstitutions/i1';
+      
+      await assertSucceeds(setDoc(doc(alice.firestore(), path), {
+        ownerId: 'alice',
+        providerId: 'revolut',
+        providerName: 'Revolut',
+        status: 'connected'
+      }));
+
+      await assertFails(setDoc(doc(alice.firestore(), path), {
+        ownerId: 'bob',
+        providerId: 'revolut',
+        providerName: 'Revolut',
+        status: 'connected'
+      }));
+
+      await assertFails(setDoc(doc(alice.firestore(), path), {
+        ownerId: 'alice',
+        providerId: 'revolut',
+        providerName: 'Revolut',
+        status: 'INVALID_STATUS'
+      }));
+    });
+
+    it('enforces ownerId integrity and schema for connectedAccounts', async () => {
+      const alice = testEnv.authenticatedContext('alice');
+      const path = 'users/alice/connectedAccounts/a1';
+      
+      await assertSucceeds(setDoc(doc(alice.firestore(), path), {
+        ownerId: 'alice',
+        institutionId: 'i1',
+        accountName: 'Main Checking',
+        accountType: 'checking',
+        balance: 1000
+      }));
+
+      await assertFails(setDoc(doc(alice.firestore(), path), {
+        ownerId: 'alice',
+        institutionId: 'i1',
+        accountName: 'Main Checking',
+        accountType: 'INVALID_TYPE',
+        balance: 1000
+      }));
+    });
+
+    it('enforces ownerId integrity and schema for cryptoWallets', async () => {
+      const alice = testEnv.authenticatedContext('alice');
+      const path = 'users/alice/cryptoWallets/w1';
+      
+      await assertSucceeds(setDoc(doc(alice.firestore(), path), {
+        ownerId: 'alice',
+        address: '0x123',
+        network: 'ethereum',
+        name: 'My Wallet'
+      }));
+
+      await assertFails(setDoc(doc(alice.firestore(), path), {
+        ownerId: 'bob',
+        address: '0x123',
+        network: 'ethereum',
+        name: 'My Wallet'
+      }));
     });
   });
 
