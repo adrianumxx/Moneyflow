@@ -1,16 +1,24 @@
 import admin from 'firebase-admin';
+import dotenv from 'dotenv';
+dotenv.config();
 
 if (!admin.apps.length) {
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
   const privateKey = process.env.FIREBASE_PRIVATE_KEY;
-  const formattedPrivateKey = privateKey ? privateKey.replace(/\\n/g, '\n') : undefined;
 
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: formattedPrivateKey,
-    }),
-  });
+  if (projectId && clientEmail && privateKey) {
+    const formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
+    admin.initializeApp({
+      credential: admin.credential.cert({
+        projectId,
+        clientEmail,
+        privateKey: formattedPrivateKey,
+      }),
+    });
+  } else {
+    console.warn('⚠️ FIREBASE ADMIN CREDENTIALS MISSING! Firestore will not be available.');
+  }
 }
 
 const db = admin.firestore();

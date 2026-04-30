@@ -1,10 +1,8 @@
+import './env.js';
 import Stripe from 'stripe';
-import dotenv from 'dotenv';
 import helmet from 'helmet';
 import cors from 'cors';
 import express from 'express';
-
-dotenv.config();
 
 import admin, { db } from '../server/firebaseAdmin.js';
 const stripeKey = process.env.STRIPE_SECRET_KEY || '';
