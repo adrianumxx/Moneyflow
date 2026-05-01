@@ -25,20 +25,28 @@ const firebaseConfig = {
   firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID || firebaseConfigData.firestoreDatabaseId
 };
 
+// Log configuration status (without exposing secrets)
 const isPlaceholder = !firebaseConfig.apiKey || firebaseConfig.apiKey.includes('remixed-') || firebaseConfig.apiKey.includes('API_KEY');
 
 if (isPlaceholder) {
-  console.warn('Firebase is using placeholder configuration. Please ensure you have completed the Firebase setup in the AI Studio environment.');
+  console.warn('Firebase is using placeholder configuration. Please ensure you have completed the Firebase setup.');
+} else {
+  console.log('Firebase initialized with Project ID:', firebaseConfig.projectId);
 }
 
 const app = initializeApp(firebaseConfig as any);
 export const auth = getAuth(app);
 
-// Enable local persistence
-setPersistence(auth, browserLocalPersistence);
+// Explicitly set persistence (Optional but good for clarity)
+setPersistence(auth, browserLocalPersistence).catch(err => {
+  console.error("Auth Persistence Error:", err);
+});
 
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || '(default)');
 export const googleProvider = new GoogleAuthProvider();
+
+// Standardize Google Auth flow
+googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 export const signIn = () => signInWithPopup(auth, googleProvider);
 export const signInRedirect = () => signInWithRedirect(auth, googleProvider);

@@ -195,24 +195,36 @@ export default function App() {
     try {
       if (isMobile) {
         await signInRedirect();
+        // Page will redirect, loading stays true
       } else {
         await signIn();
+        // If popup succeeds, authLoading will be cleared by the auth state listener or the unmount
       }
     } catch (err: any) {
       console.error("Google Sign-In Error:", err);
       
-      // If popup was blocked or failed, try redirect as fallback even on desktop
-      if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+      // Handle various failure modes with redirect fallback
+      const shouldFallbackToRedirect = [
+        'auth/popup-blocked',
+        'auth/popup-closed-by-user',
+        'auth/cancelled-popup-request',
+        'auth/internal-error',
+        'auth/network-request-failed'
+      ].includes(err.code);
+
+      if (shouldFallbackToRedirect) {
         try {
+          console.log("Attempting redirect fallback...");
           await signInRedirect();
-          return; // Redirect will happen, don't clear loading
+          return; 
         } catch (redirErr) {
           setAuthError(getFriendlyAuthError(redirErr));
+          setAuthLoading(false);
         }
       } else {
         setAuthError(getFriendlyAuthError(err));
+        setAuthLoading(false);
       }
-      setAuthLoading(false);
     }
   };
 
@@ -311,11 +323,13 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       console.log("Auth State Changed:", currentUser ? `User: ${currentUser.uid}` : "No user");
       setUser(currentUser);
+      setAuthLoading(false); // CRITICAL: Reset button loading state
       
       if (!currentUser) {
         console.log("Auth: Setting loading false (No user)");
         setLoading(false);
         setUserProfile(null);
+        // ... clear other states ...
         setAssets([]);
         setLiabilities([]);
         setGoals([]);
@@ -325,6 +339,7 @@ export default function App() {
         setGroups([]);
         return;
       }
+      // ... rest of the logic ...
 
       if (!currentUser.uid.startsWith('demo-')) {
         // Check if user has seen welcome popup

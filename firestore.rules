@@ -20,10 +20,9 @@ service cloud.firestore {
     function incoming() { return request.resource.data; }
     function existing() { return resource.data; }
     
-    // Auth tokens NEVER contain custom claims. Use document lookups for roles.
+    // Pillar 5: Role-based access using Firebase Custom Claims
     function isAdmin() { 
-      // Hardcoded emergency admin check
-      return isSignedIn() && (request.auth.token.email == "adrianomelilloXX@gmail.com");
+      return isSignedIn() && request.auth.token.get('admin', false) == true;
     }
 
     // ===============================================================
@@ -145,7 +144,8 @@ service cloud.firestore {
                     isValidUser(incoming()) &&
                     !incoming().keys().hasAny([
                       'stripeCustomerId', 'subscriptionStatus', 'plan', 
-                      'trialStartDate', 'trialDays', 'palantirTrialDays'
+                      'trialStartDate', 'trialDays', 'palantirTrialDays',
+                      'admin', 'isAdmin', 'role', 'permissions', 'isPremium'
                     ]);
       allow update: if isOwner(userId) && 
                     incoming().uid == existing().uid &&

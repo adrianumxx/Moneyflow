@@ -84,7 +84,10 @@ describe('Firestore Security Rules', () => {
       // Attempt to inject random admin flags
       await assertFails(updateDoc(doc(alice.firestore(), 'users/alice'), {
         isAdmin: true,
-        role: 'admin'
+        role: 'admin',
+        admin: true,
+        permissions: ['all'],
+        isPremium: true
       }));
     });
 
@@ -101,7 +104,9 @@ describe('Firestore Security Rules', () => {
         uid: 'eve',
         email: 'eve@example.com',
         plan: 'premium',
-        subscriptionStatus: 'active'
+        subscriptionStatus: 'active',
+        admin: true,
+        role: 'admin'
       }));
     });
   });
@@ -208,6 +213,25 @@ describe('Firestore Security Rules', () => {
         ownerId: 'bob',
         institutionName: 'Global Bank',
         balance: 10000
+      }));
+    });
+
+    it('enforces ownerId integrity for liabilities', async () => {
+      const alice = testEnv.authenticatedContext('alice');
+      const path = 'users/alice/liabilities/l1';
+      
+      await assertSucceeds(setDoc(doc(alice.firestore(), path), {
+        ownerId: 'alice',
+        name: 'Mortgage',
+        totalAmount: 300000,
+        remainingAmount: 250000
+      }));
+
+      await assertFails(setDoc(doc(alice.firestore(), path), {
+        ownerId: 'bob',
+        name: 'Mortgage',
+        totalAmount: 300000,
+        remainingAmount: 250000
       }));
     });
   });
@@ -326,6 +350,101 @@ describe('Firestore Security Rules', () => {
         address: '0x123',
         network: 'ethereum',
         name: 'My Wallet'
+      }));
+    });
+
+    it('enforces ownerId integrity and schema for investmentAccounts', async () => {
+      const alice = testEnv.authenticatedContext('alice');
+      const path = 'users/alice/investmentAccounts/v1';
+      
+      await assertSucceeds(setDoc(doc(alice.firestore(), path), {
+        ownerId: 'alice',
+        providerName: 'Vanguard',
+        accountName: 'S&P 500 ETF',
+        balance: 50000
+      }));
+
+      await assertFails(setDoc(doc(alice.firestore(), path), {
+        ownerId: 'bob',
+        providerName: 'Vanguard',
+        accountName: 'S&P 500 ETF',
+        balance: 50000
+      }));
+    });
+  });
+
+  describe('Admin Access via Custom Claims', () => {
+    it('allows admin with token.admin == true to update groups', async () => {
+      const admin = testEnv.authenticatedContext('admin_user', { admin: true });
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await setDoc(doc(context.firestore(), 'groups/g1'), {
+          ownerId: 'alice',
+          createdBy: 'alice',
+          name: 'Original Name',
+          memberIds: ['alice']
+        });
+      });
+
+      await assertSucceeds(updateDoc(doc(admin.firestore(), 'groups/g1'), {
+        name: 'Admin Overwritten Name'
+      }));
+    });
+
+    it('denies user with specific email but no admin claim from admin access', async () => {
+      const fakeAdmin = testEnv.authenticatedContext('fake_admin', { email: 'adrianomelilloXX@gmail.com' });
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await setDoc(doc(context.firestore(), 'groups/g1'), {
+          ownerId: 'alice',
+          createdBy: 'alice',
+          name: 'Original Name',
+          memberIds: ['alice']
+        });
+      });
+
+      // Should fail because email check was removed
+      await assertFails(updateDoc(doc(fakeAdmin.firestore(), 'groups/g1'), {
+        name: 'Email Hijack Attempt'
+      }));
+    });
+  });
+
+  describe('Group Expense Permissions', () => {
+    beforeEach(async () => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        await setDoc(doc(context.firestore(), 'groups/g1'), {
+          ownerId: 'alice',
+          createdBy: 'alice',
+          name: 'Shared Group',
+          memberIds: ['alice', 'charlie']
+        });
+      });
+    });
+
+    it('allows member to create an expense', async () => {
+      const charlie = testEnv.authenticatedContext('charlie');
+      await assertSucceeds(setDoc(doc(charlie.firestore(), 'groups/g1/expenses/e1'), {
+        groupId: 'g1',
+        memberIds: ['alice', 'charlie'],
+        amount: 30,
+        description: 'Pizza',
+        paidBy: 'charlie',
+        category: 'Food',
+        date: new Date(),
+        splitType: 'equal',
+        splits: { alice: 15, charlie: 15 }
+      }));
+    });
+
+    it('denies non-member from creating an expense', async () => {
+      const bob = testEnv.authenticatedContext('bob');
+      await assertFails(setDoc(doc(bob.firestore(), 'groups/g1/expenses/e1'), {
+        groupId: 'g1',
+        memberIds: ['alice', 'charlie'],
+        amount: 30,
+        description: 'Steal',
+        paidBy: 'bob',
+        category: 'Theft',
+        date: new Date()
       }));
     });
   });
