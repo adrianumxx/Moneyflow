@@ -253,8 +253,11 @@ export default function App() {
     console.log("[Auth] Initializing Auth Observer...");
     
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      const stateTrace = currentUser ? `Authenticated (${currentUser.uid.substring(0, 5)})` : "Unauthenticated";
-      console.log(`[Auth State Change] ${stateTrace}`);
+      const isDebug = new URLSearchParams(window.location.search).get('debugAuth') === '1';
+      const stateTrace = currentUser ? `Authenticated` : "Unauthenticated";
+      if (isDebug && currentUser) {
+        console.log(`[Auth State Change] ${stateTrace} (${currentUser.uid.substring(0, 5)})`);
+      }
       
       if (!currentUser) {
         // Atomic reset of all authenticated state
@@ -294,8 +297,10 @@ export default function App() {
       try {
         const result = await getRedirectResult(auth);
         if (result) {
-          console.log("[Auth] Redirect result processed for:", result.user.uid.substring(0, 5));
-          // Note: onAuthStateChanged will handle the state update
+          const isDebug = new URLSearchParams(window.location.search).get('debugAuth') === '1';
+          if (isDebug) {
+            console.log("[Auth] Redirect result processed for:", result.user.uid.substring(0, 5));
+          }
         }
       } catch (err: any) {
         console.error("[Auth] Redirect Error:", err);

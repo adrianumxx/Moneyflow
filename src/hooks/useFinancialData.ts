@@ -118,8 +118,8 @@ export const useFinancialData = (user: User | null): FinancialData => {
           });
         }
       } catch (err: any) {
-        console.error('Error ensuring user profile exists:', err);
-        setError(`Profile Error: ${err.message}`);
+        console.error('Error ensuring user profile exists (details masked for privacy)');
+        setError(`Profile Error: Service temporarily unavailable`);
       }
 
       const unsubProfile = onSnapshot(profileRef, (snap) => {
