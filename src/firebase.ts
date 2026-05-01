@@ -31,7 +31,11 @@ const isPlaceholder = !firebaseConfig.apiKey || firebaseConfig.apiKey.includes('
 if (isPlaceholder) {
   console.warn('Firebase is using placeholder configuration. Please ensure you have completed the Firebase setup.');
 } else {
-  console.log('Firebase initialized with Project ID:', firebaseConfig.projectId);
+  console.log('Firebase initialized:', {
+    projectId: firebaseConfig.projectId,
+    authDomain: firebaseConfig.authDomain,
+    env: import.meta.env.MODE
+  });
 }
 
 const app = initializeApp(firebaseConfig as any);
