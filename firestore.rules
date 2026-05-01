@@ -111,7 +111,7 @@ service cloud.firestore {
       return data.ownerId == request.auth.uid &&
              data.institutionId is string &&
              data.accountName is string &&
-             data.accountType is string &&
+             data.accountType in ['checking', 'savings', 'credit_card', 'investment', 'loan', 'mortgage', 'other'] &&
              data.balance is number &&
              (data.get('updatedAt', null) == null || data.updatedAt is timestamp);
     }
@@ -200,10 +200,9 @@ service cloud.firestore {
       }
 
       match /bankAccounts/{bankId} {
-        allow get: if isOwner(userId);
-        allow list: if isOwner(userId);
-        allow create: if isOwner(userId) && isValidBankAccount(incoming());
-        allow update, delete: if isOwner(userId);
+        allow get, list: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidBankAccount(incoming());
+        allow delete: if isOwner(userId);
       }
 
       match /insights/{insightId} {
