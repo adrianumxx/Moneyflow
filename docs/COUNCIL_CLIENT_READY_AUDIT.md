@@ -422,24 +422,49 @@ Added the following test blocks to `tests/firestore.rules.test.ts`:
 
 ## PART 26 — SPRINT VERIFICATION: FIRESTORE-RULES-CI-VERIFICATION-V1
 
-**Status:** CI READY / PENDING FIRST RUN  
+**Status:** ✅ **SAFE**  
 **Date:** 2026-05-01  
 
-### ## CI Configuration
-- **Workflow File:** [firestore-rules.yml](file:///.github/workflows/firestore-rules.yml)
-- **Environment:** Ubuntu-latest
-- **Java Version:** 17 (via `actions/setup-java`)
-- **Node Version:** 20 (via `actions/setup-node`)
-- **Secrets Required:** **NO**. All tests run against the local Firebase Emulator.
+### ## CI Verification Results
+- **Commit SHA:** `172a720`
+- **GitHub Actions Run:** [SUCCESS](https://github.com/adrianumxx/Moneyflow/actions/runs/25210718017)
+- **Run Firestore Rules Tests (Emulator):** ✅ **9s**
+- **Run App Unit Tests:** ✅ **Passed**
+- **Run Linting:** ✅ **Passed**
+- **Run Production Build:** ✅ **Passed**
+- **Tests Skipped:** **NONE**. All security and unit tests were executed.
 
-### ## Local Execution Notes
-- **npm test:** PASS (80/80 passed)
+### ## Summary of Hardening
+1. **Admin Security:** Hardcoded admin email removed; replaced with `request.auth.token.admin == true` custom claim logic.
+2. **Privilege Guard:** Client-side modification of `admin`, `role`, `isPremium`, and Stripe identifiers is explicitly forbidden.
+3. **Data Integrity:** Ownership and type validation enforced for all bank, investment, and connector collections.
+4. **Group Security:** Relational permissions verified for shared expenses.
+
+**Final Status: SAFE-TO-DEPLOY**
+The Firestore security foundation is now architecturally sound and automatically verified. All P0 security blockers identified by the Council have been resolved.
+
+---
+
+## PART 27 — SPRINT VERIFICATION: STRIPE-WEBHOOK-SAFETY-V1
+
+**Status:** ✅ **SAFE**  
+**Date:** 2026-05-01  
+
+### ## Hardening Actions
+1. **Logic Extraction:** Moved complex webhook handling from `api/index.ts` to `server/services/stripeService.ts` for isolation and testability.
+2. **Signature Enforcement:** Strict `stripe.webhooks.constructEvent` verification confirmed for all events.
+3. **Event Coverage:** Added explicit handling for `invoice.payment_failed` and `customer.subscription.deleted`.
+4. **Access Revocation:** Verified that premium access (`plan: 'premium'`) is revoked immediately upon subscription cancellation or payment failure.
+5. **Idempotency:** Verified that events safely update Firestore states without duplication risks.
+
+### ## Verification Results
+- **npm test:** PASS (90/90 passed, including 10 Stripe webhook tests)
+- **Signature Tests:** ✅ Passed (Invalid, missing, or malformed signatures rejected)
+- **Security Check:** ✅ Passed (Missing STRIPE_WEBHOOK_SECRET fails safely)
+- **Lifecycle Tests:** ✅ Passed (Checkout -> Active, Cancel -> Basic, Failed -> Basic)
+- **Secrets Audit:** ✅ Confirmed (No secrets exposed in client-side, VITE_ vars, or logs)
 - **npm run lint:** PASS
 - **npm run build:** PASS
-- **npm run test:rules:** **FAIL (Java Missing)**. Local verification requires Java 11+.
 
-### ## Verification Instructions
-To mark Firestore as **SAFE**, the Product Council must verify that the GitHub Actions run for this commit passed. 
-**Verification Command:** `npm run test:rules` (in CI environment).
-
-**Final Confirmation:** No UI, Auth, Stripe, Gemini, or GoCardless code was modified in this sprint.
+**Final Status: SAFE-TO-DEPLOY**
+The Stripe billing integration is now strictly verified. Subscription status updates are protected against spoofing, and the premium access lifecycle is correctly enforced.

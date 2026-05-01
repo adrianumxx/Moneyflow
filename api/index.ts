@@ -5,6 +5,7 @@ import cors from 'cors';
 import express from 'express';
 
 import admin, { getDb } from '../server/firebaseAdmin.js';
+import { handleStripeWebhook } from '../server/services/stripeService.js';
 const stripeKey = process.env.STRIPE_SECRET_KEY || '';
 const stripe = new Stripe(stripeKey || 'sk_test_dummy_key_for_local_dev', {
   apiVersion: '2023-10-16' as any,
@@ -44,53 +45,16 @@ app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, 
   const sig = req.headers['stripe-signature'];
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  let event;
-
   try {
     if (!sig || !endpointSecret) {
       throw new Error('Missing stripe-signature or endpointSecret');
     }
-    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+    const result = await handleStripeWebhook(req.body, sig as string, endpointSecret);
+    res.json(result);
   } catch (err: any) {
     console.error(`Webhook Error: ${err.message}`);
-    return res.status(400).send('Webhook verification failed.');
+    res.status(400).send(`Webhook Error: ${err.message}`);
   }
-
-  switch (event.type) {
-    case 'checkout.session.completed': {
-      const session = event.data.object as Stripe.Checkout.Session;
-      const userId = session.client_reference_id;
-      const customerId = session.customer as string;
-      
-      if (userId) {
-        await getDb().collection('users').doc(userId).set({
-          stripeCustomerId: customerId,
-          subscriptionStatus: 'active',
-          plan: 'premium',
-          updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-      }
-      break;
-    }
-    case 'customer.subscription.deleted':
-    case 'customer.subscription.updated': {
-      const subscription = event.data.object as Stripe.Subscription;
-      const customerId = subscription.customer as string;
-      const status = subscription.status;
-      
-      const userSnapshot = await getDb().collection('users').where('stripeCustomerId', '==', customerId).limit(1).get();
-      if (!userSnapshot.empty) {
-        const userDoc = userSnapshot.docs[0];
-        await userDoc.ref.update({
-          subscriptionStatus: status,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
-      }
-      break;
-    }
-  }
-
-  res.json({ received: true });
 });
 
 app.use(express.json());
