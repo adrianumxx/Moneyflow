@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { auth, db, signIn, signInRedirect, getRedirectResult, signUpWithEmail, logInWithEmail, logOut } from './firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged, User, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
 import { getFriendlyAuthError } from './utils/authErrors';
 import { 
@@ -220,7 +220,7 @@ export default function App() {
       } else {
         console.log("[Auth] Desktop detected, using popup flow");
         const result = await signIn();
-        console.log("[Auth] Popup sign-in successful for user:", result.user.uid);
+        console.log("[Auth] Popup sign-in successful for user:", result.user.uid.substring(0, 5) + "...");
         // We set the user immediately to speed up UI transition
         setUser(result.user);
       }
@@ -265,7 +265,7 @@ export default function App() {
       } else {
         result = await logInWithEmail(authEmail, authPassword);
       }
-      console.log("[Auth] Email auth successful for user:", result.user.uid);
+      console.log("[Auth] Email auth successful for user:", result.user.uid.substring(0, 5) + "...");
       setUser(result.user);
     } catch (err: any) {
       console.error("[Auth] Email Auth Error:", err);
@@ -305,7 +305,7 @@ export default function App() {
         console.log("[Auth] Checking for redirect result...");
         const result = await getRedirectResult(auth);
         if (result) {
-          console.log("[Auth] Redirect sign-in success for user:", result.user.uid);
+          console.log("[Auth] Redirect sign-in success for user:", result.user.uid.substring(0, 5) + "...");
           setUser(result.user);
         } else {
           console.log("[Auth] No redirect result found on mount");
@@ -355,7 +355,7 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      console.log("[Auth] State Changed:", currentUser ? `User: ${currentUser.uid}` : "No user");
+      console.log("[Auth] State Changed:", currentUser ? `User: ${currentUser.uid.substring(0, 5)}...` : "No user");
       
       // Batch updates to reduce flickers
       if (!currentUser) {
@@ -489,7 +489,6 @@ export default function App() {
     }
   };
 
-  const isProfileLoading = user && !user.uid.startsWith('demo-') && !userProfile && loading;
 
   // Emergency reset if stuck in loading
   const handleEmergencyLogout = async () => {

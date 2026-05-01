@@ -21,7 +21,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import Markdown from 'react-markdown';
-import { GoogleGenAI } from "@google/genai";
+import { chatWithAIAssistant } from '../services/geminiService';
 import { 
   LineChart, 
   Line, 
@@ -545,8 +545,6 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
     analysisAbortController.current = abortController;
 
     try {
-      const ai = new GoogleGenAI({ apiKey: getEnv('GEMINI_API_KEY') });
-      
       const expenseSummary = expenses.map(e => ({
         amount: e.amount,
         description: e.description,
@@ -573,14 +571,18 @@ export default function GroupView({ groupId, user, onBack, theme, demoExpenses, 
         Keep the tone helpful, professional, and encouraging. Use markdown for formatting.
       `;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt
+      const responseText = await chatWithAIAssistant(prompt, {
+        assets: [],
+        liabilities: [],
+        goals: [],
+        transactions: expenseSummary,
+        bankAccounts: [],
+        userDisplayName: user.displayName || 'User'
       });
 
       if (abortController.signal.aborted) return;
 
-      setAnalysisResult(response.text || "Could not generate analysis.");
+      setAnalysisResult(responseText || "Could not generate analysis.");
     } catch (error: any) {
       if (error.name === 'AbortError' || abortController.signal.aborted) {
         return;
