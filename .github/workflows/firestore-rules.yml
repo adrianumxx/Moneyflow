@@ -29,8 +29,13 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Setup Firebase Emulators
+        run: npx firebase-tools setup:emulators:firestore
+
       - name: Run Firestore Rules Tests (Emulator)
         run: npm run test:rules
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }} # Only if needed for some reason, but should work without
 
       - name: Run App Unit Tests
         run: npm test
