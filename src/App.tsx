@@ -201,56 +201,6 @@ export default function App() {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
   };
 
-  const handleGoogleSignIn = async () => {
-    console.log("[Auth] handleGoogleSignIn triggered");
-    setAuthError('');
-    setAuthLoading(true);
-    
-    // Check for mobile or embedded browsers to prefer redirect
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    try {
-      // Ensure persistence is set before sign-in
-      await setPersistence(auth, browserLocalPersistence);
-      
-      if (isMobile) {
-        console.log("[Auth] Mobile detected, using redirect flow");
-        await signInRedirect();
-        // Page will redirect, loading stays true
-      } else {
-        console.log("[Auth] Desktop detected, using popup flow");
-        const result = await signIn();
-        console.log("[Auth] Popup sign-in successful for user:", result.user.uid.substring(0, 5) + "...");
-        // We set the user immediately to speed up UI transition
-        setUser(result.user);
-      }
-    } catch (err: any) {
-      console.error("[Auth] Google Sign-In Error:", err);
-      
-      // Handle various failure modes with redirect fallback
-      const shouldFallbackToRedirect = [
-        'auth/popup-blocked',
-        'auth/popup-closed-by-user',
-        'auth/cancelled-popup-request',
-        'auth/internal-error',
-        'auth/network-request-failed'
-      ].includes(err.code);
-
-      if (shouldFallbackToRedirect) {
-        try {
-          console.log("[Auth] Attempting redirect fallback due to:", err.code);
-          await signInRedirect();
-          return; 
-        } catch (redirErr) {
-          setAuthError(getFriendlyAuthError(redirErr));
-          setAuthLoading(false);
-        }
-      } else {
-        setAuthError(getFriendlyAuthError(err));
-        setAuthLoading(false);
-      }
-    }
-  };
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -298,25 +248,103 @@ export default function App() {
     }
   }, [financialData, user]);
 
+  // Combined Auth & Profile Observer
   useEffect(() => {
+    console.log("[Auth] Initializing Auth Observer...");
+    
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      const stateTrace = currentUser ? `Authenticated (${currentUser.uid.substring(0, 5)})` : "Unauthenticated";
+      console.log(`[Auth State Change] ${stateTrace}`);
+      
+      if (!currentUser) {
+        // Atomic reset of all authenticated state
+        setUser(null);
+        setUserProfile(null);
+        setLoading(false);
+        setAuthLoading(false);
+        setAssets([]);
+        setLiabilities([]);
+        setGoals([]);
+        setTransactions([]);
+        setBankAccounts([]);
+        setInsights([]);
+        setGroups([]);
+        return;
+      }
+
+      // User exists
+      setUser(currentUser);
+      setAuthLoading(false);
+      
+      // If demo user, we are done
+      if (currentUser.uid.startsWith('demo-')) {
+        setLoading(false);
+        return;
+      }
+
+      // Real user: Ensure loading is true while we wait for useFinancialData
+      // (This prevents the landing page from flashing if user is defined but profile isn't yet)
+      if (!userProfile) {
+        setLoading(true);
+      }
+    });
+
     // Handle redirect result on mount
-    const checkRedirect = async () => {
+    const handleRedirect = async () => {
       try {
-        console.log("[Auth] Checking for redirect result...");
         const result = await getRedirectResult(auth);
         if (result) {
-          console.log("[Auth] Redirect sign-in success for user:", result.user.uid.substring(0, 5) + "...");
-          setUser(result.user);
-        } else {
-          console.log("[Auth] No redirect result found on mount");
+          console.log("[Auth] Redirect result processed for:", result.user.uid.substring(0, 5));
+          // Note: onAuthStateChanged will handle the state update
         }
       } catch (err: any) {
-        console.error("[Auth] Redirect Auth Error:", err);
+        console.error("[Auth] Redirect Error:", err);
         setAuthError(getFriendlyAuthError(err));
       }
     };
-    checkRedirect();
+    handleRedirect();
+
+    return () => unsubscribe();
+  }, [userProfile]);
+
+  const handleGoogleSignIn = async () => {
+    console.log("[Auth] handleGoogleSignIn triggered");
+    setAuthError('');
+    setAuthLoading(true);
     
+    // Prefer Redirect in production to avoid COOP/popup issues reported in audit
+    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    try {
+      if (!isLocal || isMobile) {
+        console.log("[Auth] Using Redirect Flow (Production/Mobile)");
+        await signInRedirect();
+      } else {
+        console.log("[Auth] Using Popup Flow (Development/Desktop)");
+        await signIn();
+        // onAuthStateChanged will handle the result
+      }
+    } catch (err: any) {
+      console.error("[Auth] Google Sign-In Error:", err);
+      
+      // Automatic fallback if popup is blocked or fails
+      if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
+        try {
+          await signInRedirect();
+        } catch (redirErr) {
+          setAuthError(getFriendlyAuthError(redirErr));
+          setAuthLoading(false);
+        }
+      } else {
+        setAuthError(getFriendlyAuthError(err));
+        setAuthLoading(false);
+      }
+    }
+  };
+
+  // Re-enable window properties for legacy hooks
+  useEffect(() => {
     (window as any).openCreateGroupModal = () => setIsCreateModalOpen(true);
     return () => {
       delete (window as any).openCreateGroupModal;
@@ -331,6 +359,7 @@ export default function App() {
     if (requisitionId && user) {
       const handleCallback = async () => {
         try {
+          const { handleSyncCallback } = await import('./services/syncService');
           const response = await handleSyncCallback('gocardless_sandbox', { requisitionId });
           if (response.success) {
             setAdvisorState({
@@ -338,13 +367,10 @@ export default function App() {
               message: `Live Data Verified: ${response.status === 'LN' ? 'Linked & Authorized' : 'Authorization pending.'}`,
               actionLabel: "View Accounts"
             });
-          } else {
-            setLastError(response.error || 'Failed to verify bank handshake.');
           }
         } catch (error) {
           console.error('[App] Callback error:', error);
         } finally {
-          // Clean URL
           const newUrl = window.location.pathname + window.location.hash;
           window.history.replaceState({}, document.title, newUrl);
         }
@@ -352,52 +378,6 @@ export default function App() {
       handleCallback();
     }
   }, [user]);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      console.log("[Auth] State Changed:", currentUser ? `User: ${currentUser.uid.substring(0, 5)}...` : "No user");
-      
-      // Batch updates to reduce flickers
-      if (!currentUser) {
-        setUser(null);
-        setUserProfile(null);
-        setLoading(false);
-        setAuthLoading(false);
-        // Clear other states
-        setAssets([]);
-        setLiabilities([]);
-        setGoals([]);
-        setTransactions([]);
-        setBankAccounts([]);
-        setInsights([]);
-        setGroups([]);
-      } else {
-        setUser(currentUser);
-        setAuthLoading(false);
-        
-        if (!currentUser.uid.startsWith('demo-')) {
-          // Check if user has seen welcome popup
-          const hasSeenWelcome = localStorage.getItem(`hasSeenWelcome_${currentUser.uid}`);
-          if (!hasSeenWelcome) {
-            setShowWelcomePopup(true);
-          }
-
-          // Test connection
-          try {
-            const { getDocFromServer } = await import('firebase/firestore');
-            await getDocFromServer(doc(db, 'users', currentUser.uid));
-            console.log("[Auth] Firestore connection verified for user");
-          } catch (error) {
-            console.warn("[Auth] Firestore connection warning (might be initial sync):", error);
-          }
-        } else {
-          // Demo user is already handled by the login function setting initial state
-          setLoading(false);
-        }
-      }
-    });
-    return () => unsubscribe();
-  }, []);
 
   // Removed redundant groups listener (now in useFinancialData)
 
@@ -492,8 +472,10 @@ export default function App() {
 
   // Emergency reset if stuck in loading
   const handleEmergencyLogout = async () => {
+    console.log("[Auth] Emergency Reset Triggered");
     await logOut();
-    window.location.reload();
+    // Force a full reload to clear any stale memory/redirect states
+    window.location.href = '/'; 
   };
 
   // Loading Guard: Stay in loading if we have a user but no profile yet (for non-demo users)
