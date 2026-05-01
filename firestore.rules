@@ -258,10 +258,9 @@ service cloud.firestore {
       allow list: if isSignedIn() && (request.auth.uid in resource.data.memberIds);
       
       allow create: if isSignedIn() && incoming().createdBy == request.auth.uid && incoming().ownerId == request.auth.uid;
-      allow update: if isGroupMember() && (
-        (isAdmin()) ||
+      allow update: if (isGroupMember() && (
         incoming().diff(existing()).affectedKeys().hasAny(['name', 'description', 'memberIds', 'maxBudget', 'budgetType', 'updatedAt'])
-      );
+      )) || isAdmin();
       allow delete: if isAdmin() || (isSignedIn() && resource.data.createdBy == request.auth.uid);
 
       match /expenses/{expenseId} {

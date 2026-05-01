@@ -11,7 +11,7 @@
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit",
     "test": "vitest run --exclude tests/firestore.rules.test.ts",
-    "test:rules": "npx firebase-tools emulators:exec --project demo-moneyflow --only firestore \"vitest run tests/firestore.rules.test.ts\""
+    "test:rules": "npx firebase-tools emulators:exec --project demo-moneyflow --only firestore \"vitest run tests/firestore.rules.test.ts --verbose\""
   },
   "dependencies": {
     "@google/genai": "^1.29.0",
