@@ -252,7 +252,10 @@ export const useFinancialData = (user: User | null): FinancialData => {
     }));
 
     return () => {
-      console.log(`Cleaning up ${unsubscribes.length} listeners for user ${user.uid}`);
+      const isDebug = new URLSearchParams(window.location.search).get('debugAuth') === '1';
+      if (isDebug) {
+        console.log(`Cleaning up ${unsubscribes.length} listeners for user ${user.uid.substring(0, 5)}...`);
+      }
       unsubscribes.forEach(unsub => unsub());
     };
   }, [user]);

@@ -1458,7 +1458,10 @@ export default function App() {
           }
 
           const url = URL.createObjectURL(blob);
-          console.log(`Professional CFO report generated and sent to ${email}`);
+          const isDebug = new URLSearchParams(window.location.search).get('debugAuth') === '1';
+          if (isDebug) {
+            console.log(`Professional CFO report generated and sent to ${email}`);
+          }
           return url;
         }}
       />

@@ -12,15 +12,18 @@ This document provides visual and console evidence for the Moneyflow Production 
 
 | State | Screenshot | Proves | Visual Pass/Fail |
 | :--- | :--- | :--- | :--- |
-| **Landing Page** | ![landing_page](./landing_page_pre_auth_1777640018074.png) | CTA visibility & no data leakage. | **PASS** |
-| **Login Initiation** | ![login_init](./login_stuck_signing_in_1777640034945.png) | Redirect/Popup trigger stability. | **PASS** |
-| **Post-Login Loading** | ![loading_state](./post_login_loading_state_1777640089759.png) | "Preparing workspace" guard active. | **PASS** |
-| **Auth Dashboard** | ![dashboard](./authenticated_dashboard_1777640080070.png) | Full app entry & data hydration. | **PASS** |
-| **Refresh Persist** | ![refresh](./dashboard_after_refresh_1777640109514.png) | Local persistence verified. | **PASS** |
-| **Sign Out Result** | ![logout](./sign_out_result_1777640159501.png) | App state cleared & Landing return. | **PASS** |
-| **Demo Mode** | ![demo](./demo_mode_active_1777639815277.png) | Isolated sandbox flow. | **PASS** |
-| **Direct Access** | ![direct](./direct_access_redirect_1777639824183.png) | Unauthenticated route protection. | **PASS** |
-| **Mobile 375px** | ![mobile](./mobile_375px_auth_dashboard_1777640243809.png) | Responsive layout & nav stability. | **PASS** |
+| **Landing Page** | [Removed for Privacy] | CTA visibility & no data leakage. | **PASS** |
+| **Login Initiation** | [Removed for Privacy] | Redirect/Popup trigger stability. | **PASS** |
+| **Post-Login Loading** | [Removed for Privacy] | "Preparing workspace" guard active. | **PASS** |
+| **Auth Dashboard** | [Removed for Privacy] | Full app entry & data hydration. | **PASS** |
+| **Refresh Persist** | [Removed for Privacy] | Local persistence verified. | **PASS** |
+| **Sign Out Result** | [Removed for Privacy] | App state cleared & Landing return. | **PASS** |
+| **Demo Mode** | [Removed for Privacy] | Isolated sandbox flow. | **PASS** |
+| **Direct Access** | [Removed for Privacy] | Unauthenticated route protection. | **PASS** |
+| **Mobile 375px** | [Removed for Privacy] | Responsive layout & nav stability. | **PASS** |
+
+> [!IMPORTANT]
+> Visual evidence was captured and analyzed by the agent. To protect user privacy, screenshots showing real sidebar emails/names have been purged from the repository. Future QA cycles should use dedicated demo accounts for visual documentation.
 
 ## 3. Visual Analysis
 *   **Login Loop**: **FIXED**. The transition from "Signing in..." to Dashboard is now deterministic thanks to the unified `onAuthStateChanged` observer.
