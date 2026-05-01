@@ -21,7 +21,7 @@ describe('Firestore Security Rules', () => {
 
   beforeAll(async () => {
     testEnv = await initializeTestEnvironment({
-      projectId: `moneyflow-rules-whitelist-${Date.now()}`,
+      projectId: 'demo-moneyflow',
       firestore: {
         rules: readFileSync(resolve(process.cwd(), 'firestore.rules'), 'utf8'),
         host: 'localhost',
