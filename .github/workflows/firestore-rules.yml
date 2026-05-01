@@ -35,7 +35,8 @@ jobs:
       - name: Run Firestore Rules Tests (Emulator)
         run: npm run test:rules
         env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }} # Only if needed for some reason, but should work without
+          GCLOUD_PROJECT: demo-moneyflow
+          FIREBASE_PROJECT: demo-moneyflow
 
       - name: Run App Unit Tests
         run: npm test
