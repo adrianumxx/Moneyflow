@@ -94,18 +94,19 @@ import IntegrationsHub from './components/IntegrationsHub';
 import GoalsView from './components/GoalsView';
 import BetaFeedbackButton from './components/BetaFeedbackButton';
 import { handleSyncCallback, listInstitutions } from './services/syncService';
+import { FEATURES, isFeatureVisible, getFeatureLabel } from './config/featureFlags';
 
 export default function App() {
   const { t, i18n } = useTranslation();
   const navigationItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { id: 'groups', icon: Users, label: 'Groups' },
-    { id: 'palantir', icon: Globe, label: 'Insights' },
-    { id: 'sync', icon: Link, label: 'Connect' },
+    { id: 'groups', icon: Users, label: 'Groups', visible: isFeatureVisible('ADVANCED_GROUPS') },
+    { id: 'palantir', icon: Globe, label: 'Insights', visible: isFeatureVisible('PALANTIR_LIVE'), beta: true },
+    { id: 'sync', icon: Link, label: 'Connect', visible: isFeatureVisible('BANK_SYNC') },
     { id: 'ledger', icon: History, label: 'Ledger' },
-    { id: 'forecast', icon: TrendingUp, label: 'Forecast' },
+    { id: 'forecast', icon: TrendingUp, label: 'Forecast', comingSoon: true },
     { id: 'settings', icon: SettingsIcon, label: 'Settings' }
-  ];
+  ].filter(item => item.visible !== false);
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -150,9 +151,9 @@ export default function App() {
   const triggerAdvice = () => {
     const messages = [
       "I've analyzed your latest flows: Your savings rate is up by 2% this week. Keep it up!",
-      "Live Data is active. Connect your primary bank to enable deep liquidity flows.",
-      "Pattern detected: Your housing expenses are stable. Would you like to see a 12-month forecast?",
-      "Opportunity: Based on your liquidity, you could reach your next goal 2 months faster with a minor adjustment."
+      "Sandbox Data is active. Connect your test bank to see how deep liquidity flows look.",
+      "Pattern detected: Your housing expenses are stable. Would you like to see a sample 12-month forecast?",
+      "Opportunity: Based on your sample liquidity, you could reach your next goal 2 months faster with a minor adjustment."
     ];
     setAdvisorState({
       visible: true,
@@ -180,6 +181,21 @@ export default function App() {
     }
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  // Route Guard for Private Beta
+  useEffect(() => {
+    const tabToFeatureMap: Record<string, keyof typeof FEATURES> = {
+      'palantir': 'PALANTIR_LIVE',
+      'sync': 'BANK_SYNC',
+      'forecast': 'CFO_REPORT', // Shared flag or specific one
+    };
+
+    const feature = tabToFeatureMap[activeTab];
+    if (feature && !isFeatureVisible(feature)) {
+      console.warn(`Direct access to ${activeTab} blocked. Feature is gated.`);
+      setActiveTab('dashboard');
+    }
+  }, [activeTab]);
 
   const toggleTheme = () => {
     setTheme(prev => prev === 'dark' ? 'light' : 'dark');
@@ -531,7 +547,7 @@ export default function App() {
             Your financial life, clearly organized.
           </h1>
           <p className="text-slate-500 dark:text-slate-400 mb-12 leading-relaxed text-base font-medium px-4">
-            Moneyflow helps you understand your accounts, spending, goals and financial signals in one private workspace.
+            Moneyflow helps you understand your accounts, spending, goals and AI-assisted insights in one private workspace.
           </p>
 
           <div className="space-y-6">
@@ -694,8 +710,8 @@ export default function App() {
                 <span>Try demo</span>
               </button>
               <p className="mt-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] text-center leading-relaxed">
-                Read-only banking connection. No money movement. Disconnect anytime.<br />
-                <span className="opacity-60">Private beta access</span>
+                Informational read-only view. No money movement.<br />
+                <span className="opacity-60">Private beta access • Not financial advice</span>
               </p>
             </div>
           </div>
@@ -761,14 +777,23 @@ export default function App() {
               <button 
                 key={item.id}
                 onClick={() => {
+                  if ((item as any).comingSoon) return;
                   setActiveTab(item.id as any);
                   setSelectedGroupId(null);
                   setIsSidebarOpen(false);
                 }}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 ${activeTab === item.id ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 ${(item as any).comingSoon ? 'opacity-40 cursor-not-allowed' : activeTab === item.id ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
               >
-                <item.icon className="w-5 h-5" />
-                <span className="font-bold">{t(item.label)}</span>
+                <div className="flex items-center gap-3">
+                  <item.icon className="w-5 h-5" />
+                  <span className="font-bold">{t(item.label)}</span>
+                </div>
+                {(item as any).beta && (
+                  <span className="text-[8px] font-black bg-indigo-500/10 text-indigo-400 px-1.5 py-0.5 rounded border border-indigo-500/20">BETA</span>
+                )}
+                {(item as any).comingSoon && (
+                  <span className="text-[8px] font-black bg-slate-500/10 text-slate-400 px-1.5 py-0.5 rounded border border-slate-500/20">SOON</span>
+                )}
               </button>
             ))}
           </nav>
@@ -1169,6 +1194,8 @@ export default function App() {
                   transactions,
                   bankAccounts,
                   goals,
+                  insights,
+                  groups,
                   connectedInstitutions,
                   connectedAccounts,
                   cryptoWallets
@@ -1193,94 +1220,43 @@ export default function App() {
           <div className="flex items-center justify-around max-w-md mx-auto">
             <button
               onClick={() => {
-                setActiveTab('groups');
+                setActiveTab('dashboard');
                 setSelectedGroupId(null);
                 setIsSidebarOpen(false);
               }}
               className={`flex-1 flex flex-col items-center gap-1.5 py-2 transition-all ${
-                activeTab === 'groups' && !selectedGroupId
+                activeTab === 'dashboard' && !selectedGroupId
                   ? 'text-indigo-600 dark:text-indigo-400 scale-110' 
                   : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
               }`}
             >
-              <Users className={`w-5 h-5 ${(activeTab === 'groups' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
-              <span className="text-xs font-black uppercase tracking-tight">Groups</span>
+              <LayoutDashboard className={`w-5 h-5 ${(activeTab === 'dashboard' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
+              <span className="text-[10px] font-black uppercase tracking-tight">Home</span>
             </button>
-            <button
-              onClick={() => {
-                setActiveTab('wealth');
-                setSelectedGroupId(null);
-                setIsSidebarOpen(false);
-              }}
-              className={`flex-1 flex flex-col items-center gap-1.5 py-2 transition-all ${
-                activeTab === 'wealth' && !selectedGroupId
-                  ? 'text-indigo-600 dark:text-indigo-400 scale-110' 
-                  : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
-              }`}
-            >
-              <Briefcase className={`w-5 h-5 ${(activeTab === 'wealth' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
-              <span className="text-xs font-black uppercase tracking-tight">Wealth</span>
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('palantir');
-                setSelectedGroupId(null);
-                setIsSidebarOpen(false);
-              }}
-              className={`flex-1 flex flex-col items-center gap-1.5 py-2 transition-all ${
-                activeTab === 'palantir' && !selectedGroupId
-                  ? 'text-indigo-600 dark:text-indigo-400 scale-110' 
-                  : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
-              }`}
-            >
-              <Globe className={`w-5 h-5 ${(activeTab === 'palantir' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
-              <span className="text-xs font-black uppercase tracking-tight">Insights</span>
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('sync');
-                setSelectedGroupId(null);
-                setIsSidebarOpen(false);
-              }}
-              className={`flex-1 flex flex-col items-center gap-1.5 py-2 transition-all ${
-                activeTab === 'sync' && !selectedGroupId
-                  ? 'text-indigo-600 dark:text-indigo-400 scale-110' 
-                  : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
-              }`}
-            >
-              <Link className={`w-5 h-5 ${(activeTab === 'sync' && !selectedGroupId) ? 'stroke-indigo-500' : ''}`} />
-              <span className="text-xs font-black uppercase tracking-tight">Connect</span>
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('ledger');
-                setSelectedGroupId(null);
-                setIsSidebarOpen(false);
-              }}
-              className={`flex-1 flex flex-col items-center gap-1.5 py-2 transition-all ${
-                activeTab === 'ledger' && !selectedGroupId
-                  ? 'text-indigo-600 dark:text-indigo-400 scale-110' 
-                  : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
-              }`}
-            >
-              <Receipt className={`w-5 h-5 ${(activeTab === 'ledger' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
-              <span className="text-xs font-black uppercase tracking-tight">Ledger</span>
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('goals');
-                setSelectedGroupId(null);
-                setIsSidebarOpen(false);
-              }}
-              className={`flex-1 flex flex-col items-center gap-1.5 py-2 transition-all ${
-                activeTab === 'goals' && !selectedGroupId
-                  ? 'text-indigo-600 dark:text-indigo-400 scale-110' 
-                  : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
-              }`}
-            >
-              <Target className={`w-5 h-5 ${(activeTab === 'goals' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
-              <span className="text-xs font-black uppercase tracking-tight">Goals</span>
-            </button>
+
+            {navigationItems.map((item) => {
+              if (item.id === 'dashboard' || item.id === 'settings') return null;
+              const Icon = item.icon;
+              const isActive = activeTab === item.id && !selectedGroupId;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setActiveTab(item.id as any);
+                    setSelectedGroupId(null);
+                    setIsSidebarOpen(false);
+                  }}
+                  className={`flex-1 flex flex-col items-center gap-1.5 py-2 transition-all ${
+                    isActive
+                      ? 'text-indigo-600 dark:text-indigo-400 scale-110' 
+                      : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 ${isActive ? 'fill-indigo-500/10' : ''}`} />
+                  <span className="text-[10px] font-black uppercase tracking-tight">{item.label}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </main>
@@ -1347,7 +1323,7 @@ export default function App() {
           // Header
           doc.setFontSize(22);
           doc.setTextColor(30, 41, 59);
-          doc.text('STRATEGIC FINANCIAL AUDIT 2024', 14, 22);
+          doc.text('STRATEGIC FINANCIAL AUDIT (DEMO)', 14, 22);
           
           doc.setFontSize(10);
           doc.setTextColor(100, 116, 139);

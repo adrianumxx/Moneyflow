@@ -18,6 +18,8 @@ interface PreferencesSettingsProps {
     transactions: any[];
     bankAccounts: any[];
     goals: any[];
+    insights: any[];
+    groups: any[];
     connectedInstitutions: any[];
     connectedAccounts: any[];
     cryptoWallets: any[];
@@ -150,23 +152,23 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
 
         <div className="grid gap-6">
           <div className="p-6 bg-slate-50 dark:bg-zinc-950/50 rounded-3xl border border-slate-100 dark:border-zinc-800">
-            <h3 className="text-xs font-black uppercase tracking-widest text-indigo-500 mb-3">AI Context Usage</h3>
+            <h3 className="text-xs font-black uppercase tracking-widest text-indigo-500 mb-3">AI Data Usage & Privacy</h3>
             <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-              Our intelligence engine utilizes your aggregated financial context (assets, liabilities, and transactions) to generate insights and risk models. Your data is analyzed securely to ensure privacy-first intelligence.
+              Moneyflow AI utilizes a sanitized subset of your financial data (redacted of PII like names, IDs, or account numbers) to generate insights. No raw credentials or banking tokens are ever shared with AI models. You can review our <button onClick={() => setIsLegalModalOpen(true)} className="text-indigo-600 dark:text-indigo-400 underline decoration-indigo-500/30 font-bold">Privacy Policy</button> for more details.
             </p>
           </div>
 
           <div className="p-6 bg-slate-50 dark:bg-zinc-950/50 rounded-3xl border border-slate-100 dark:border-zinc-800">
-            <h3 className="text-xs font-black uppercase tracking-widest text-amber-500 mb-3">Informational Boundaries</h3>
+            <h3 className="text-xs font-black uppercase tracking-widest text-amber-500 mb-3">Beta Disclaimers</h3>
             <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
-              All AI-generated outputs, including growth forecasts and probability vectors, are for informational and educational purposes only. These do not constitute financial, legal, or tax advice. AI models may occasionally produce inaccuracies or incomplete estimates based on fluctuating market data.
+              Insights and forecasts are for informational purposes only and do not constitute professional financial advice. During the private beta, data sync may be based on sandbox/demo environments and should be manually verified.
             </p>
           </div>
 
           <div className="p-6 bg-slate-50 dark:bg-zinc-950/50 rounded-3xl border border-slate-100 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-6">
             <div className="space-y-1">
               <h3 className="text-xs font-black uppercase tracking-widest text-emerald-500">Data Portability</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Download your personal financial archive for your own records.</p>
+              <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Download your personal data archive in JSON format.</p>
             </div>
             <button 
               onClick={handleExportData}
@@ -176,17 +178,29 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
             </button>
           </div>
 
-          <div className="p-6 bg-rose-500/5 dark:bg-rose-500/5 rounded-3xl border border-rose-500/10 dark:border-rose-500/20 flex flex-col sm:flex-row items-center justify-between gap-6">
-            <div className="space-y-1">
-              <h3 className="text-xs font-black uppercase tracking-widest text-rose-500">Data Erasure</h3>
-              <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Permanently remove all financial records from your profile.</p>
+          <div className="p-6 bg-rose-500/5 dark:bg-rose-500/5 rounded-3xl border border-rose-500/10 dark:border-rose-500/20">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-4">
+              <div className="space-y-1">
+                <h3 className="text-xs font-black uppercase tracking-widest text-rose-500">Delete Account Data</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">Permanently remove your financial records and profile from Moneyflow.</p>
+              </div>
+              <button 
+                onClick={() => setIsPurgeModalOpen(true)}
+                className="px-6 py-3 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" /> Delete My Data
+              </button>
             </div>
-            <button 
-              onClick={() => setIsPurgeModalOpen(true)}
-              className="px-6 py-3 bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-500/20 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" /> Delete Financial Data
-            </button>
+            <div className="space-y-3 text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-medium">
+              <p>
+                <span className="font-bold text-slate-700 dark:text-slate-200 uppercase tracking-tighter mr-1">Shared Groups:</span> 
+                In shared groups, your personal profile is removed or anonymized. Some historical group expense records may remain so other members’ balances stay accurate.
+              </p>
+              <p>
+                <span className="font-bold text-slate-700 dark:text-slate-200 uppercase tracking-tighter mr-1">Billing & Stripe:</span> 
+                This removes your personal Moneyflow data. Some billing records are managed by Stripe and may be retained where required for payment, tax, fraud prevention, or legal obligations.
+              </p>
+            </div>
           </div>
 
           <div className="p-6 bg-slate-50 dark:bg-zinc-950/50 rounded-3xl border border-slate-100 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-6">
@@ -283,9 +297,16 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
                 </button>
               </div>
 
-              <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase italic mb-4">Delete All Data</h2>
+              <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-white uppercase italic mb-4">Delete Account Data</h2>
               <div className="space-y-4 text-sm text-slate-500 font-medium leading-relaxed mb-6">
-                <p>This action is <span className="text-rose-500 font-bold">irreversible</span>. Once initiated, all indexed assets, transactions, and liability records will be permanently erased from your profile.</p>
+                <p>This action is <span className="text-rose-500 font-bold uppercase italic tracking-tighter">permanent</span>. All personal assets, transactions, and liability records will be removed from your Moneyflow profile.</p>
+                
+                <div className="p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/10 space-y-3">
+                  <p className="text-[10px] leading-relaxed">
+                    <span className="font-bold text-slate-700 dark:text-slate-200 uppercase tracking-tighter mr-1">Retention Note:</span> 
+                    Shared group records are anonymized but remain for accounting integrity. Billing records are managed by Stripe and may be retained where legally required for tax or fraud prevention.
+                  </p>
+                </div>
                 
                 {!dryRunData && !isDryRunLoading && (
                   <button 
@@ -311,7 +332,7 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                      <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Erasure Audit Preview</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Account Data Audit</p>
                     </div>
                     
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[10px] font-bold">

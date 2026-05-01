@@ -13,6 +13,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { Asset, Transaction, BankAccount, ConnectedAccount, FinancialGoal, Liability } from '../types';
 import DataCompletenessScore from './DataCompletenessScore';
+import { isFeatureVisible } from '../config/featureFlags';
 
 interface GuidedSetupProps {
   assets: Asset[];
@@ -48,7 +49,7 @@ export default function GuidedSetupChecklist({
     {
       id: 'bank',
       title: 'Connect a bank',
-      description: 'Enable real-time sync for precise, automatic transaction tracking. Cuts manual work by 90%.',
+      description: 'Enable sandbox sync to preview automatic transaction tracking. Reduces manual entry during your trial.',
       isDone: bankAccounts.length > 0 || connectedAccounts.length > 0,
       icon: Building2,
       action: 'NAV_SYNC',
@@ -99,7 +100,9 @@ export default function GuidedSetupChecklist({
 
   const effectiveCollapsed = isMostlyComplete || isCollapsed;
 
-  const nextAction = steps.find(s => !s.isDone);
+  const nextAction = steps
+    .filter(s => s.id !== 'insights' || isFeatureVisible('PALANTIR_LIVE'))
+    .find(s => !s.isDone);
 
   return (
     <motion.div 
@@ -158,7 +161,9 @@ export default function GuidedSetupChecklist({
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {steps.map((step) => (
+              {steps
+                .filter(s => s.id !== 'insights' || isFeatureVisible('PALANTIR_LIVE'))
+                .map((step) => (
                 <div 
                   key={step.id}
                   className={`p-5 rounded-3xl border transition-all ${

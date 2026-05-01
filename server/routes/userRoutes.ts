@@ -24,7 +24,7 @@ router.post('/purge/dry-run', async (req: AuthenticatedRequest, res) => {
       'assets', 'liabilities', 'goals', 'transactions', 
       'bankAccounts', 'insights', 'connectedInstitutions', 
       'connectedAccounts', 'cryptoWallets', 'investmentAccounts', 
-      'palantir_memory'
+      'palantir_memory', 'income'
     ];
 
     const counts: Record<string, number> = {};
@@ -72,7 +72,7 @@ router.post('/purge', async (req: AuthenticatedRequest, res) => {
       'assets', 'liabilities', 'goals', 'transactions', 
       'bankAccounts', 'insights', 'connectedInstitutions', 
       'connectedAccounts', 'cryptoWallets', 'investmentAccounts', 
-      'palantir_memory'
+      'palantir_memory', 'income'
     ];
 
     let deletedDocsCount = 0;
@@ -84,7 +84,6 @@ router.post('/purge', async (req: AuthenticatedRequest, res) => {
       if (!snap.empty) {
         deletedDocsCount += snap.size;
         deletedCollections.push(col);
-        // Sequential delete for safety in beta
         const batch = getDb().batch();
         snap.docs.forEach(doc => batch.delete(doc.ref));
         await batch.commit();
@@ -97,16 +96,36 @@ router.post('/purge', async (req: AuthenticatedRequest, res) => {
     
     for (const groupDoc of groupsSnap.docs) {
       const groupData = groupDoc.data();
-      const isOwner = groupData.ownerId === userId;
+      const isOwner = groupData.createdBy === userId || groupData.ownerId === userId;
       const otherMembers = groupData.memberIds.filter((id: string) => id !== userId);
 
-      if (isOwner && otherMembers.length === 0) {
-        // Sole owner, delete group and its subcollections (expenses)
-        // Note: Recursive delete would be better, but for now we delete the group doc
-        await groupDoc.ref.delete();
+      if (isOwner) {
+        // Owner deleting: Wipe expenses subcollection first
+        const expensesSnap = await groupDoc.ref.collection('expenses').get();
+        if (!expensesSnap.empty) {
+          const expBatch = getDb().batch();
+          expensesSnap.docs.forEach(d => expBatch.delete(d.ref));
+          await expBatch.commit();
+          deletedDocsCount += expensesSnap.size;
+        }
+
+        if (otherMembers.length === 0) {
+          // Sole owner, delete group doc
+          await groupDoc.ref.delete();
+        } else {
+          // Group has other members, but owner is leaving. 
+          // Transfer ownership to first other member or mark as orphaned.
+          // For Beta: We remove the user and mark as orphaned-owner.
+          await groupDoc.ref.update({
+            memberIds: otherMembers,
+            ownerId: otherMembers[0], // Transfer to next member
+            createdBy: groupData.createdBy === userId ? 'deleted_user' : groupData.createdBy,
+            updatedAt: new Date()
+          });
+        }
         groupsUpdatedCount++;
       } else {
-        // Just a member or owner of shared group, remove from memberIds
+        // Just a member, remove from memberIds
         await groupDoc.ref.update({
           memberIds: otherMembers,
           updatedAt: new Date()

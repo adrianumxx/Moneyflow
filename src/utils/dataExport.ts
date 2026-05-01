@@ -15,6 +15,8 @@ export const prepareExportBundle = (exportData: any) => {
     transactions: exportData.transactions,
     bankAccounts: exportData.bankAccounts,
     goals: exportData.goals,
+    insights: exportData.insights,
+    groups: exportData.groups?.filter((g: any) => g.ownerId === exportData.userProfile?.uid || g.createdBy === exportData.userProfile?.uid),
     connectedInstitutions: exportData.connectedInstitutions,
     connectedAccounts: exportData.connectedAccounts,
     cryptoWallets: exportData.cryptoWallets
@@ -24,7 +26,7 @@ export const prepareExportBundle = (exportData: any) => {
   const SENSITIVE_KEYS = [
     'accessToken', 'refreshToken', 'apiKey', 'privateKey', 
     'seedPhrase', 'credentials', 'password', 'token', 
-    'stripeCustomerId', 'sessionToken', 'secret'
+    'stripeCustomerId', 'sessionToken', 'secret', 'clientSecret'
   ];
 
   const sanitize = (obj: any): any => {
@@ -32,8 +34,9 @@ export const prepareExportBundle = (exportData: any) => {
     if (typeof obj !== 'object') return obj;
     
     // Handle Timestamps or Dates
-    if (obj instanceof Date || (obj.toDate && typeof obj.toDate === 'function')) {
-      return obj;
+    if (obj instanceof Date) return obj.toISOString();
+    if (obj.toDate && typeof obj.toDate === 'function') {
+      return obj.toDate().toISOString();
     }
 
     if (Array.isArray(obj)) return obj.map(sanitize);

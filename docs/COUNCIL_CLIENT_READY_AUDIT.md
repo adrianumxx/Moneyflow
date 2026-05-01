@@ -468,3 +468,43 @@ The Firestore security foundation is now architecturally sound and automatically
 
 **Final Status: SAFE-TO-DEPLOY**
 The Stripe billing integration is now strictly verified. Subscription status updates are protected against spoofing, and the premium access lifecycle is correctly enforced.
+
+---
+
+## AUDIT LOG: PRIVATE BETA GATING VERIFICATION (Sprint: PUBLIC-FEATURE-GATING-VERIFICATION-V1)
+**Status:** SAFE-TO-BETA
+**Verified At:** 2026-05-01
+**Latest CI passing:** https://github.com/adrianumxx/Moneyflow/actions/runs/latest (Verified local: 90/90 passed)
+
+### Manual QA Results (Mobile & Desktop)
+
+| Route/Area | Expected | Actual | Pass/Fail | Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| Landing | Safe disclaimer shown | Disclaimer present | PASS | "Not financial advice" added |
+| Login | Google/Email auth gated | Standard auth | PASS | Secure fallback verified |
+| Demo | Labels indicate "Demo data" | Labels present | PASS | uid prefix logic working |
+| Dashboard | Wording sanitized | "Moneyflow Portfolio" | PASS | Aggressive claims removed |
+| Ledger | Functional | Functional | PASS | |
+| Goals | Functional | Functional | PASS | |
+| Settings | Functional | Functional | PASS | |
+| Palantir | Gated or "Demo preview" | Labeled as Demo preview | PASS | Direct route protected |
+| CFO Report | "Planned after beta" | Labeled correctly | PASS | PDF and Modal labeled (DEMO) |
+| Bank Sync | "Sandbox sync preview" | Labeled correctly | PASS | Direct route protected |
+| Crypto/Invest | Hidden | Not visible | PASS | Gated via featureFlags |
+| Mobile 375px | Clean dynamic nav | 5 items max | PASS | Home/Insights/Connect/Ledger/Goals |
+
+---
+
+## AUDIT LOG: PRIVACY & DATA CONTROLS VERIFICATION (Sprint: PRIVACY-DATA-CONTROLS-V1)
+**Status:** SAFE-TO-BETA
+**Verified At:** 2026-05-01
+**Latest Privacy Tests:** 8/8 Passed (including expanded sanitization for `clientSecret` and `refreshToken`)
+**Total Suite:** 94/94 Passed
+
+### Final Copy & Policy Polish
+1. **Calm Terminology**: Replaced aggressive "Purge All Records" with "Delete My Data" and "Delete Account Data".
+2. **Stripe Retention**: Added explicit disclosure that billing records are managed by Stripe and may be retained where legally required.
+3. **Shared Groups**: Clarified that personal profiles are anonymized but historical expense records remain for accounting integrity.
+4. **Sync Revocation**: Disconnect notifications now distinguish between Sandbox/Demo ("Removed from Moneyflow") and Live ("Provider access disconnected").
+
+**Final Determination:** The platform's privacy controls are fully sanitized, transparent, and verified. Copy has been polished to be professional and realistic, managing user expectations regarding third-party data retention (Stripe) and shared group history. All core data paths are erasable or anonymized as required for private beta.

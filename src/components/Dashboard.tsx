@@ -422,7 +422,7 @@ export default function Dashboard({
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 sm:gap-8">
         <div>
           <div className="flex items-center gap-2 mb-3 sm:mb-4">
-             <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">Moneyflow Overview</span>
+             <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 rounded-full text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em]">Moneyflow Portfolio</span>
           </div>
           <h1 className="text-4xl sm:text-5xl md:text-6xl font-black tracking-tighter text-slate-800 dark:text-white mb-2 sm:mb-4 font-display leading-none">
             Welcome, <span className="text-indigo-600 dark:text-indigo-400">{user.displayName?.split(' ')[0]}</span>
@@ -671,7 +671,7 @@ export default function Dashboard({
                   <div className="p-3 bg-white/10 rounded-xl">
                     <Activity className="w-5 h-5 text-indigo-400" />
                   </div>
-                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-300">Moneyflow AI</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-300">Insight Suggestion</span>
                 </div>
                 <h4 className="text-xl font-black font-display tracking-tight mb-2">Savings Opportunity</h4>
                 <p className="text-slate-400 text-xs leading-relaxed mb-6">Optimization ready for your household group. Potential {formatMoney(420, userProfile?.baseCurrency)} monthly improvement detected.</p>

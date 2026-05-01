@@ -29,7 +29,7 @@ export default function GlobalPulse() {
           <div className="relative">
             <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
           </div>
-          <span className="text-[8px] font-black uppercase tracking-[0.2em] text-indigo-500">Live Data</span>
+          <span className="text-[8px] font-black uppercase tracking-[0.2em] text-indigo-500">System Status</span>
         </div>
         
         <div className="h-4 w-[1px] bg-indigo-500/20" />
@@ -51,7 +51,7 @@ export default function GlobalPulse() {
         <div className="flex items-center gap-4 shrink-0">
           <div className="flex items-center gap-1.5">
             <Activity className="w-3 h-3 text-emerald-500" />
-            <span className="text-[8px] font-black text-emerald-500 uppercase">Live Sync</span>
+            <span className="text-[8px] font-black text-emerald-500 uppercase">Private Sync</span>
           </div>
           <div className="flex items-center gap-1.5">
             <ShieldCheck className="w-3 h-3 text-indigo-400" />

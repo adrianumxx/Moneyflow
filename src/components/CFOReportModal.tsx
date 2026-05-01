@@ -92,7 +92,7 @@ export default function CFOReportModal({ isOpen, onClose, onSend }: CFOReportMod
                   {downloadUrl && (
                     <a 
                       href={downloadUrl} 
-                      download="Financial_Report_2024.pdf"
+                      download="Demo_Financial_Report.pdf"
                       className="inline-flex items-center gap-3 px-8 py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-950 rounded-2xl text-sm font-black shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all"
                     >
                       <Download className="w-5 h-5" /> Download Report
@@ -109,8 +109,8 @@ export default function CFOReportModal({ isOpen, onClose, onSend }: CFOReportMod
               ) : (
                 <>
                   <div className="space-y-4 mb-10">
-                    <h2 className="text-4xl font-black tracking-tighter text-slate-800 dark:text-white font-display leading-[0.9]">Financial Report</h2>
-                    <p className="text-slate-500 font-medium text-lg">Detailed summary of your assets, debts, and projected growth.</p>
+                    <h2 className="text-4xl font-black tracking-tighter text-slate-800 dark:text-white font-display leading-[0.9]">Demo Financial Report</h2>
+                    <p className="text-slate-500 font-medium text-lg">Sample analysis for demonstration purposes during the private beta.</p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 mb-10">

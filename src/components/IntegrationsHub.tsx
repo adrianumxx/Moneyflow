@@ -103,11 +103,14 @@ export default function IntegrationsHub({ userId, userProfile, connectedInstitut
     }
   };
 
-  const handleDisconnect = async (institutionId: string) => {
+  const handleDisconnect = async (institutionId: string, isDemoOrSandbox: boolean = false) => {
     try {
       const response = await disconnectInstitution(institutionId);
       if (response.success) {
-        showNotification('Connection Revoked', 'Access disconnected. Historical records preserved.', 'success');
+        const message = isDemoOrSandbox 
+          ? 'Sandbox connection removed from Moneyflow. No live data was affected.'
+          : 'Live provider access disconnected. Historical imported records preserved.';
+        showNotification('Connection Revoked', message, 'success');
       } else {
         throw new Error(response.error || 'Revocation failed');
       }
@@ -179,9 +182,9 @@ export default function IntegrationsHub({ userId, userProfile, connectedInstitut
                       </div>
                       <div className="flex gap-1">
                         <button 
-                          onClick={() => handleDisconnect(inst.id)}
+                          onClick={() => handleDisconnect(inst.id, !!inst.isDemo)}
                           className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all"
-                          title="Disconnect"
+                          title={inst.isDemo ? "Remove Sandbox Sync" : "Disconnect Provider"}
                         >
                           <X className="w-4 h-4" />
                         </button>

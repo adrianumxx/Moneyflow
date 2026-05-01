@@ -35,6 +35,7 @@ import {
   calculateMonthlyExpenses,
   calculateCashFlow
 } from '../utils/financialCalculations';
+import { FEATURES, isFeatureVisible } from '../config/featureFlags';
 
 interface WealthOverviewProps {
   assets: Asset[];
@@ -149,21 +150,28 @@ export default function WealthOverview({
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 px-2">
         <div className="flex flex-col gap-1">
           <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Your Financial Overview</h2>
-          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Strategic Portfolio Insights</p>
+          <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Portfolio Summary</p>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
            <div className="flex-1 md:flex-none px-5 py-2.5 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 flex items-center justify-center md:justify-start gap-3 shadow-sm">
              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Live Status: Secure</span>
+             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Sandbox sync preview</span>
            </div>
            
-           <button 
-             onClick={handleFinancialReport}
-             className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-2 flex-shrink-0"
-           >
-             <FileText className="w-4 h-4" />
-             {t('Get Report')}
-           </button>
+           {isFeatureVisible('CFO_REPORT') ? (
+             <button 
+               onClick={handleFinancialReport}
+               className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-2 flex-shrink-0"
+             >
+               <FileText className="w-4 h-4" />
+               {t('Get Report')}
+             </button>
+           ) : (
+             <div className="px-6 py-3 bg-slate-100 dark:bg-white/5 text-slate-400 rounded-2xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 border border-slate-200 dark:border-white/10">
+               <FileText className="w-4 h-4" />
+               {t('Planned after beta')}
+             </div>
+           )}
         </div>
       </div>
 
@@ -245,14 +253,14 @@ export default function WealthOverview({
                   }`} />
                   <span className="text-[9px] font-black uppercase tracking-widest text-white/70">
                     {userProfile?.uid?.startsWith('demo-') ? 'Demo Data' :
-                     bankAccounts.length > 0 ? 'Live Data' : 'Manual Data'}
+                     bankAccounts.length > 0 ? 'Connected' : 'Manual Entry'}
                   </span>
                 </div>
 
                 <div className="h-10 w-[1px] bg-white/10 mx-2 hidden sm:block" />
                 <div className="hidden sm:flex flex-col">
-                  <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Live Sync</span>
-                  <span className="text-white text-[10px] font-bold">Active</span>
+                  <span className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Privacy</span>
+                  <span className="text-white text-[10px] font-bold">Protected</span>
                 </div>
               </div>
             </div>

@@ -226,7 +226,7 @@ export default function Palantir({
       user_data: 'Manual data',
       estimated_data: 'Estimated insight',
       fallback_data: 'Fallback estimate',
-      live_search: 'Live intelligence',
+      live_search: 'Market signal',
       model_inference: 'AI estimate',
       cached: 'Cached',
       fallback: 'Fallback'
@@ -320,8 +320,11 @@ export default function Palantir({
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            Intelligence Engine Active • {isLoading ? "Analyzing global news & trends..." : "Live Market Signals"}
+            Insights System Active • {isLoading ? "Analyzing global news & trends..." : "Market Insights"}
           </p>
+          <div className="mt-1 px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full inline-block">
+            <span className="text-[10px] font-black uppercase tracking-widest text-amber-500">Demo preview — sample insights, not live data</span>
+          </div>
           
           <div className="flex items-center gap-2 mt-2">
             {data?.dataQuality && (

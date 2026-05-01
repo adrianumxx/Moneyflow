@@ -17,8 +17,13 @@ vi.mock('../../server/firebaseAdmin', () => ({
       size: 1,
       docs: [{ 
         id: 'test-id', 
-        data: () => ({ memberIds: ['test-user-123'], ownerId: 'test-user-123' }),
-        ref: { delete: vi.fn().mockResolvedValue({}), update: vi.fn().mockResolvedValue({}) }
+        data: () => ({ memberIds: ['test-user-123'], ownerId: 'test-user-123', createdBy: 'test-user-123' }),
+        ref: { 
+          delete: vi.fn().mockResolvedValue({}), 
+          update: vi.fn().mockResolvedValue({}),
+          collection: vi.fn().mockReturnThis(),
+          get: vi.fn().mockResolvedValue({ empty: true, size: 0, docs: [] })
+        }
       }]
     }),
     delete: vi.fn().mockResolvedValue({}),
