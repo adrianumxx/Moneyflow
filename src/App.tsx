@@ -7,7 +7,10 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'motion/react';
 import { Menu, LayoutDashboard, Globe, Target, Users, History, Settings as SettingsIcon } from 'lucide-react';
-import { db, logOut, Timestamp, addDoc, collection, serverTimestamp } from './firebase';
+
+// Official Firebase Imports
+import { db, logOut } from './firebase';
+import { Timestamp, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 // Context & Hooks
 import { useAuth } from './context/AuthContext';
@@ -46,7 +49,7 @@ import CFOReportModal from './components/CFOReportModal';
 
 // Utils & Types
 import { handleSyncCallback } from './services/syncService';
-import { Transaction, BankAccount } from './types';
+import { Transaction } from './types';
 
 export default function App() {
   const { t } = useTranslation();
@@ -162,7 +165,13 @@ export default function App() {
         ) : (
           <motion.div key="auth" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
             <AuthPage 
-              onGoogleSignIn={handleGoogleSignIn} onEmailAuth={handleEmailAuth}
+              onGoogleSignIn={signInWithGoogle} 
+              onEmailAuth={async (e) => {
+                e.preventDefault();
+                setLoginError('');
+                setIsLoggingIn(true);
+                try { await signInWithEmail(authEmail, authPassword, isSignUp); } catch(err: any) { setLoginError(err.message); } finally { setIsLoggingIn(false); }
+              }}
               authEmail={authEmail} setAuthEmail={setAuthEmail}
               authPassword={authPassword} setAuthPassword={setAuthPassword}
               isEmailView={isEmailView} setIsEmailView={setIsEmailView}
