@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { onAuthStateChanged, User, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
-import { auth, db, signUpWithEmail, logInWithEmail, signIn, signInRedirect, getRedirectResult, logOut } from '../firebase';
+import { doc, onSnapshot, serverTimestamp, setDoc, getDoc } from 'firebase/firestore';
+import { auth, db, signUpWithEmail, logInWithEmail, signIn, signInRedirect, logOut } from '../firebase';
 import { UserProfile } from '../types';
 
 interface AuthContextType {
@@ -22,6 +22,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, async (currentUser) => {
+      // 1. Update basic user state
       setUser(currentUser);
       
       if (!currentUser) {
@@ -30,40 +31,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+      // 2. Handle Demo Users
       if (currentUser.uid.startsWith('demo-')) {
         setLoading(false);
         return;
       }
 
-      // Listen to profile changes with improved stability
+      // 3. Robust Profile Sync
       const profileRef = doc(db, 'users', currentUser.uid);
-      const unsubscribeProfile = onSnapshot(profileRef, async (docSnap) => {
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setUserProfile({ uid: docSnap.id, ...data } as UserProfile);
-          setLoading(false);
+      
+      // Try a direct fetch first for faster initial load
+      try {
+        const snap = await getDoc(profileRef);
+        if (snap.exists()) {
+          setUserProfile({ uid: snap.id, ...snap.data() } as UserProfile);
         } else {
-          // Confirm missing before creating to avoid race conditions
-          try {
-            const initialProfile = {
-              uid: currentUser.uid,
-              displayName: currentUser.displayName || 'Wealth Explorer',
-              email: currentUser.email,
-              photoURL: currentUser.photoURL,
-              createdAt: serverTimestamp(),
-              updatedAt: serverTimestamp(),
-              hasCompletedOnboarding: false,
-              plan: 'free'
-            };
-            await setDoc(profileRef, initialProfile, { merge: true });
-            // onSnapshot will pick up the newly created document
-          } catch (e) {
-            console.error("[AuthContext] Profile initialization failed:", e);
-            setLoading(false);
-          }
+          // Atomic creation if missing
+          const initialData = {
+            uid: currentUser.uid,
+            displayName: currentUser.displayName || 'Wealth Explorer',
+            email: currentUser.email,
+            photoURL: currentUser.photoURL,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+            hasCompletedOnboarding: false,
+            plan: 'free'
+          };
+          await setDoc(profileRef, initialData, { merge: true });
+          setUserProfile(initialData as any);
         }
+      } catch (e) {
+        console.error("[AuthContext] Initial fetch error:", e);
+      }
+
+      // 4. Start long-lived listener
+      const unsubscribeProfile = onSnapshot(profileRef, (docSnap) => {
+        if (docSnap.exists()) {
+          setUserProfile({ uid: docSnap.id, ...docSnap.data() } as UserProfile);
+        }
+        setLoading(false);
       }, (error) => {
-        console.error("[AuthContext] Profile stream error:", error);
+        console.error("[AuthContext] Profile sync error:", error);
         setLoading(false);
       });
 
@@ -74,24 +82,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signInWithGoogle = async () => {
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
     await setPersistence(auth, browserLocalPersistence);
-    if (!isLocal || isMobile) {
-      await signInRedirect();
-    } else {
-      await signIn();
-    }
+    const isLocal = window.location.hostname === 'localhost';
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    if (!isLocal || isMobile) await signInRedirect();
+    else await signIn();
   };
 
   const signInWithEmail = async (email: string, pass: string, isSignUp: boolean) => {
     await setPersistence(auth, browserLocalPersistence);
-    if (isSignUp) {
-      await signUpWithEmail(email, pass);
-    } else {
-      await logInWithEmail(email, pass);
-    }
+    if (isSignUp) await signUpWithEmail(email, pass);
+    else await logInWithEmail(email, pass);
   };
 
   const signOut = async () => {
@@ -100,14 +101,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      userProfile, 
-      loading, 
-      signInWithGoogle, 
-      signInWithEmail, 
-      signOut 
-    }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, signInWithGoogle, signInWithEmail, signOut }}>
       {children}
     </AuthContext.Provider>
   );
@@ -115,8 +109,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (context === undefined) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };
