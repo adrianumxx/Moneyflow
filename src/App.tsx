@@ -8,6 +8,10 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'motion/react';
 import { Menu, Globe, LayoutDashboard } from 'lucide-react';
 
+// Official Firebase Imports
+import { db, logOut } from './firebase';
+import { Timestamp, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+
 // Context & Hooks
 import { useAuth } from './context/AuthContext';
 import { useFinancial } from './context/FinancialContext';
@@ -54,6 +58,14 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'overview' | 'social' | 'forecast' | 'ledger' | 'settings' | 'palantir' | 'goals'>('overview');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
+  // Auth UI State (Restored)
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [isEmailView, setIsEmailView] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
   // Modal Logic
   const [modal, setModal] = useState<string | null>(null);
   const closeModal = () => setModal(null);
@@ -69,6 +81,31 @@ export default function App() {
     theme === 'dark' ? root.classList.add('dark') : root.classList.remove('dark');
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  const handleEmailAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+    setIsLoggingIn(true);
+    try {
+      await signInWithEmail(authEmail, authPassword, isSignUp);
+    } catch (err: any) {
+      setLoginError(err.message);
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setLoginError('');
+    setIsLoggingIn(true);
+    try {
+      await signInWithGoogle();
+    } catch (err: any) {
+      setLoginError(err.message);
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
 
   // Main UI Guards
   if (authLoading) {
@@ -89,19 +126,20 @@ export default function App() {
         ) : (
           <motion.div key="auth" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
             <AuthPage 
-              onGoogleSignIn={signInWithGoogle} 
-              onEmailAuth={(e: any) => {/* Handled in component */}}
-              authEmail="" setAuthEmail={()=>{}} authPassword="" setAuthPassword={()=>{}}
-              isEmailView={false} setIsEmailView={()=>{}} isSignUp={false} setIsSignUp={()=>{}}
-              authError="" authLoading={false} onTryDemo={() => window.location.reload()}
+              onGoogleSignIn={handleGoogleSignIn} 
+              onEmailAuth={handleEmailAuth}
+              authEmail={authEmail} setAuthEmail={setAuthEmail}
+              authPassword={authPassword} setAuthPassword={setAuthPassword}
+              isEmailView={isEmailView} setIsEmailView={setIsEmailView}
+              isSignUp={isSignUp} setIsSignUp={setIsSignUp}
+              authError={loginError} authLoading={isLoggingIn}
+              onTryDemo={() => window.location.reload()}
             />
           </motion.div>
         )}
       </AnimatePresence>
     );
   }
-
-  const isDemo = user.uid.startsWith('demo-');
 
   return (
     <div className="flex h-screen mesh-gradient font-sans selection:bg-indigo-100 relative overflow-hidden transition-colors duration-300">
