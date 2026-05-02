@@ -35,15 +35,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      // Listen to profile changes
+      // Listen to profile changes with improved stability
       const profileRef = doc(db, 'users', currentUser.uid);
-      const unsubscribeProfile = onSnapshot(profileRef, (doc) => {
-        if (doc.exists()) {
-          setUserProfile({ uid: doc.id, ...doc.data() } as UserProfile);
+      const unsubscribeProfile = onSnapshot(profileRef, async (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setUserProfile({ uid: docSnap.id, ...data } as UserProfile);
+          setLoading(false);
+        } else {
+          // Confirm missing before creating to avoid race conditions
+          try {
+            const initialProfile = {
+              uid: currentUser.uid,
+              displayName: currentUser.displayName || 'Wealth Explorer',
+              email: currentUser.email,
+              photoURL: currentUser.photoURL,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp(),
+              hasCompletedOnboarding: false,
+              plan: 'free'
+            };
+            await setDoc(profileRef, initialProfile, { merge: true });
+            // onSnapshot will pick up the newly created document
+          } catch (e) {
+            console.error("[AuthContext] Profile initialization failed:", e);
+            setLoading(false);
+          }
         }
-        setLoading(false);
       }, (error) => {
-        console.error("Profile snapshot error:", error);
+        console.error("[AuthContext] Profile stream error:", error);
         setLoading(false);
       });
 

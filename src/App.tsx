@@ -53,8 +53,11 @@ export default function App() {
   const { user, userProfile, loading: authLoading, signInWithGoogle, signInWithEmail, signOut } = useAuth();
   const financialData = useFinancial();
 
-  // Navigation Setup
+  // Navigation & UI Failsafes
   const [showAuth, setShowAuth] = useState(false);
+  const [onboardingJustFinished, setOnboardingCompleted] = useState(false);
+
+  // Navigation Setup
   const navigationItems = [
     { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
     { id: 'palantir', icon: Globe, label: 'Intelligence', visible: isFeatureVisible('PALANTIR_LIVE'), beta: true },
@@ -175,7 +178,12 @@ export default function App() {
 
   return (
     <div className="flex h-screen mesh-gradient font-sans selection:bg-indigo-100 relative overflow-hidden transition-colors duration-300">
-      {userProfile && !userProfile.hasCompletedOnboarding && <MagicOnboarding userId={user.uid} onComplete={() => console.log('Ready.')} />}
+      {userProfile && !userProfile.hasCompletedOnboarding && !onboardingJustFinished && (
+        <MagicOnboarding 
+          userId={user.uid} 
+          onComplete={() => setOnboardingCompleted(true)} 
+        />
+      )}
 
       <Sidebar 
         navigationItems={navigationItems} activeTab={activeTab} setActiveTab={setActiveTab}
