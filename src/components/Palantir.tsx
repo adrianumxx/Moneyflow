@@ -7,40 +7,31 @@ import {
 import { useTranslation } from 'react-i18next';
 import { getPalantirIntelligence, PalantirIntelligence, PalantirNewsItem } from '../services/geminiService';
 import { useNotifications } from '../context/NotificationContext';
+import { useFinancial } from '../context/FinancialContext';
 import { Asset, Liability, FinancialGoal as Goal, UserProfile, Transaction, BankAccount, ConnectedInstitution, ConnectedAccount, CryptoWallet, InvestmentAccount, Income } from '../types';
 import { authenticatedFetch } from '../utils/api';
 import { formatMoney } from '../utils/format';
 import { assessDataQuality } from '../utils/dataQuality';
 
 interface PalantirProps {
-  assets?: Asset[];
-  liabilities?: Liability[];
-  goals?: Goal[];
-  transactions?: Transaction[];
-  bankAccounts?: BankAccount[];
-  connectedInstitutions?: ConnectedInstitution[];
-  connectedAccounts?: ConnectedAccount[];
-  cryptoWallets?: CryptoWallet[];
-  investmentAccounts?: InvestmentAccount[];
-  income?: Income[];
-  userProfile?: UserProfile | null;
   onAskAI?: (prompt: string) => void;
 }
 
-export default function Palantir({ 
-  assets, 
-  liabilities, 
-  goals, 
-  transactions,
-  bankAccounts,
-  connectedInstitutions,
-  connectedAccounts,
-  cryptoWallets,
-  investmentAccounts,
-  income,
-  userProfile, 
-  onAskAI 
-}: PalantirProps) {
+export default function Palantir({ onAskAI }: PalantirProps) {
+  const { 
+    assets, 
+    liabilities, 
+    goals, 
+    transactions,
+    bankAccounts,
+    connectedInstitutions,
+    connectedAccounts,
+    cryptoWallets,
+    investmentAccounts,
+    income,
+    userProfile 
+  } = useFinancial();
+
   const { t, i18n } = useTranslation();
   const [data, setData] = useState<PalantirIntelligence | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -307,6 +298,14 @@ export default function Palantir({
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 pb-40 lg:pb-32 pt-6 lg:pt-8 px-4 sm:px-6 max-w-7xl mx-auto font-sans selection:bg-amber-500/30">
       
+      {/* LEGAL DISCLAIMER STRIP */}
+      <div className="bg-indigo-600/10 border border-indigo-500/20 px-6 py-3 rounded-2xl flex items-center justify-center gap-3 mb-8">
+        <ShieldAlert className="w-4 h-4 text-indigo-500" />
+        <p className="text-[10px] font-black uppercase tracking-[0.1em] text-indigo-500/80">
+          Intelligence orientation only. Not financial, legal, or tax advice. Grounded in live global signals.
+        </p>
+      </div>
+
       {/* Header & Search */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>

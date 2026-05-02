@@ -16,7 +16,15 @@ export const handleStripeWebhook = async (payload: Buffer, sig: string, endpoint
 
   const db = getDb();
 
-  // Log event for audit and idempotency check
+  // 1. Idempotency Check: Avoid processing same event twice
+  const eventRef = db.collection('processed_stripe_events').doc(event.id);
+  const eventSnap = await eventRef.get();
+  if (eventSnap.exists) {
+    console.log(`[Stripe Webhook] Event already processed: ${event.id}`);
+    return { received: true, alreadyProcessed: true };
+  }
+
+  // Log event for audit
   console.log(`[Stripe Webhook] Processing event: ${event.id} (type: ${event.type})`);
 
   switch (event.type) {
@@ -100,6 +108,12 @@ export const handleStripeWebhook = async (payload: Buffer, sig: string, endpoint
     default:
       console.log(`[Stripe Webhook] Unhandled event type: ${event.type}`);
   }
+
+  // 2. Finalize Idempotency: Mark event as processed
+  await eventRef.set({
+    processedAt: admin.firestore.FieldValue.serverTimestamp(),
+    type: event.type
+  });
 
   return { received: true };
 };

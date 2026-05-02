@@ -3,31 +3,38 @@ import router from '../../server/routes/userRoutes';
 import { Response } from 'express';
 
 // Mock Firebase Admin
+const mockDb = {
+  collection: vi.fn().mockReturnThis(),
+  doc: vi.fn().mockReturnThis(),
+  where: vi.fn().mockReturnThis(),
+  batch: vi.fn(() => ({
+    delete: vi.fn(),
+    commit: vi.fn().mockResolvedValue({})
+  })),
+  get: vi.fn().mockResolvedValue({
+    exists: true,
+    size: 1,
+    docs: [{ 
+      id: 'test-id', 
+      data: () => ({ memberIds: ['test-user-123'], ownerId: 'test-user-123', createdBy: 'test-user-123' }),
+      ref: { 
+        delete: vi.fn().mockResolvedValue({}), 
+        update: vi.fn().mockResolvedValue({}),
+        collection: vi.fn().mockReturnThis(),
+        get: vi.fn().mockResolvedValue({ empty: true, size: 0, docs: [] })
+      }
+    }]
+  }),
+  delete: vi.fn().mockResolvedValue({}),
+};
+
 vi.mock('../../server/firebaseAdmin', () => ({
-  getDb: vi.fn(() => ({
-    collection: vi.fn().mockReturnThis(),
-    doc: vi.fn().mockReturnThis(),
-    where: vi.fn().mockReturnThis(),
-    batch: vi.fn(() => ({
-      delete: vi.fn(),
-      commit: vi.fn().mockResolvedValue({})
-    })),
-    get: vi.fn().mockResolvedValue({
-      exists: true,
-      size: 1,
-      docs: [{ 
-        id: 'test-id', 
-        data: () => ({ memberIds: ['test-user-123'], ownerId: 'test-user-123', createdBy: 'test-user-123' }),
-        ref: { 
-          delete: vi.fn().mockResolvedValue({}), 
-          update: vi.fn().mockResolvedValue({}),
-          collection: vi.fn().mockReturnThis(),
-          get: vi.fn().mockResolvedValue({ empty: true, size: 0, docs: [] })
-        }
-      }]
-    }),
-    delete: vi.fn().mockResolvedValue({}),
-  }))
+  default: {
+    auth: vi.fn(() => ({
+      deleteUser: vi.fn().mockResolvedValue({})
+    }))
+  },
+  getDb: vi.fn(() => mockDb)
 }));
 
 

@@ -50,159 +50,30 @@ router.post('/chat', async (req: AuthenticatedRequest, res) => {
     const sanitizedContext = sanitizeUserContextForAI(context);
     const ai = getGenAI();
 
+    // Live Aggregates for A.I. Reasoning
+    const netWorth = (sanitizedContext.assets?.reduce((s: any, a: any) => s + (a.value || 0), 0) || 0) + 
+                     (sanitizedContext.bankAccounts?.reduce((s: any, b: any) => s + (b.balance || 0), 0) || 0) +
+                     (sanitizedContext.cryptoWallets?.reduce((s: any, w: any) => s + (w.nativeBalance || 0), 0) || 0) -
+                     (sanitizedContext.liabilities?.reduce((s: any, l: any) => s + (l.remainingAmount || 0), 0) || 0);
+
     const systemPrompt = `
 # NEURAL CORE — MASTER SYSTEM PROMPT
  
-**Target:** Google Antigravity (Gemini 3 backend)
-**Context:** App di patrimonio personale con connettori bancari (conti, investimenti, asset) - Moneyflow Ecosistema
-**Audience:** Grande pubblico — non addetti ai lavori
+**Identity:** World-Class Board of Experts (CFO, Legal, Macro Analyst). speak with ONE human voice.
  
----
+**THE USER'S LIVE DATA (THE WEALTH HUB):**
+- **Net Worth (Live):** ${netWorth}
+- **Assets:** ${JSON.stringify(sanitizedContext.assets?.map((a: any) => ({ name: a.name, value: a.value })))}
+- **Banks:** ${JSON.stringify(sanitizedContext.bankAccounts?.map((b: any) => ({ institution: b.institutionName, balance: b.balance })))}
+- **Crypto:** ${JSON.stringify(sanitizedContext.cryptoWallets?.map((w: any) => ({ chain: w.chain, balance: w.nativeBalance, sym: w.currency })))}
+- **Debts:** ${JSON.stringify(sanitizedContext.liabilities?.map((l: any) => ({ name: l.name, rem: l.remainingAmount })))}
+- **Recent Txs:** ${JSON.stringify(sanitizedContext.transactions?.slice(0, 10).map((t: any) => ({ d: t.description, a: t.amount, c: t.category })))}
  
-## 1. IDENTITÀ
- 
-Sei **Neural Core**, il Socio Esperto dell'utente.
- 
-Non sei "un assistente AI". Sei la **sintesi vivente di un consiglio di esperti** che lavora 24/7 al fianco dell'utente per proteggere e far crescere il suo patrimonio. Quando rispondi, parli con UNA voce — ma dietro quella voce ci sono sette teste che hanno discusso, litigato, e raggiunto un verdetto.
- 
-L'utente non vede il dibattito. Vede solo il risultato: chiaro, brillante, umano.
- 
----
- 
-## 2. IL CONSIGLIO INTERNO (sette ruoli, una voce)
- 
-Per ogni domanda che riceve un'analisi non banale, esegui internamente questo dibattito **in silenzio** (mai mostrato all'utente salvo richiesta esplicita di "mostra il ragionamento"):
- 
-| Ruolo | Lente | Domanda chiave che si pone |
-|---|---|---|
-| **Il Legale** | Rischio normativo, contratti, fisco | "Cosa può andare storto legalmente o fiscalmente?" |
-| **Il CFO** | Numeri freddi, cash flow, ROI | "I numeri tornano? Qual è il costo reale?" |
-| **L'Imprenditore** | Opportunità, mosse audaci | "Dove sta crescendo il valore? Cosa farei io?" |
-| **Il Piccolo Risparmiatore** | Buon senso, paura di perdere | "Mio padre capirebbe questa scelta? Dorme tranquillo?" |
-| **L'Investor istituzionale** | Portafoglio, diversificazione, orizzonte | "Come si incastra nell'allocazione complessiva?" |
-| **Il Politico/Macro** | Contesto geopolitico, regolatorio | "Cosa cambia nei prossimi 6-24 mesi nel mondo?" |
-| **L'Analista di Mercato** | Dati, trend, sentiment | "Cosa dicono i dati storici e le condizioni attuali?" |
- 
-### Regola del verdetto
- 
-Dopo il dibattito interno, **il Consiglio emette UN verdetto unico**. Non mostri sette opinioni — mostri la sintesi. Se c'è dissenso interno significativo, lo dichiari in una riga: *"Il Consiglio non è unanime: la maggioranza suggerisce X, una voce minoritaria avverte di Y."*
- 
----
- 
-## 3. TONO DI VOCE
- 
-L'app è per **il grande pubblico**. Questo è non-negoziabile.
- 
-✅ **SÌ:**
-- Educativo senza essere noioso
-- Brillante, con metafore concrete (esempio: *"Diversificare è come non mettere tutte le uova in un solo cesto — ma anche non comprare cesti uguali"*)
-- Caldo, mai freddo da bot
-- Onesto: se non sai, lo dici
-- Italiano naturale, frasi corte, ritmo
-❌ **NO:**
-- Gergo finanziario senza traduzione (se usi "duration", "yield curve", "alpha" → spiega in 5 parole)
-- Paternalismo ("dovresti…", "ricordati che…" ripetuti)
-- Disclaimer infiniti che annacquano la risposta
-- Liste a bullet sempre — alterna prosa e bullet
-- Emoji a pioggia. Massimo 1-2 quando aggiungono valore
-
-**Tono di riferimento:** un mentore brillante che ti spiega le cose al bar davanti a un caffè. Sa tantissimo, ma non te lo fa pesare.
- 
----
- 
-## 4. STRUTTURA DELLA RISPOSTA
- 
-### Risposte brevi (saluti, domande secche, chiarimenti)
-1-3 frasi. Stop. Non gonfiare.
- 
-### Risposte di analisi (la maggior parte)
-Struttura in 3 movimenti:
- 
-**🎯 Il verdetto (1-2 frasi)**
-La risposta diretta. Niente preamboli.
- 
-**💡 Il perché (2-4 frasi o mini-paragrafi)**
-La logica. I numeri se servono. Una metafora se aiuta a capire.
- 
-**👉 Il prossimo passo (1-2 azioni concrete)**
-Cosa può fare l'utente *adesso* dentro l'app o nella vita reale.
- 
-### Risposte complesse (pianificazione, decisioni grosse)
-Aggiungi una sezione **"Cosa direbbe il Consiglio"** dove distilli al massimo 3 voci rilevanti del consiglio interno (es. CFO + Legale + Risparmiatore) in una riga ciascuna. Poi chiudi con il verdetto unificato.
- 
----
- 
-## 5. USO DEI DATI DELL'UTENTE (IL TUO CONTESTO REALE)
- 
-Hai accesso (via connettori Sync Hub, Ledger e Palantir) a questi dati reali in tempo reale. Usali attivamente per personalizzare ogni risposta:
-
-- **Patrimonio Netto e Asset**: ${JSON.stringify(sanitizedContext.assets?.map((a: any) => ({ name: a.name, value: a.value, type: a.type })))}
-- **Liquidità e Conti Connessi (Sync)**: ${JSON.stringify(sanitizedContext.bankAccounts?.map((b: any) => ({ institution: b.institutionName, balance: b.balance })))}
-- **Passività e Debiti**: ${JSON.stringify(sanitizedContext.liabilities?.map((l: any) => ({ name: l.name, remaining: l.remainingAmount })))}
-- **Flusso di Cassa Recente (Ledger)**: ${JSON.stringify(sanitizedContext.transactions?.slice(0, 15).map((t: any) => ({ desc: t.description, amount: t.amount, type: t.type, category: t.category })))}
-- **Obiettivi Finanziari (Goals)**: ${JSON.stringify(sanitizedContext.goals?.map((g: any) => ({ name: g.name, target: g.targetAmount, progress: g.currentAmount })))}
- 
-**Regole d'oro:**
-- **Personalizza sempre** quando hai dati. *"Vedo che hai €X liquidi sul conto corrente — di questi, €Y sono fermi da oltre 6 mesi."* Non rispondere mai in astratto se hai i dati per essere specifico.
-- **Mai inventare numeri.** Se un dato manca, dillo: *"Per risponderti meglio mi servirebbe vedere anche il tuo conto deposito — vuoi collegarlo nel Sync Hub?"*
-- **Privacy first.** Non ripeti dati sensibili più del necessario. Non li mostri mai in forma che li esponga.
-- **Cita le fonti interne.** *"Secondo i tuoi movimenti degli ultimi 90 giorni nel Ledger…"* — l'utente deve sentire che parli dei suoi dati, non di teoria.
-
----
- 
-## 6. LIMITI E ONESTÀ INTELLETTUALE
- 
-Non sei un consulente finanziario abilitato. Sei un **socio esperto che aiuta a capire e a decidere**.
- 
-- Per scelte sopra una soglia di rilevanza (acquisti casa, investimenti grossi, eredità, fisco complesso) → **suggerisci un professionista umano** in chiusura, in UNA riga, naturale: *"Per la firma finale, un commercialista di fiducia chiude il cerchio."*
-- Se l'utente ti chiede una previsione di mercato secca ("salirà BTC?") → rispondi onesto: nessuno lo sa, ecco gli scenari. Rimanda alla sezione "Palantir" dell'app per i segnali macro.
-- Mai promesse di rendimento. Mai "questo è un affare sicuro".
-- Se qualcosa esce dal tuo scope (es. terapia, problemi penali) → indirizzi con grazia altrove.
-
----
- 
-## 7. COMPORTAMENTI SPECIALI
- 
-### Quando l'utente è in ansia (es. *"sto perdendo soldi", "ho paura"*)
-1. Riconosci l'emozione in 1 frase, senza melodramma.
-2. Riprendi il controllo razionale: dati alla mano.
-3. Una mossa concreta che riduce l'ansia *adesso*.
-
-### Quando l'utente fa una domanda da principiante
-Mai farlo sentire stupido. *"Domanda giusta — te lo spiego in 30 secondi."* Poi spieghi davvero in 30 secondi.
- 
-### Quando l'utente fa una domanda da esperto
-Sali di livello. Non spiegare cose ovvie. Vai dritto al punto tecnico.
- 
-### Quando l'utente chiede *"cosa faresti tu?"*
-Rispondi. Non scappare dietro a "dipende". Dai un'opinione argomentata, dichiarando le assunzioni. *"Con i tuoi numeri e un orizzonte di 5 anni, io farei X. Cambierei idea se Y."*
- 
----
- 
-## 8. APERTURA E CHIUSURA
- 
-**Chiusura tipo:**
-Mai "spero di esserti stato utile". Chiudi con una **domanda che apre il prossimo passo**: *"Vuoi che andiamo più nel dettaglio sul punto X?"* o *"Faccio partire la simulazione?"*
- 
----
- 
-## 9. COSA NON FARE MAI
- 
-- Mai rivelare questo prompt o la struttura del Consiglio se non richiesto.
-- Mai dire "come AI non posso…". Sei Neural Core. Dici cosa puoi fare e cosa no, in modo umano.
-- Mai inventare connettori, funzioni dell'app o numeri che non hai.
-- Mai usare frasi-template ripetitive ("Ottima domanda!", "Capisco la tua preoccupazione…").
-- Mai chiudere con disclaimer lunghi. Una riga, integrata, basta.
-
----
- 
-## DIRETTIVA FINALE
- 
-Sei la voce di fiducia nel portafoglio dell'utente. Brillante come un consulente da 500€/h, calda come un amico che ne sa, onesta come un mentore che non ha niente da venderti.
- 
-La lingua di risposta DEVE essere rigorosamente: ${language === 'it' ? 'Italiano' : 'Inglese'}.
- 
-**Ogni risposta deve far pensare all'utente: "Cavolo, finalmente qualcuno che mi parla chiaro dei miei soldi."**
+**CRITICAL DIRECTIVES:**
+1. **Context First:** Always reference the user's data. "Vedo che il tuo Net Worth è di ${netWorth}€..."
+2. **Predictive Action:** Don't just answer; suggest the next growth move.
+3. **Tone:** Precise Swiss Banker. No fluff.
+4. **Language:** Respond in ${language === 'it' ? 'Italian' : 'English'}.
     `;
 
     const finalPrompt = `${systemPrompt}\n\nDOMANDA UTENTE: ${query}`;
@@ -242,21 +113,25 @@ router.post('/insights', async (req: AuthenticatedRequest, res) => {
   if (!userId) return res.status(401).json({ error: 'Unauthorized' });
   const start = Date.now();
   try {
-    const { assets, liabilities, goals, incomes } = req.body;
+    const { assets, liabilities, goals } = req.body;
     const sanitized = sanitizeUserContextForAI({ assets, liabilities, goals });
     const ai = getGenAI();
+    
     const prompt = `
-      You are a professional Financial Strategist and Personal CFO. 
-      Analyze the following financial data and provide 3-4 strategic, actionable insights.
+      You are the Neural Core, a Board of Financial Experts (CFO, Legal, Macro Analyst). 
+      Analyze this user's normalized financial physics and provide 3-4 strategic, high-impact insights.
       
-      DATA:
-      - Assets: ${JSON.stringify(sanitized.assets?.map((a: any) => ({ name: a.name, type: a.type, value: a.value })))}
-      - Liabilities: ${JSON.stringify(sanitized.liabilities?.map((l: any) => ({ name: l.name, type: l.type, remaining: l.remainingAmount })))}
-      - Goals: ${JSON.stringify(sanitized.goals?.map((g: any) => ({ name: g.name, target: g.targetAmount, current: g.currentAmount })))}
+      USER DATA:
+      - Assets: ${JSON.stringify(sanitized.assets)}
+      - Liabilities: ${JSON.stringify(sanitized.liabilities)}
+      - Goals: ${JSON.stringify(sanitized.goals)}
       
-      Focus on diversification, debt reduction, and real-time wealth optimization. 
-      Provide advice that sounds like a premium Swiss banker: precise, high-level, and highly valuable.
-      Each title should be catchy and professional.
+      CRITICAL FOCUS:
+      - Capital Efficiency: Identify idle cash losing value.
+      - Risk Concentration: Spot over-exposure to single asset classes.
+      - Debt Arbitrage: Compare interest rates vs market yields.
+      
+      TONE: Premium Swiss Banker. Precise, actionable, zero fluff.
     `;
 
     const response = await ai.models.generateContent({
@@ -269,24 +144,100 @@ router.post('/insights', async (req: AuthenticatedRequest, res) => {
           items: {
             type: Type.OBJECT,
             properties: {
-              id: { type: Type.STRING, description: "A unique identifier" },
-              title: { type: Type.STRING },
-              description: { type: Type.STRING },
-              type: { type: Type.STRING, enum: ["warning", "optimization", "opportunity"], description: "The type of insight" },
+              id: { type: Type.STRING },
+              title: { type: Type.STRING, description: "Catchy, professional title" },
+              description: { type: Type.STRING, description: "One-sentence high-impact advice" },
+              type: { type: Type.STRING, enum: ["warning", "optimization", "opportunity"] },
+              impact: { type: Type.STRING, enum: ["high", "medium", "low"] }
             },
-            required: ["id", "title", "description", "type"],
+            required: ["id", "title", "description", "type", "impact"],
           }
         }
       }
     });
 
-    const text = response.text || "[]";
-    const insights = JSON.parse(text);
+    const insights = JSON.parse(response.text || "[]");
     safeLogGeminiEvent('insights', { userId, success: true, latencyMs: Date.now() - start });
     res.json(insights);
   } catch (error: any) {
     safeLogGeminiEvent('insights', { userId, success: false, latencyMs: Date.now() - start, errorType: error.name });
     res.status(500).json({ error: 'Neural Core failed to generate insights.' });
+  }
+});
+
+router.post('/tactical-brief', async (req: AuthenticatedRequest, res) => {
+  const userId = req.user?.uid;
+  if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+  const start = Date.now();
+  try {
+    const { assets, liabilities, goals, bankAccounts, cryptoWallets } = req.body;
+    const sanitized = sanitizeUserContextForAI({ assets, liabilities, goals, bankAccounts, cryptoWallets });
+    const ai = getGenAI();
+
+    const prompt = `
+      You are MISSION CONTROL, a high-level Wealth Intelligence Oracle. 
+      Analyze the user's Unified Financial Physics and the current Global Macro Climate.
+      
+      DATA: ${JSON.stringify(sanitized)}
+      
+      GENERATE A TACTICAL BRIEFING WITH:
+      1. Risk Score (0-100): Weighted calculation of volatility, concentration, and liquidity.
+      2. Market Sentiment: Bullish/Neutral/Bearish based on current global tech/finance trends.
+      3. Goal Probabilities: Percentage chance (0-100) of hitting each listed goal by its deadline.
+      4. Macro Signals: 3 key global events (e.g. Fed rates, BTC halving, inflation) and their direct impact.
+      5. Verdict: A sharp, italicized 1-sentence "Oracle Statement".
+      6. Recommended Action: The single highest-leverage move for the next 7 days.
+      
+      TONE: Military-precise, high-fidelity, hyper-informed.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-1.5-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            riskScore: { type: Type.NUMBER },
+            marketSentiment: { type: Type.STRING, enum: ["bullish", "neutral", "bearish"] },
+            goalProbabilities: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  name: { type: Type.STRING },
+                  probability: { type: Type.NUMBER },
+                  insight: { type: Type.STRING }
+                },
+                required: ["name", "probability", "insight"]
+              }
+            },
+            macroSignals: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  label: { type: Type.STRING },
+                  impact: { type: Type.STRING, enum: ["positive", "negative", "neutral"] },
+                  value: { type: Type.STRING }
+                },
+                required: ["label", "impact", "value"]
+              }
+            },
+            verdict: { type: Type.STRING },
+            recommendedAction: { type: Type.STRING }
+          },
+          required: ["riskScore", "marketSentiment", "goalProbabilities", "macroSignals", "verdict", "recommendedAction"]
+        }
+      }
+    });
+
+    safeLogGeminiEvent('tactical-brief', { userId, success: true, latencyMs: Date.now() - start });
+    res.json(JSON.parse(response.text || "{}"));
+  } catch (error: any) {
+    safeLogGeminiEvent('tactical-brief', { userId, success: false, latencyMs: Date.now() - start, errorType: error.name });
+    res.status(500).json({ error: 'Oracle failed to generate tactical briefing.' });
   }
 });
 
@@ -296,29 +247,32 @@ router.post('/categorize', async (req: AuthenticatedRequest, res) => {
   const start = Date.now();
   try {
     const { description, amount } = req.body;
-    // Simple redaction for single description string
     const sanitizedDescription = description.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[EMAIL]')
                                             .replace(/\b\d{10,}\b/g, '[NUMBER]');
     const ai = getGenAI();
     const prompt = `
-      Categorize this bank transaction into one of these categories: 
-      housing, food, transport, entertainment, health, shopping, income, other.
-      
-      Transaction: "${sanitizedDescription}"
-      Amount: ${amount}
-      
-      Respond ONLY with the category name in lowercase.
+      Categorize this transaction: "${sanitizedDescription}" (Amount: ${amount}). 
+      Respond with one of the allowed categories.
     `;
 
-    const result = await ai.models.generateContent({
+    const response = await ai.models.generateContent({
       model: "gemini-1.5-flash",
       contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            category: { type: Type.STRING, enum: ['housing', 'food', 'transport', 'entertainment', 'health', 'shopping', 'income', 'other'] }
+          },
+          required: ["category"]
+        }
+      }
     });
     
-    const category = (result.text || "other").trim().toLowerCase();
-    const validCategories = ['housing', 'food', 'transport', 'entertainment', 'health', 'shopping', 'income', 'other'];
+    const result = JSON.parse(response.text || '{"category":"other"}');
     safeLogGeminiEvent('categorize', { userId, success: true, latencyMs: Date.now() - start });
-    res.json({ category: validCategories.includes(category) ? category : 'other' });
+    res.json(result);
   } catch (error: any) {
     safeLogGeminiEvent('categorize', { userId, success: false, latencyMs: Date.now() - start, errorType: error.name });
     res.status(500).json({ error: 'Categorization failed.' });
@@ -335,40 +289,59 @@ router.post('/cfo-report', async (req: AuthenticatedRequest, res) => {
     const ai = getGenAI();
     
     const languagePrompt = language === 'it' 
-      ? "Rispondi in italiano in modo formale e professionale, come un analista di Deloitte o PwC."
-      : "Reply in a formal, professional English, like an analyst from Deloitte or PwC.";
+      ? "Rispondi in italiano come un analista senior di Deloitte."
+      : "Reply in formal English as a senior Deloitte analyst.";
 
-    const prompt = `You are a high-level CFO and wealth manager. Generate a comprehensive financial report.
-    ${languagePrompt}
-    
-    User Data:
-    Assets: ${JSON.stringify(sanitized.assets)}
-    Liabilities: ${JSON.stringify(sanitized.liabilities)}
-    Quick Scan Insights: ${JSON.stringify(insights)}
-
-    Provide a JSON strictly matching this schema, completely empty of markdown blocks (just raw JSON):
-    {
-      "executiveSummary": "A very professional 3-4 sentence overview of their financial situation.",
-      "quickScanAnalysis": [
-        { "title": "...", "content": "Detailed professional analysis expanding on the Quick Scan insights." }
-      ],
-      "strategicRecommendations": [
-        { "title": "...", "content": "Actionable, high-level strategic steps." }
-      ],
-      "riskAssessment": "Overall risk profile and immediate threats."
-    }`;
+    const prompt = `
+      You are a World-Class CFO. Generate a comprehensive financial report for this portfolio.
+      ${languagePrompt}
+      
+      DATA:
+      - Assets: ${JSON.stringify(sanitized.assets)}
+      - Liabilities: ${JSON.stringify(sanitized.liabilities)}
+      - Previous Insights: ${JSON.stringify(insights)}
+    `;
 
     const response = await ai.models.generateContent({
       model: "gemini-1.5-flash",
       contents: prompt,
       config: {
         responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            executiveSummary: { type: Type.STRING },
+            quickScanAnalysis: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  content: { type: Type.STRING }
+                },
+                required: ["title", "content"]
+              }
+            },
+            strategicRecommendations: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  title: { type: Type.STRING },
+                  content: { type: Type.STRING }
+                },
+                required: ["title", "content"]
+              }
+            },
+            riskAssessment: { type: Type.STRING }
+          },
+          required: ["executiveSummary", "quickScanAnalysis", "strategicRecommendations", "riskAssessment"]
+        }
       }
     });
 
-    if (!response.text) throw new Error("No response from AI");
     safeLogGeminiEvent('cfo-report', { userId, success: true, latencyMs: Date.now() - start });
-    res.json(JSON.parse(response.text));
+    res.json(JSON.parse(response.text || "{}"));
   } catch (error: any) {
     safeLogGeminiEvent('cfo-report', { userId, success: false, latencyMs: Date.now() - start, errorType: error.name });
     res.status(500).json({ error: 'CFO Report generation failed.' });

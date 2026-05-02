@@ -157,11 +157,11 @@ export default function CFOReportModal({ isOpen, onClose, onSend }: CFOReportMod
                     
                     <div className="flex flex-col items-center gap-4 text-slate-400">
                       <div className="flex items-center justify-center gap-2">
-                        <ShieldCheck className="w-4 h-4" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">Securely Encrypted</span>
+                        <ShieldCheck className="w-4 h-4 text-indigo-500" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-500/80">Orientation Intelligence</span>
                       </div>
                       <p className="text-[9px] text-center text-slate-500 uppercase tracking-widest font-bold leading-relaxed max-w-xs">
-                        Report contains AI-driven analysis for informational purposes only. Not financial, legal, or tax advice.
+                        Report contains AI-driven analysis for informational purposes only. Not financial, legal, or tax advice. Grounded in live global signals.
                       </p>
                     </div>
                   </form>

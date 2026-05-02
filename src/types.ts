@@ -23,7 +23,9 @@ export interface UserProfile {
   monthlyIncomeTarget?: number;
   stripeCustomerId?: string;
   subscriptionStatus?: string;
-  plan?: 'free' | 'premium';
+  plan?: 'free' | 'pro' | 'premium';
+  trialStartDate?: Timestamp;
+  trialEndDate?: Timestamp;
   updatedAt?: Timestamp;
   hasCompletedOnboarding?: boolean;
   primaryGoal?: string;
@@ -235,6 +237,32 @@ export interface Expense {
   createdAt: Timestamp;
   splitType: SplitType;
   splits?: SplitDetail[];
+}
+
+export interface FutureEvent {
+  id: string;
+  type: 'one_time_purchase' | 'one_time_income' | 'recurring_income_change' | 'recurring_expense_change' | 'asset_appreciation_change';
+  label: string;
+  amount: number;
+  date: Timestamp;
+  isRecurring?: boolean;
+}
+
+export interface TacticalBrief {
+  riskScore: number; // 0-100
+  marketSentiment: 'bullish' | 'neutral' | 'bearish';
+  goalProbabilities: {
+    name: string;
+    probability: number; // 0-100
+    insight: string;
+  }[];
+  macroSignals: {
+    label: string;
+    impact: 'positive' | 'negative' | 'neutral';
+    value: string;
+  }[];
+  verdict: string;
+  recommendedAction: string;
 }
 
 export const CATEGORIES = [

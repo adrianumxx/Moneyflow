@@ -18,20 +18,18 @@ import {
   Pencil
 } from 'lucide-react';
 import { motion } from 'motion/react';
-import { Transaction, UserProfile } from '../types';
 import { formatMoney } from '../utils/format';
 import { db } from '../firebase';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { handleFirestoreError, OperationType } from '../utils/errorHandling';
 import { getTransactionIntelligence } from '../utils/transactionInsights';
+import { useAuth } from '../context/AuthContext';
+import { useFinancial } from '../context/FinancialContext';
 
 interface TransactionsViewProps {
-  transactions: Transaction[];
-  userId: string;
   onAddTransaction: () => void;
   onDeleteTransaction?: (id: string) => void;
-  onEditTransaction?: (transaction: Transaction) => void;
-  userProfile?: UserProfile;
+  onEditTransaction?: (transaction: any) => void;
 }
 
 const CATEGORY_ICONS: Record<string, any> = {
@@ -46,16 +44,18 @@ const CATEGORY_ICONS: Record<string, any> = {
 };
 
 export default function TransactionsView({ 
-  transactions, 
-  userId, 
   onAddTransaction,
   onDeleteTransaction,
-  onEditTransaction,
-  userProfile
+  onEditTransaction
 }: TransactionsViewProps) {
+  const { user, userProfile } = useAuth();
+  const { transactions } = useFinancial();
+  
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<string>('all');
   const [catFilter, setCatFilter] = useState<string>('all');
+
+  if (!user) return null;
 
   const filteredTransactions = transactions
     .filter(tx => {
@@ -70,14 +70,14 @@ export default function TransactionsView({
     if (!id) return;
     if (!window.confirm('Are you sure you want to delete this transaction?')) return;
     try {
-      if (userId.startsWith('demo-')) {
+      if (user.uid.startsWith('demo-')) {
         if (onDeleteTransaction) onDeleteTransaction(id);
         return;
       }
-      await deleteDoc(doc(db, 'users', userId, 'transactions', id));
+      await deleteDoc(doc(db, 'users', user.uid, 'transactions', id));
     } catch (error) {
       console.error("Delete transaction failed:", error);
-      handleFirestoreError(error, OperationType.DELETE, `users/${userId}/transactions/${id}`);
+      handleFirestoreError(error, OperationType.DELETE, `users/${user.uid}/transactions/${id}`);
     }
   };
 

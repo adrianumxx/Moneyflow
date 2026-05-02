@@ -6,6 +6,7 @@ import express from 'express';
 
 import admin, { getDb } from '../server/firebaseAdmin.js';
 import { handleStripeWebhook } from '../server/services/stripeService.js';
+import cryptoRoutes from '../server/routes/cryptoRoutes.js';
 const stripeKey = process.env.STRIPE_SECRET_KEY || '';
 const stripe = new Stripe(stripeKey || 'sk_test_dummy_key_for_local_dev', {
   apiVersion: '2023-10-16' as any,
@@ -93,6 +94,7 @@ const syncLimiter = rateLimit({
 import geminiRoutes from '../server/routes/geminiRoutes.js';
 import syncRoutes from '../server/routes/syncRoutes.js';
 import userRoutes from '../server/routes/userRoutes.js';
+import cryptoRoutes from '../server/routes/cryptoRoutes.js';
 
 /**
  * Data Erasure Rate Limiter
@@ -122,6 +124,7 @@ const destructivePurgeLimiter = rateLimit({
 
 app.use('/api/gemini', geminiLimiter, authMiddleware, geminiRoutes);
 app.use('/api/sync', syncLimiter, authMiddleware, syncRoutes);
+app.use('/api/crypto', authMiddleware, cryptoRoutes);
 app.use('/api/user/purge/dry-run', purgeLimiter); 
 app.post('/api/user/purge', destructivePurgeLimiter); 
 app.use('/api/user', authMiddleware, userRoutes);

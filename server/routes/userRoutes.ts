@@ -1,5 +1,5 @@
 import express from 'express';
-import { getDb } from '../firebaseAdmin.js';
+import admin, { getDb } from '../firebaseAdmin.js';
 import { AuthenticatedRequest } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
@@ -134,8 +134,11 @@ router.post('/purge', async (req: AuthenticatedRequest, res) => {
       }
     }
 
-    // 3. Delete Profile (Last step)
+    // 3. Delete Profile from Firestore
     await userRef.delete();
+
+    // 4. Delete Auth User from Firebase
+    await admin.auth().deleteUser(userId);
 
     res.json({
       success: true,

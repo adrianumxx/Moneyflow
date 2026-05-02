@@ -5,356 +5,102 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { auth, db, signIn, signInRedirect, getRedirectResult, signUpWithEmail, logInWithEmail, logOut } from './firebase';
-import { onAuthStateChanged, User, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { FirebaseError } from 'firebase/app';
-import { getFriendlyAuthError } from './utils/authErrors';
-import { 
-  collection, 
-  query, 
-  onSnapshot, 
-  doc, 
-  setDoc, 
-  serverTimestamp, 
-  getDoc,
-  deleteDoc,
-  where,
-  addDoc,
-  Timestamp
-} from 'firebase/firestore';
-import { 
-  Plus, 
-  LogOut, 
-  LayoutDashboard, 
-  Users, 
-  Receipt, 
-  Settings, 
-  ChevronRight,
-  Wallet,
-  PieChart,
-  ArrowUpRight,
-  ArrowDownLeft,
-  Search,
-  Filter,
-  MoreVertical,
-  Menu,
-  X,
-  Sun,
-  Moon,
-  MinusCircle,
-  Activity,
-  Zap,
-  MessageSquare,
-  Bug,
-  Briefcase,
-  Globe,
-  History,
-  TrendingUp,
-  Settings as SettingsIcon,
-  Link,
-  Bot,
-  Target
-} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Group, UserProfile, Asset, Liability, FinancialGoal, AIInsight, Transaction, BankAccount, Expense, ConnectedInstitution, ConnectedAccount, CryptoWallet, InvestmentAccount, Income } from './types';
-import { handleFirestoreError, OperationType } from './utils/errorHandling';
-import { getEnv, isDev } from './utils/env';
-import { getCurrencySymbol, formatMoney } from './utils/format';
-import { 
-  calculateTotalAssets, 
-  calculateTotalLiabilities, 
-  calculateNetWorth 
-} from './utils/financialCalculations';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { generateCFOReportData } from './services/geminiService';
-import { useFinancialData } from './hooks/useFinancialData';
+import { Menu, LayoutDashboard, Globe, Target, Users, History, Settings as SettingsIcon } from 'lucide-react';
+import { db, logOut, Timestamp, addDoc, collection, serverTimestamp } from './firebase';
+
+// Context & Hooks
+import { useAuth } from './context/AuthContext';
+import { useFinancial } from './context/FinancialContext';
+import { isFeatureVisible } from './config/featureFlags';
 
 // Components
-import Dashboard from './components/Dashboard';
-import MagicOnboarding from './components/MagicOnboarding';
-import Palantir from './components/Palantir';
-import GroupView from './components/GroupView';
-import CreateGroupModal from './components/CreateGroupModal';
+import MarketingLanding from './components/MarketingLanding';
+import AuthPage from './components/AuthPage';
+import Sidebar from './components/Sidebar';
+import MobileNav from './components/MobileNav';
+import PaywallGuard from './components/PaywallGuard';
 import WealthOverview from './components/WealthOverview';
-import FinancialForecast from './components/FinancialForecast';
-import AddAssetModal from './components/AddAssetModal';
-import AddLiabilityModal from './components/AddLiabilityModal';
-import ConnectBankModal from './components/ConnectBankModal';
-import AddTransactionModal from './components/AddTransactionModal';
+import Dashboard from './components/Dashboard'; // Social Hub
+import Palantir from './components/Palantir';
 import TransactionsView from './components/TransactionsView';
-import AddGoalModal from './components/AddGoalModal';
-import CFOReportModal from './components/CFOReportModal';
+import GoalsView from './components/GoalsView';
+import GroupView from './components/GroupView';
+import FinancialForecast from './components/FinancialForecast';
 import SubscriptionSettings from './components/SubscriptionSettings';
 import PreferencesSettings from './components/PreferencesSettings';
-import FeedbackModal from './components/FeedbackModal';
+import MagicOnboarding from './components/MagicOnboarding';
 import GlobalPulse from './components/GlobalPulse';
 import NeuralAdvisor from './components/NeuralAdvisor';
-import IntegrationsHub from './components/IntegrationsHub';
-import GoalsView from './components/GoalsView';
 import BetaFeedbackButton from './components/BetaFeedbackButton';
-import { handleSyncCallback, listInstitutions } from './services/syncService';
-import { FEATURES, isFeatureVisible, getFeatureLabel } from './config/featureFlags';
+
+// Modals
+import CreateGroupModal from './components/CreateGroupModal';
+import AddAssetModal from './components/AddAssetModal';
+import AddLiabilityModal from './components/AddLiabilityModal';
+import AddGoalModal from './components/AddGoalModal';
+import AddTransactionModal from './components/AddTransactionModal';
+import ConnectBankModal from './components/ConnectBankModal';
+import AddCryptoWalletModal from './components/AddCryptoWalletModal';
+import CFOReportModal from './components/CFOReportModal';
+
+// Utils & Types
+import { handleSyncCallback } from './services/syncService';
+import { Transaction, BankAccount } from './types';
 
 export default function App() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const { user, userProfile, loading: authLoading, signInWithGoogle, signInWithEmail, signOut } = useAuth();
+  const financialData = useFinancial();
+
+  // Navigation Setup
+  const [showAuth, setShowAuth] = useState(false);
   const navigationItems = [
-    { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { id: 'groups', icon: Users, label: 'Groups', visible: isFeatureVisible('ADVANCED_GROUPS') },
-    { id: 'palantir', icon: Globe, label: 'Insights', visible: isFeatureVisible('PALANTIR_LIVE'), beta: true },
-    { id: 'sync', icon: Link, label: 'Connect', visible: isFeatureVisible('BANK_SYNC') },
+    { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
+    { id: 'palantir', icon: Globe, label: 'Intelligence', visible: isFeatureVisible('PALANTIR_LIVE'), beta: true },
+    { id: 'goals', icon: Target, label: 'Goals' },
+    { id: 'social', icon: Users, label: 'Groups', visible: isFeatureVisible('ADVANCED_GROUPS') },
     { id: 'ledger', icon: History, label: 'Ledger' },
-    { id: 'forecast', icon: TrendingUp, label: 'Forecast', comingSoon: true },
     { id: 'settings', icon: SettingsIcon, label: 'Settings' }
   ].filter(item => item.visible !== false);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [groupExpenses, setGroupExpenses] = useState<Record<string, Expense[]>>({});
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [liabilities, setLiabilities] = useState<Liability[]>([]);
-  const [goals, setGoals] = useState<FinancialGoal[]>([]);
-  const [insights, setInsights] = useState<AIInsight[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
-  const [connectedInstitutions, setConnectedInstitutions] = useState<ConnectedInstitution[]>([]);
-  const [connectedAccounts, setConnectedAccounts] = useState<ConnectedAccount[]>([]);
-  const [cryptoWallets, setCryptoWallets] = useState<CryptoWallet[]>([]);
-  const [investmentAccounts, setInvestmentAccounts] = useState<InvestmentAccount[]>([]);
-  const [income, setIncome] = useState<Income[]>([]);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [activeTab, setActiveTab] = useState<'wealth' | 'groups' | 'forecast' | 'ledger' | 'pulse' | 'settings' | 'palantir' | 'dashboard' | 'sync' | 'goals'>('dashboard');
-  const [lastError, setLastError] = useState<string | null>(null);
+
+  const [activeTab, setActiveTab] = useState<'overview' | 'social' | 'forecast' | 'ledger' | 'settings' | 'palantir' | 'goals'>('overview');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  
+  // Modal visibility states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAddAssetModalOpen, setIsAddAssetModalOpen] = useState(false);
   const [isAddLiabilityModalOpen, setIsAddLiabilityModalOpen] = useState(false);
   const [isCFOReportOpen, setIsCFOReportOpen] = useState(false);
   const [isAddGoalModalOpen, setIsAddGoalModalOpen] = useState(false);
-  
-  // Auth state
-  const [authEmail, setAuthEmail] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [isEmailAuth, setIsEmailAuth] = useState(false);
-  const [isEmailView, setIsEmailView] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [authError, setAuthError] = useState('');
-  const [authLoading, setAuthLoading] = useState(false);
   const [isConnectBankOpen, setIsConnectBankOpen] = useState(false);
+  const [isConnectCryptoOpen, setIsConnectCryptoOpen] = useState(false);
   const [isAddTransactionModalOpen, setIsAddTransactionModalOpen] = useState(false);
   const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  // Auth UI states
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [isEmailView, setIsEmailView] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const [isLogginIn, setIsLoggingIn] = useState(false);
+
   const [advisorState, setAdvisorState] = useState<{ visible: boolean; message: string; actionLabel?: string }>({
     visible: false,
     message: ''
   });
-  // Manual Neural Advisor Trigger
-  const triggerAdvice = () => {
-    const messages = [
-      "I've analyzed your latest flows: Your savings rate is up by 2% this week. Keep it up!",
-      "Sandbox Data is active. Connect your test bank to see how deep liquidity flows look.",
-      "Pattern detected: Your housing expenses are stable. Would you like to see a sample 12-month forecast?",
-      "Opportunity: Based on your sample liquidity, you could reach your next goal 2 months faster with a minor adjustment."
-    ];
-    setAdvisorState({
-      visible: true,
-      message: messages[Math.floor(Math.random() * messages.length)],
-      actionLabel: "View Insights"
-    });
-  };
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-  const [dataDeletedPopup, setDataDeletedPopup] = useState(false);
-  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    if (typeof window !== 'undefined') {
-      return (localStorage.getItem('theme') as 'light' | 'dark') || 'dark';
-    }
-    return 'dark';
-  });
 
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => (localStorage.getItem('theme') as 'light' | 'dark') || 'dark');
+
+  // Effects
   useEffect(() => {
     const root = window.document.documentElement;
-    if (theme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
+    theme === 'dark' ? root.classList.add('dark') : root.classList.remove('dark');
     localStorage.setItem('theme', theme);
   }, [theme]);
-
-  // Route Guard for Private Beta
-  useEffect(() => {
-    const tabToFeatureMap: Record<string, keyof typeof FEATURES> = {
-      'palantir': 'PALANTIR_LIVE',
-      'sync': 'BANK_SYNC',
-      'forecast': 'CFO_REPORT', // Shared flag or specific one
-    };
-
-    const feature = tabToFeatureMap[activeTab];
-    if (feature && !isFeatureVisible(feature)) {
-      console.warn(`Direct access to ${activeTab} blocked. Feature is gated.`);
-      setActiveTab('dashboard');
-    }
-  }, [activeTab]);
-
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'dark' ? 'light' : 'dark');
-  };
-
-
-  const handleEmailAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("[Auth] handleEmailAuth triggered, isSignUp:", isSignUp);
-    setAuthError('');
-    setAuthLoading(true);
-    try {
-      await setPersistence(auth, browserLocalPersistence);
-      let result;
-      if (isSignUp) {
-        result = await signUpWithEmail(authEmail, authPassword);
-      } else {
-        result = await logInWithEmail(authEmail, authPassword);
-      }
-      console.log("[Auth] Email auth successful for user:", result.user.uid.substring(0, 5) + "...");
-      setUser(result.user);
-    } catch (err: any) {
-      console.error("[Auth] Email Auth Error:", err);
-      setAuthError(getFriendlyAuthError(err));
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const financialData = useFinancialData(user);
-
-  // Sync Firestore data to local state for non-demo users
-  useEffect(() => {
-    if (user && !user.uid.startsWith('demo-')) {
-      setAssets(financialData.assets);
-      setLiabilities(financialData.liabilities);
-      setGoals(financialData.goals);
-      setInsights(financialData.insights);
-      setTransactions(financialData.transactions);
-      setBankAccounts(financialData.bankAccounts);
-      setConnectedInstitutions(financialData.connectedInstitutions);
-      setConnectedAccounts(financialData.connectedAccounts);
-      setCryptoWallets(financialData.cryptoWallets);
-      setInvestmentAccounts(financialData.investmentAccounts);
-      setIncome(financialData.income);
-      setGroups(financialData.groups);
-      setUserProfile(financialData.userProfile);
-      setLoading(financialData.loading);
-      setLastError(financialData.error);
-    }
-  }, [financialData, user]);
-
-  // Combined Auth & Profile Observer
-  useEffect(() => {
-    console.log("[Auth] Initializing Auth Observer...");
-    
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      const isDebug = new URLSearchParams(window.location.search).get('debugAuth') === '1';
-      const stateTrace = currentUser ? `Authenticated` : "Unauthenticated";
-      if (isDebug && currentUser) {
-        console.log(`[Auth State Change] ${stateTrace} (${currentUser.uid.substring(0, 5)})`);
-      }
-      
-      if (!currentUser) {
-        // Atomic reset of all authenticated state
-        setUser(null);
-        setUserProfile(null);
-        setLoading(false);
-        setAuthLoading(false);
-        setAssets([]);
-        setLiabilities([]);
-        setGoals([]);
-        setTransactions([]);
-        setBankAccounts([]);
-        setInsights([]);
-        setGroups([]);
-        return;
-      }
-
-      // User exists
-      setUser(currentUser);
-      setAuthLoading(false);
-      
-      // If demo user, we are done
-      if (currentUser.uid.startsWith('demo-')) {
-        setLoading(false);
-        return;
-      }
-
-      // Real user: Ensure loading is true while we wait for useFinancialData
-      // (This prevents the landing page from flashing if user is defined but profile isn't yet)
-      if (!userProfile) {
-        setLoading(true);
-      }
-    });
-
-    // Handle redirect result on mount
-    const handleRedirect = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-          const isDebug = new URLSearchParams(window.location.search).get('debugAuth') === '1';
-          if (isDebug) {
-            console.log("[Auth] Redirect result processed for:", result.user.uid.substring(0, 5));
-          }
-        }
-      } catch (err: any) {
-        console.error("[Auth] Redirect Error:", err);
-        setAuthError(getFriendlyAuthError(err));
-      }
-    };
-    handleRedirect();
-
-    return () => unsubscribe();
-  }, [userProfile]);
-
-  const handleGoogleSignIn = async () => {
-    console.log("[Auth] handleGoogleSignIn triggered");
-    setAuthError('');
-    setAuthLoading(true);
-    
-    // Prefer Redirect in production to avoid COOP/popup issues reported in audit
-    const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    try {
-      if (!isLocal || isMobile) {
-        console.log("[Auth] Using Redirect Flow (Production/Mobile)");
-        await signInRedirect();
-      } else {
-        console.log("[Auth] Using Popup Flow (Development/Desktop)");
-        await signIn();
-        // onAuthStateChanged will handle the result
-      }
-    } catch (err: any) {
-      console.error("[Auth] Google Sign-In Error:", err);
-      
-      // Automatic fallback if popup is blocked or fails
-      if (err.code === 'auth/popup-blocked' || err.code === 'auth/popup-closed-by-user') {
-        try {
-          await signInRedirect();
-        } catch (redirErr) {
-          setAuthError(getFriendlyAuthError(redirErr));
-          setAuthLoading(false);
-        }
-      } else {
-        setAuthError(getFriendlyAuthError(err));
-        setAuthLoading(false);
-      }
-    }
-  };
-
-  // Re-enable window properties for legacy hooks
-  useEffect(() => {
-    (window as any).openCreateGroupModal = () => setIsCreateModalOpen(true);
-    return () => {
-      delete (window as any).openCreateGroupModal;
-    };
-  }, []);
 
   // GoCardless Callback Detection
   useEffect(() => {
@@ -364,7 +110,6 @@ export default function App() {
     if (requisitionId && user) {
       const handleCallback = async () => {
         try {
-          const { handleSyncCallback } = await import('./services/syncService');
           const response = await handleSyncCallback('gocardless_sandbox', { requisitionId });
           if (response.success) {
             setAdvisorState({
@@ -384,1180 +129,135 @@ export default function App() {
     }
   }, [user]);
 
-  // Removed redundant groups listener (now in useFinancialData)
+  // Derived data based on user type (Demo vs Real)
+  const isDemo = user?.uid.startsWith('demo-');
+  const groups = isDemo ? [] : financialData.groups;
 
-  useEffect(() => {
-    if (selectedGroupId && !groups.find(g => g.id === selectedGroupId)) {
-      setSelectedGroupId(null);
-    }
-  }, [groups, selectedGroupId]);
-
-  const handleConnectBank = (institutionName: string) => {
-    // In a real app, this would receive data from a Plaid/Finicity webhook
-    // We simulate a successful new connection
-    const newAccount: BankAccount = {
-      id: `acc-${Date.now()}`,
-      institutionName: institutionName,
-      accountName: 'Direct Connection',
-      balance: Math.floor(Math.random() * 5000) + 1500,
-      currency: 'EUR',
-      lastSynced: Timestamp.now()
-    };
-    
-    setBankAccounts(prev => [...prev, newAccount]);
-    
-    // Add a small notification or just rely on the UI update
-    console.log(`Successfully connected to ${institutionName}`);
-  };
-
-  const handleDemoUpdate = (type: 'assets' | 'liabilities' | 'goals' | 'transactions' | 'groups' | 'groupExpense', item: any, extraId?: string) => {
-    if (!user || !user.uid.startsWith('demo-')) return;
-    
-    const formattedItem = {
-      ...item,
-      id: item.id || `demo-${Date.now()}`,
-      updatedAt: Timestamp.now(),
-      createdAt: item.createdAt || Timestamp.now(),
-      date: item.date instanceof Timestamp ? item.date : Timestamp.fromDate(item.date instanceof Date ? item.date : new Date(item.date || Date.now()))
-    };
-
-    switch (type) {
-      case 'assets': setAssets(prev => {
-        const exists = prev.find(a => a.id === formattedItem.id);
-        return exists ? prev.map(a => a.id === formattedItem.id ? (formattedItem as Asset) : a) : [formattedItem as Asset, ...prev];
-      }); break;
-      case 'liabilities': setLiabilities(prev => {
-        const exists = prev.find(l => l.id === formattedItem.id);
-        return exists ? prev.map(l => l.id === formattedItem.id ? (formattedItem as Liability) : l) : [formattedItem as Liability, ...prev];
-      }); break;
-      case 'goals': setGoals(prev => {
-        const exists = prev.find(g => g.id === formattedItem.id);
-        return exists ? prev.map(g => g.id === formattedItem.id ? (formattedItem as FinancialGoal) : g) : [formattedItem as FinancialGoal, ...prev];
-      }); break;
-      case 'transactions': setTransactions(prev => {
-        const exists = prev.find(t => t.id === formattedItem.id);
-        return exists ? prev.map(t => t.id === formattedItem.id ? (formattedItem as Transaction) : t) : [formattedItem as Transaction, ...prev];
-      }); break;
-      case 'groups': setGroups(prev => {
-        const exists = prev.find(g => g.id === formattedItem.id);
-        return exists ? prev.map(g => g.id === formattedItem.id ? (formattedItem as Group) : g) : [formattedItem as Group, ...prev];
-      }); break;
-      case 'groupExpense': 
-        if (extraId) {
-          setGroupExpenses(prev => {
-            const current = prev[extraId] || [];
-            const exists = current.find(e => e.id === formattedItem.id);
-            if (exists) {
-              return {
-                ...prev,
-                [extraId]: current.map(e => e.id === formattedItem.id ? (formattedItem as Expense) : e)
-              };
-            }
-            return {
-              ...prev,
-              [extraId]: [formattedItem as Expense, ...current]
-            };
-          });
-        }
-        break;
-    }
-  };
-
-  const handleDemoDelete = (type: 'assets' | 'liabilities' | 'goals' | 'transactions' | 'groups', id: string) => {
-    if (!user || !user.uid.startsWith('demo-')) return;
-    switch (type) {
-      case 'assets': setAssets(prev => prev.filter(item => item.id !== id)); break;
-      case 'liabilities': setLiabilities(prev => prev.filter(item => item.id !== id)); break;
-      case 'goals': setGoals(prev => prev.filter(item => item.id !== id)); break;
-      case 'transactions': setTransactions(prev => prev.filter(item => item.id !== id)); break;
-      case 'groups': setGroups(prev => prev.filter(item => item.id !== id)); break;
-    }
-  };
-
-
-  // Emergency reset if stuck in loading
   const handleEmergencyLogout = async () => {
-    console.log("[Auth] Emergency Reset Triggered");
     await logOut();
-    // Force a full reload to clear any stale memory/redirect states
     window.location.href = '/'; 
   };
 
-  // Loading Guard: Stay in loading if we have a user but no profile yet (for non-demo users)
-  const isProfileLoading = user && !user.uid.startsWith('demo-') && !userProfile;
-  if (loading || isProfileLoading) {
+  // Main UI Guards
+  if (authLoading || (user && !user.uid.startsWith('demo-') && !userProfile)) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#020617] transition-colors duration-300">
-        <div className="relative">
-          <motion.div 
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="w-24 h-24 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full shadow-[0_0_50px_rgba(99,102,241,0.2)]"
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-             <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center backdrop-blur-xl border border-white/5">
-                <LayoutDashboard className="w-6 h-6 text-indigo-500" />
-             </div>
-          </div>
-        </div>
-        
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-8 text-center"
-        >
-          <h2 className="text-white font-black tracking-[0.3em] uppercase text-[10px] mb-2">Moneyflow OS</h2>
-          <p className="text-indigo-400 font-bold tracking-widest text-[9px] uppercase animate-pulse">
-            {user && !userProfile ? 'Preparing your workspace...' : 'Setting up Moneyflow...'}
-          </p>
-        </motion.div>
-        
-        {/* Emergency Button after 3 seconds */}
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 4 }}
-          onClick={handleEmergencyLogout}
-          className="mt-12 px-8 py-3 bg-white/5 hover:bg-white/10 text-slate-500 hover:text-white rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all border border-white/5"
-        >
-          Stuck? Click to Reset Session
-        </motion.button>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#020617]">
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: "linear" }} className="w-16 h-16 border-2 border-indigo-500/20 border-t-indigo-500 rounded-full" />
+        <p className="mt-8 text-[10px] font-black uppercase tracking-[0.3em] text-indigo-500/50">Synchronizing Core Systems</p>
+        <button onClick={handleEmergencyLogout} className="mt-12 text-[10px] font-black uppercase tracking-widest text-zinc-500">Stuck? Reset Session</button>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-[#020617] p-4 text-center relative overflow-hidden transition-colors duration-300">
-        {/* Advanced Mesh Gradient Background */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-          <div className="absolute -top-1/4 -left-1/4 w-[80%] h-[80%] bg-indigo-500/20 dark:bg-indigo-600/10 rounded-full blur-[140px] animate-pulse" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60%] h-[60%] bg-fuchsia-500/10 dark:bg-purple-600/10 rounded-full blur-[120px]" />
-          <div className="absolute -bottom-1/4 -right-1/4 w-[80%] h-[80%] bg-emerald-500/10 dark:bg-emerald-600/10 rounded-full blur-[140px]" />
-        </div>
-
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          className="max-w-md w-full glass-card p-10 sm:p-14 rounded-[3.5rem] shadow-premium relative z-10"
-        >
-          <div className="w-20 h-20 bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 rounded-[2.5rem] flex items-center justify-center mx-auto mb-10 shadow-glow rotate-3">
-            <motion.div
-              animate={{ rotate: [-10, 10, -10] }}
-              transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-            >
-              <Activity className="w-10 h-10 text-white" />
-            </motion.div>
-          </div>
-          
-          <h1 className="text-4xl sm:text-5xl font-black tracking-tighter mb-4 text-slate-900 dark:text-white font-display">
-            Your financial life, clearly organized.
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 mb-12 leading-relaxed text-base font-medium px-4">
-            Moneyflow helps you understand your accounts, spending, goals and AI-assisted insights in one private workspace.
-          </p>
-
-          <div className="space-y-6">
-            {!isEmailView ? (
-              <div className="space-y-3">
-                {authError && (
-                  <div className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-[2rem] text-rose-600 dark:text-rose-400 text-xs font-bold mb-4 animate-shake leading-relaxed">
-                    {authError}
-                  </div>
-                )}
-                <button
-                  onClick={handleGoogleSignIn}
-                  disabled={authLoading}
-                  className="w-full py-5 addictive-gradient text-white rounded-[2rem] font-black hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-4 shadow-2xl shadow-indigo-600/30 text-lg outline-none focus:ring-4 focus:ring-indigo-500/40 group disabled:opacity-70"
-                >
-                  <div className="w-7 h-7 bg-white rounded-full flex items-center justify-center p-1.5 shadow-sm group-hover:rotate-12 transition-transform shrink-0">
-                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" className="w-full h-full" />
-                  </div>
-                  {authLoading ? 'Signing in...' : 'Continue with Google'}
-                </button>
-                
-                <button
-                  onClick={() => setIsEmailView(true)}
-                  className="w-full py-4 bg-white dark:bg-white/5 text-slate-600 dark:text-zinc-400 rounded-[2rem] font-bold border-2 border-slate-100 dark:border-white/5 hover:border-indigo-500 transition-all text-sm"
-                >
-                  Continue with Email
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleEmailAuth} className="space-y-4">
-                {authError && (
-                  <div className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-[2rem] text-rose-600 dark:text-rose-400 text-xs font-bold leading-relaxed">
-                    {authError}
-                  </div>
-                )}
-                
-                <div className="space-y-3 text-left">
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5 ml-5">Email Address</label>
-                    <input 
-                      type="email" 
-                      value={authEmail}
-                      onChange={(e) => setAuthEmail(e.target.value)}
-                      required
-                      className="w-full px-6 py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 text-slate-900 dark:text-white transition-all font-medium"
-                      placeholder="you@example.com"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5 ml-5">Security Key</label>
-                    <input 
-                      type="password" 
-                      value={authPassword}
-                      onChange={(e) => setAuthPassword(e.target.value)}
-                      required
-                      minLength={6}
-                      className="w-full px-6 py-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-indigo-500 dark:focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 text-slate-900 dark:text-white transition-all font-medium"
-                      placeholder="••••••••"
-                    />
-                  </div>
-                </div>
-
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={authLoading}
-                    className="w-full py-5 addictive-gradient text-white rounded-[2rem] font-black hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 shadow-xl shadow-indigo-600/20 text-lg disabled:opacity-50 disabled:pointer-events-none"
-                  >
-                    {authLoading ? 'Verifying...' : (isSignUp ? 'Create Account' : 'Sign In')}
-                  </button>
-                  
-                  <div className="mt-6 flex flex-col gap-3">
-                    <button
-                      type="button"
-                      onClick={() => setIsSignUp(!isSignUp)}
-                      className="text-xs font-bold text-slate-500 hover:text-indigo-600 transition-colors"
-                    >
-                      {isSignUp ? 'Already have an account? Sign in' : "New to Moneyflow? Create an account"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsEmailView(false)}
-                      className="text-xs font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                    >
-                      Back to Google Login
-                    </button>
-                  </div>
-                </div>
-              </form>
-            )}
-
-            <div className="flex items-center gap-3 py-2">
-              <div className="flex-1 h-[1px] bg-slate-200 dark:bg-slate-800" />
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none">Explore</span>
-              <div className="flex-1 h-[1px] bg-slate-200 dark:bg-slate-800" />
-            </div>
-            
-            <div className="pt-2">
-              <button
-                onClick={() => {
-                  const demoProfiles = [
-                    {
-                      name: 'The Executive',
-                      goal: 'Legacy Building',
-                      exp: 'Expert',
-                      assets: [
-                        { id: '1', name: 'Private Equity', type: 'investment', value: 450000, institution: 'JP Morgan', createdAt: Timestamp.now(), updatedAt: Timestamp.now() },
-                        { id: '2', name: 'Swiss Estate', type: 'real_estate', value: 1200000, institution: 'Personal', createdAt: Timestamp.now(), updatedAt: Timestamp.now() }
-                      ],
-                      liabilities: [{ id: '1', name: 'Lombard Loan', type: 'loan', totalAmount: 200000, remainingAmount: 150000, monthlyPayment: 2000, interestRate: 2.1, createdAt: Timestamp.now(), updatedAt: Timestamp.now() }],
-                      income: 25000
-                    },
-                    {
-                      name: 'Crypto Whale',
-                      goal: 'Strategic Growth',
-                      exp: 'Intermediate',
-                      assets: [
-                        { id: '1', name: 'Cold Wallet (BTC)', type: 'crypto', value: 850000, institution: 'Ledger', createdAt: Timestamp.now(), updatedAt: Timestamp.now() },
-                        { id: '2', name: 'Solana Ecosystem', type: 'crypto', value: 120000, institution: 'Phantom', createdAt: Timestamp.now(), updatedAt: Timestamp.now() }
-                      ],
-                      liabilities: [],
-                      income: 5000
-                    }
-                  ];
-
-                  const arc = demoProfiles[Math.floor(Math.random() * demoProfiles.length)];
-                  
-                  const demoUser = {
-                    uid: 'demo-' + arc.name.toLowerCase().replace(' ', '-'),
-                    displayName: arc.name,
-                    email: 'guest@moneyflow.ai',
-                    photoURL: `https://ui-avatars.com/api/?name=${arc.name}&background=6366f1&color=fff`,
-                  } as any;
-                  setUser(demoUser);
-                  
-                  setUserProfile({
-                    uid: demoUser.uid,
-                    displayName: arc.name,
-                    primaryGoal: arc.goal,
-                    experienceLevel: arc.exp,
-                    hasCompletedOnboarding: true,
-                    plan: 'free',
-                    subscriptionStatus: 'trialing',
-                    trialStartDate: new Date().toISOString(),
-                    palantirTrialDays: 7,
-                  } as any);
-                  
-                  setAssets(arc.assets as any);
-                  setLiabilities(arc.liabilities as any);
-                  setTransactions([
-                    { id: '1', amount: arc.income, category: 'income', date: Timestamp.now(), description: 'Monthly Income', type: 'income', isRecurring: true, createdAt: Timestamp.now() },
-                    { id: '2', amount: -(arc.income * 0.4), category: 'housing', date: Timestamp.now(), description: 'Living Expenses', type: 'expense', isRecurring: true, createdAt: Timestamp.now() }
-                  ]);
-                  setLoading(false);
-                }}
-                className="w-full py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-[2rem] font-black hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-xl shadow-zinc-200 dark:shadow-black/20 text-sm group"
-              >
-                <Zap className="w-5 h-5 text-indigo-500 group-hover:animate-pulse" />
-                <span>Try demo</span>
-              </button>
-              <p className="mt-4 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.15em] text-center leading-relaxed">
-                Informational read-only view. No money movement.<br />
-                <span className="opacity-60">Private beta access • Not financial advice</span>
-              </p>
-            </div>
-          </div>
-        </motion.div>
-      </div>
+      <AnimatePresence mode="wait">
+        {!showAuth ? (
+          <motion.div key="marketing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+            <MarketingLanding onStart={() => setShowAuth(true)} onTryDemo={() => window.location.reload()} />
+          </motion.div>
+        ) : (
+          <motion.div key="auth" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+            <AuthPage 
+              onGoogleSignIn={handleGoogleSignIn} onEmailAuth={handleEmailAuth}
+              authEmail={authEmail} setAuthEmail={setAuthEmail}
+              authPassword={authPassword} setAuthPassword={setAuthPassword}
+              isEmailView={isEmailView} setIsEmailView={setIsEmailView}
+              isSignUp={isSignUp} setIsSignUp={setIsSignUp}
+              authError={loginError} authLoading={isLogginIn}
+              onTryDemo={() => window.location.reload()}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     );
   }
 
   return (
-    <div className="flex h-screen mesh-gradient font-sans selection:bg-indigo-100 selection:text-indigo-900 relative overflow-hidden transition-colors duration-300">
-      {/* Magic Onboarding Overlay */}
-      {user && !user.uid.startsWith('demo-') && userProfile && !userProfile.hasCompletedOnboarding && (
-        <MagicOnboarding 
-          userId={user.uid} 
-          onComplete={() => {
-            // The onSnapshot in App.tsx will pick up the firestore change
-            console.log('Onboarding complete!');
-          }} 
-        />
-      )}
-      {/* Mobile Sidebar Overlay */}
-      <AnimatePresence>
-        {isSidebarOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsSidebarOpen(false)}
-            className="fixed inset-0 bg-zinc-950/60 backdrop-blur-sm z-40 lg:hidden"
-          />
-        )}
-      </AnimatePresence>
+    <div className="flex h-screen mesh-gradient font-sans selection:bg-indigo-100 relative overflow-hidden transition-colors duration-300">
+      {userProfile && !userProfile.hasCompletedOnboarding && <MagicOnboarding userId={user.uid} onComplete={() => console.log('Ready.')} />}
 
-      {/* Sidebar */}
-      <aside className={`
-        fixed lg:static inset-y-0 left-0 w-72 bg-white/70 dark:bg-zinc-950/40 backdrop-blur-3xl border-r border-white/20 dark:border-white/5 flex flex-col z-50 lg:z-10 transition-all duration-300 ease-in-out overflow-y-auto custom-scrollbar
-        ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-      `}>
-        {/* Vibrant background glow */}
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-10 dark:opacity-20">
-          <div className="absolute -top-24 -left-24 w-64 h-64 bg-indigo-600 rounded-full blur-[100px]" />
-          <div className="absolute top-1/2 -right-32 w-64 h-64 bg-fuchsia-600 rounded-full blur-[100px]" />
-        </div>
+      <Sidebar 
+        navigationItems={navigationItems} activeTab={activeTab} setActiveTab={setActiveTab}
+        groups={groups} selectedGroupId={selectedGroupId} setSelectedGroupId={setSelectedGroupId}
+        user={user} onLogout={handleEmergencyLogout} theme={theme} toggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+        isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen}
+        onAddAsset={() => setIsAddAssetModalOpen(true)} onAddLiability={() => setIsAddLiabilityModalOpen(true)}
+        onAddTransaction={() => setIsAddTransactionModalOpen(true)} onCreateGroup={() => setIsCreateModalOpen(true)}
+      />
 
-        <div className="p-8 relative z-10 shrink-0">
-          <div className="flex items-center justify-between mb-10">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-fuchsia-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
-                <Wallet className="w-6 h-6 text-white" />
-              </div>
-              <span className="text-xl font-bold tracking-tight text-indigo-600 dark:text-indigo-400 font-display">Moneyflow</span>
-            </div>
-            <button 
-              onClick={() => setIsSidebarOpen(false)}
-              className="lg:hidden p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-
-          <nav className="space-y-1.5">
-            {navigationItems.map(item => (
-              <button 
-                key={item.id}
-                onClick={() => {
-                  if ((item as any).comingSoon) return;
-                  setActiveTab(item.id as any);
-                  setSelectedGroupId(null);
-                  setIsSidebarOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 ${(item as any).comingSoon ? 'opacity-40 cursor-not-allowed' : activeTab === item.id ? 'bg-indigo-600 text-white shadow-xl shadow-indigo-500/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
-              >
-                <div className="flex items-center gap-3">
-                  <item.icon className="w-5 h-5" />
-                  <span className="font-bold">{t(item.label)}</span>
-                </div>
-                {(item as any).beta && (
-                  <span className="text-[8px] font-black bg-indigo-500/10 text-indigo-400 px-1.5 py-0.5 rounded border border-indigo-500/20">BETA</span>
-                )}
-                {(item as any).comingSoon && (
-                  <span className="text-[8px] font-black bg-slate-500/10 text-slate-400 px-1.5 py-0.5 rounded border border-slate-500/20">SOON</span>
-                )}
-              </button>
-            ))}
-          </nav>
-
-          <div className="pt-4 border-t border-zinc-100 dark:border-white/5 pb-6">
-            <p className="px-4 text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3">Wealth Management</p>
-            <button 
-              onClick={() => { setIsAddAssetModalOpen(true); setIsSidebarOpen(false); }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white transition-all font-bold group"
-            >
-              <div className="p-1.5 bg-indigo-500/10 rounded-lg group-hover:bg-indigo-500 group-hover:text-white transition-colors">
-                <Plus className="w-4 h-4" />
-              </div>
-              Add Manual Asset
-            </button>
-            <button 
-              onClick={() => { setIsAddLiabilityModalOpen(true); setIsSidebarOpen(false); }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white transition-all font-bold group"
-            >
-              <div className="p-1.5 bg-red-500/10 rounded-lg group-hover:bg-red-500 group-hover:text-white transition-colors">
-                <MinusCircle className="w-4 h-4" />
-              </div>
-              Add Liability
-            </button>
-            <button 
-              onClick={() => { setIsAddTransactionModalOpen(true); setIsSidebarOpen(false); }}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white transition-all font-bold group"
-            >
-              <div className="p-1.5 bg-slate-100 dark:bg-white/10 rounded-lg group-hover:bg-slate-900 dark:group-hover:bg-white transition-colors">
-                <Receipt className="w-4 h-4" />
-              </div>
-              Add Manual Entry
-            </button>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-4 py-2 relative z-10 custom-scrollbar min-h-[200px]">
-          <div className="flex items-center justify-between px-4 mb-4">
-            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">Your Groups</span>
-            <button 
-              onClick={() => {
-                setIsCreateModalOpen(true);
-                setIsSidebarOpen(false);
-              }}
-              className="p-1.5 hover:bg-zinc-100 dark:hover:bg-white/10 rounded-lg transition-colors text-zinc-400 dark:text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="space-y-1">
-            {groups.map(group => (
-              <button
-                key={group.id}
-                onClick={() => {
-                  setSelectedGroupId(group.id);
-                  setIsSidebarOpen(false);
-                }}
-                className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 group ${selectedGroupId === group.id ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white'}`}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={`w-2 h-2 rounded-full transition-transform group-hover:scale-125 ${group.type === 'personal' ? 'bg-blue-400' : group.type === 'household' ? 'bg-emerald-400' : 'bg-orange-400'}`} />
-                  <span className="truncate text-sm font-medium">{group.name}</span>
-                </div>
-                {selectedGroupId === group.id && <ChevronRight className="w-4 h-4 opacity-70" />}
-              </button>
-            ))}
-            {groups.length === 0 && (
-              <div className="px-4 py-8 text-center">
-                <p className="text-xs text-zinc-400 dark:text-zinc-600 italic">No groups yet</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="p-6 mt-auto relative z-10 shrink-0">
-          <div className="p-4 bg-zinc-50 dark:bg-white/5 rounded-2xl border border-zinc-200 dark:border-white/10 mb-4 backdrop-blur-md">
-            <div className="flex items-center gap-3">
-              <img src={user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName}&background=random`} alt="" className="w-10 h-10 rounded-xl shadow-sm border border-zinc-200 dark:border-white/10" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-zinc-900 dark:text-white truncate">{user.displayName}</p>
-                <p className="text-[10px] text-zinc-500 truncate font-mono">{user.email}</p>
-              </div>
-            </div>
-            
-            {user.uid.startsWith('demo-') && (
-              <button
-                onClick={signIn}
-                className="mt-4 w-full py-3 bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white rounded-xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-600/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-              >
-                Save Progress & Sign Up
-              </button>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={() => {
-                if (user.uid.startsWith('demo-')) {
-                  setUser(null);
-                } else {
-                  logOut();
-                }
-              }}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-zinc-500 dark:text-zinc-400 hover:bg-red-500/10 hover:text-red-600 dark:hover:text-red-400 transition-all duration-300 font-bold text-sm"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign Out
-            </button>
-            <button 
-              onClick={toggleTheme}
-              className="p-3 rounded-xl text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-white/5 hover:text-zinc-900 dark:hover:text-white transition-all duration-300"
-              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            >
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
       <main className="flex-1 overflow-y-auto relative pb-32 lg:pb-0">
-        {/* Mobile Header */}
-        <div className="lg:hidden flex items-center justify-between p-4 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-zinc-100 dark:border-white/5 sticky top-0 z-30 transition-colors">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-fuchsia-500 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-500/10">
-              <Wallet className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-slate-900 dark:text-white font-display tracking-tight">Moneyflow</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={toggleTheme}
-              className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
-            >
-              {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-            <button 
-              onClick={() => setIsSidebarOpen(true)}
-              className="p-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-white"
-            >
-              <Menu className="w-6 h-6" />
-            </button>
-          </div>
-        </div>
-        {/* Global Market Pulse */}
-        <div className="sticky top-0 z-40">
-          <GlobalPulse />
-        </div>
-
-        {/* Floating AI Assistant Trigger */}
-        <motion.button 
-          onClick={triggerAdvice}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className="fixed bottom-28 lg:bottom-10 right-6 z-40 w-14 h-14 lg:w-16 lg:h-16 bg-white/10 dark:bg-slate-900/40 backdrop-blur-xl border border-indigo-500/30 rounded-full flex items-center justify-center shadow-2xl group overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-fuchsia-600/20 group-hover:opacity-100 opacity-0 transition-opacity" />
-          <img 
-            src="/assets/ai_assistant.png" 
-            alt="AI Partner" 
-            className="w-full h-full object-cover scale-110" 
-          />
-          <div className="absolute top-1 right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-900 animate-pulse shadow-lg" />
-        </motion.button>
-
-        {/* Beta Feedback Button (Floating) */}
-        <BetaFeedbackButton variant="floating" section="App Shell" />
-
-        {/* AI Advisor Assistant (Conversational Chat) */}
-        <NeuralAdvisor 
-          isVisible={advisorState.visible}
-          context={{
-            assets,
-            liabilities,
-            goals,
-            transactions,
-            bankAccounts,
-            userDisplayName: userProfile?.displayName || 'User',
-            baseCurrency: userProfile?.baseCurrency || 'EUR'
-          }}
-          language={userProfile?.language || 'en'}
-          initialMessage={advisorState.message}
-          onClose={() => setAdvisorState(prev => ({ ...prev, visible: false, message: '' }))}
-        />
+        <header className="lg:hidden flex items-center justify-between p-4 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-30">
+          <div className="flex items-center gap-2"><div className="w-8 h-8 bg-indigo-600 rounded-lg" /><span className="font-bold dark:text-white">Moneyflow</span></div>
+          <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-zinc-500"><Menu className="w-6 h-6" /></button>
+        </header>
+        
+        <GlobalPulse />
+        
+        <motion.button onClick={() => setAdvisorState({ visible: true, message: 'How can I help?' })} className="fixed bottom-28 lg:bottom-10 right-6 z-40 w-14 h-14 bg-indigo-600 rounded-full shadow-2xl flex items-center justify-center text-white"><Globe className="w-6 h-6" /></motion.button>
 
         <AnimatePresence mode="wait">
-          {selectedGroupId ? (
-            <motion.div
-              key={selectedGroupId}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto"
-            >
-              <GroupView 
-                groupId={selectedGroupId} 
-                user={user} 
-                onBack={() => setSelectedGroupId(null)} 
-                theme={theme}
-                demoExpenses={groupExpenses[selectedGroupId] || []}
-                onDemoExpenseAdd={(exp) => handleDemoUpdate('groupExpense', exp, selectedGroupId)}
-                allGroups={groups}
-              />
-            </motion.div>
-          ) : activeTab === 'dashboard' ? (
-            <motion.div
-              key="dashboard"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto"
-            >
-              <WealthOverview 
-                assets={assets}
-                liabilities={liabilities}
-                goals={goals}
-                insights={insights}
-                transactions={transactions}
-                bankAccounts={bankAccounts}
-                onInsightsGenerated={async (newInsights) => {
-                  setInsights(newInsights);
-                  if (!user.uid.startsWith('demo-')) {
-                    // Save to firestore for persistence
-                    for (const insight of newInsights) {
-                       await addDoc(collection(db, 'users', user!.uid, 'insights'), {
-                         ...insight,
-                         ownerId: user!.uid,
-                         createdAt: serverTimestamp(),
-                         updatedAt: serverTimestamp(),
-                       });
-                    }
-                  }
-                }}
-                onConnectBank={() => setIsConnectBankOpen(true)}
-                onAddGoal={() => setIsAddGoalModalOpen(true)}
-                onAddAsset={() => setIsAddAssetModalOpen(true)}
-                onGenerateReport={() => {
-                  setIsCFOReportOpen(true);
-                }}
-                theme={theme}
-              />
-            </motion.div>
-          ) : activeTab === 'groups' ? (
-            <motion.div
-              key="groups"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto"
-            >
-              <Dashboard 
-                groups={groups} 
-                onSelectGroup={setSelectedGroupId}
-                user={user}
-                onAddGroup={() => setIsCreateModalOpen(true)}
-                onAddAsset={() => setIsAddAssetModalOpen(true)}
-                onAddTransaction={() => setIsAddTransactionModalOpen(true)}
-                onConnectBank={() => setIsConnectBankOpen(true)}
-                onNavigateToTab={(tab) => setActiveTab(tab)}
-                userProfile={userProfile || undefined}
-                theme={theme}
-                transactions={transactions}
-                assets={assets}
-                bankAccounts={bankAccounts}
-                connectedAccounts={connectedAccounts}
-                goals={goals}
-                liabilities={liabilities}
-                onNavigateToLedger={() => setActiveTab('ledger')}
-              />
-            </motion.div>
-          ) : activeTab === 'forecast' ? (
-            <motion.div
-              key="forecast"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto"
-            >
-              <FinancialForecast
-                assets={assets}
-                liabilities={liabilities}
-                transactions={transactions}
-                bankAccounts={bankAccounts}
-                userProfile={userProfile || undefined}
-              />
-            </motion.div>
-          ) : activeTab === 'palantir' ? (
-            <motion.div
-              key="palantir"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="p-0 sm:p-4 lg:p-6"
-            >
-              <Palantir 
-                assets={assets} 
-                liabilities={liabilities} 
-                goals={goals} 
-                transactions={transactions}
-                bankAccounts={bankAccounts}
-                connectedInstitutions={connectedInstitutions}
-                connectedAccounts={connectedAccounts}
-                cryptoWallets={cryptoWallets}
-                investmentAccounts={investmentAccounts}
-                income={income}
-                userProfile={userProfile} 
-                onAskAI={(prompt) => setAdvisorState({ visible: true, message: prompt })} 
-              />
-            </motion.div>
-          ) : activeTab === 'sync' ? (
-            <motion.div
-              key="sync"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.3 }}
-              className="p-0 sm:p-4 lg:p-6"
-            >
-              <IntegrationsHub 
-                userId={user.uid} 
-                userProfile={userProfile || undefined} 
-                connectedInstitutions={connectedInstitutions}
-              />
-            </motion.div>
-          ) : activeTab === 'ledger' ? (
-            <motion.div
-              key="ledger"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto"
-            >
-              <TransactionsView 
-                transactions={transactions}
-                userId={user.uid}
-                onAddTransaction={() => setIsAddTransactionModalOpen(true)}
-                onDeleteTransaction={(id) => handleDemoDelete('transactions', id)}
-                onEditTransaction={(tx) => {
-                  setEditingTransaction(tx);
-                  setIsAddTransactionModalOpen(true);
-                }}
-                userProfile={userProfile || undefined}
-              />
-            </motion.div>
-          ) : activeTab === 'goals' ? (
-            <motion.div
-              key="goals"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto"
-            >
-              <GoalsView 
-                goals={goals}
-                onAddGoal={() => setIsAddGoalModalOpen(true)}
-                userProfile={userProfile || undefined}
-              />
-            </motion.div>
-          ) : activeTab === 'settings' ? (
-            <motion.div
-              key="settings"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto"
-            >
-              <div className="mb-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
-                <div>
-                  <h1 className="text-4xl font-black font-display tracking-tight text-slate-900 dark:text-white mb-2">{t('Account Settings')}</h1>
-                  <p className="text-slate-500">{t('Manage your profile, preferences, and premium subscription.')}</p>
-                </div>
-                <button
-                  onClick={() => setIsFeedbackOpen(true)}
-                  className="flex items-center gap-3 px-6 py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl font-bold hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-zinc-200 dark:shadow-black/20"
-                >
-                  <MessageSquare className="w-5 h-5 text-indigo-500" />
-                  {t('Suggest a Feature')}
-                </button>
-              </div>
-              <SubscriptionSettings 
-                userProfile={userProfile}
-                userId={user.uid}
-                userEmail={user.email}
-              />
-              <PreferencesSettings 
-                exportData={{
-                  userProfile,
-                  assets,
-                  liabilities,
-                  transactions,
-                  bankAccounts,
-                  goals,
-                  insights,
-                  groups,
-                  connectedInstitutions,
-                  connectedAccounts,
-                  cryptoWallets
-                }}
-              />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="fallback"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex items-center justify-center min-h-[60vh] text-slate-400 font-bold uppercase tracking-widest text-[10px]"
-            >
-              Setting up Moneyflow...
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Mobile Bottom Navigation */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-2xl border-t border-zinc-100 dark:border-white/5 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom,1.5rem))] z-40 transition-colors shadow-[0_-10px_30px_rgba(0,0,0,0.05)]">
-          <div className="flex items-center justify-around max-w-md mx-auto">
-            <button
-              onClick={() => {
-                setActiveTab('dashboard');
-                setSelectedGroupId(null);
-                setIsSidebarOpen(false);
-              }}
-              className={`flex-1 flex flex-col items-center gap-1.5 py-2 transition-all ${
-                activeTab === 'dashboard' && !selectedGroupId
-                  ? 'text-indigo-600 dark:text-indigo-400 scale-110' 
-                  : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
-              }`}
-            >
-              <LayoutDashboard className={`w-5 h-5 ${(activeTab === 'dashboard' && !selectedGroupId) ? 'fill-indigo-500/10' : ''}`} />
-              <span className="text-[10px] font-black uppercase tracking-tight">Home</span>
-            </button>
-
-            {navigationItems.map((item) => {
-              if (item.id === 'dashboard' || item.id === 'settings') return null;
-              const Icon = item.icon;
-              const isActive = activeTab === item.id && !selectedGroupId;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveTab(item.id as any);
-                    setSelectedGroupId(null);
-                    setIsSidebarOpen(false);
-                  }}
-                  className={`flex-1 flex flex-col items-center gap-1.5 py-2 transition-all ${
-                    isActive
-                      ? 'text-indigo-600 dark:text-indigo-400 scale-110' 
-                      : 'text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200'
-                  }`}
-                >
-                  <Icon className={`w-5 h-5 ${isActive ? 'fill-indigo-500/10' : ''}`} />
-                  <span className="text-[10px] font-black uppercase tracking-tight">{item.label}</span>
-                </button>
-              );
-            })}
+          <div className="p-4 sm:p-6 lg:p-10 max-w-7xl mx-auto">
+            {selectedGroupId ? (
+              <motion.div key="group" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><GroupView groupId={selectedGroupId} onBack={() => setSelectedGroupId(null)} theme={theme} /></motion.div>
+            ) : activeTab === 'overview' ? (
+              <motion.div key="overview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <WealthOverview 
+                  onInsightsGenerated={async () => {}} 
+                  onConnectBank={() => setIsConnectBankOpen(true)} 
+                  onConnectCrypto={() => setIsConnectCryptoOpen(true)}
+                  onAddGoal={() => setIsAddGoalModalOpen(true)} 
+                  onAddAsset={() => setIsAddAssetModalOpen(true)} 
+                  onGenerateReport={() => setIsCFOReportOpen(true)} 
+                  theme={theme} 
+                />
+              </motion.div>
+            ) : activeTab === 'social' ? (
+              <motion.div key="social" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <PaywallGuard feature="ADVANCED_GROUPS">
+                  <Dashboard onSelectGroup={setSelectedGroupId} onNavigateToLedger={() => setActiveTab('ledger')} theme={theme} />
+                </PaywallGuard>
+              </motion.div>
+            ) : activeTab === 'palantir' ? (
+              <motion.div key="palantir" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <PaywallGuard feature="PALANTIR_LIVE">
+                  <Palantir onAskAI={(p) => setAdvisorState({ visible: true, message: p })} />
+                </PaywallGuard>
+              </motion.div>
+            ) : activeTab === 'forecast' ? (
+              <motion.div key="forecast" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <PaywallGuard feature="SCENARIO_ENGINE">
+                  <FinancialForecast />
+                </PaywallGuard>
+              </motion.div>
+            ) : activeTab === 'ledger' ? (
+              <motion.div key="ledger" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><TransactionsView onAddTransaction={() => setIsAddTransactionModalOpen(true)} onEditTransaction={(tx) => { setEditingTransaction(tx); setIsAddTransactionModalOpen(true); }} /></motion.div>
+            ) : activeTab === 'goals' ? (
+              <motion.div key="goals" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><GoalsView onAddGoal={() => setIsAddGoalModalOpen(true)} /></motion.div>
+            ) : activeTab === 'settings' ? (
+              <motion.div key="settings" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <SubscriptionSettings userProfile={userProfile} userId={user.uid} userEmail={user.email} />
+                <PreferencesSettings />
+              </motion.div>
+            ) : null}
           </div>
-        </div>
+        </AnimatePresence>
       </main>
 
+      <MobileNav navigationItems={navigationItems} activeTab={activeTab} setActiveTab={setActiveTab} selectedGroupId={selectedGroupId} setSelectedGroupId={setSelectedGroupId} setIsSidebarOpen={setIsSidebarOpen} />
+      
       {/* Modals */}
-      <AnimatePresence>
-        {dataDeletedPopup && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }}
-              onClick={() => setDataDeletedPopup(false)}
-              className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
-            />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-[40px] shadow-2xl p-10 text-center"
-            >
-              <div className="w-20 h-20 bg-orange-50 dark:bg-orange-500/10 rounded-3xl flex items-center justify-center mx-auto mb-8 text-orange-600 dark:text-orange-400 border border-orange-100 dark:border-orange-500/20">
-                <Settings className="w-10 h-10" />
-              </div>
-              <h3 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-white mb-4 font-display">Demo Data Reset</h3>
-              <p className="text-slate-500 dark:text-slate-400 mb-10 leading-relaxed text-sm">
-                Your data has been wiped because 24 hours have passed since your session began. 
-                <br /><br />
-                To keep your wealth data permanent, please <span className="font-bold text-indigo-600 dark:text-indigo-400">Remix</span> this Moneyflow instance.
-              </p>
-              <button
-                onClick={() => setDataDeletedPopup(false)}
-                className="w-full py-4 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl font-bold hover:bg-zinc-800 dark:hover:bg-zinc-100 transition-all shadow-lg shadow-zinc-200 dark:shadow-black/20 active:scale-95"
-              >
-                Got it
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      <CreateGroupModal 
-        isOpen={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)} 
-        user={user}
-        onDemoAdd={(group) => handleDemoUpdate('groups', group)}
-        onSuccess={(groupId) => setSelectedGroupId(groupId)}
-      />
-
-      <CFOReportModal 
-        isOpen={isCFOReportOpen}
-        onClose={() => setIsCFOReportOpen(false)}
-        onSend={async (email) => {
-          
-          const totalAssets = calculateTotalAssets(assets, bankAccounts);
-          const totalLiabilities = calculateTotalLiabilities(liabilities);
-          const netWorth = calculateNetWorth(assets, bankAccounts, liabilities);
-
-          // Call Gemini for the CFO Data
-          const cfoData = await generateCFOReportData(assets, liabilities, insights, i18n.language);
-
-          const doc = new jsPDF();
-          
-          // Header
-          doc.setFontSize(22);
-          doc.setTextColor(30, 41, 59);
-          doc.text('STRATEGIC FINANCIAL AUDIT (DEMO)', 14, 22);
-          
-          doc.setFontSize(10);
-          doc.setTextColor(100, 116, 139);
-          doc.text(`PREPARED FOR: ${email.toUpperCase()}`, 14, 32);
-          doc.text(`DATE: ${new Date().toLocaleDateString()}`, 14, 37);
-          
-          // 1. Executive Summary
-          doc.setFontSize(14);
-          doc.setTextColor(30, 41, 59);
-          doc.text('1. EXECUTIVE SUMMARY', 14, 50);
-          
-          doc.setFontSize(10);
-          doc.setTextColor(71, 85, 105);
-          doc.text(doc.splitTextToSize(cfoData.executiveSummary, 180), 14, 60);
-
-          let currentY = 60 + doc.splitTextToSize(cfoData.executiveSummary, 180).length * 5 + 10;
-          
-          // 2. Asset Breakdown
-          doc.setFontSize(14);
-          doc.setTextColor(30, 41, 59);
-          doc.text('2. ASSET INFRASTRUCTURE', 14, currentY);
-          
-          const currencySymbol = getCurrencySymbol(userProfile?.baseCurrency);
-          const assetRows = [
-            ...assets.map(a => [a.name, a.type.toUpperCase(), `${currencySymbol}${a.value.toLocaleString()}`, `${((a.value/totalAssets)*100).toFixed(1)}%`]),
-            ...bankAccounts.map(b => [b.accountName, 'CASH/BANK', `${currencySymbol}${b.balance.toLocaleString()}`, `${((b.balance/totalAssets)*100).toFixed(1)}%`])
-          ];
-          autoTable(doc, {
-            startY: currentY + 5,
-            head: [['Asset Name', 'Sector', 'Valuation', 'Weight']],
-            body: assetRows,
-            theme: 'striped',
-            headStyles: { fillColor: [79, 70, 229] }
-          });
-          
-          // 3. Liabilities
-          currentY = (doc as any).lastAutoTable.finalY + 15;
-          if (currentY > 250) { doc.addPage(); currentY = 20; }
-
-          doc.setFontSize(14);
-          doc.setTextColor(30, 41, 59);
-          doc.text('3. LIABILITY & DEBT STRUCTURE', 14, currentY);
-          
-          const liabilityRows = liabilities.map(l => [l.name, l.type.toUpperCase(), `${currencySymbol}${l.remainingAmount.toLocaleString()}`, `${currencySymbol}${l.monthlyPayment.toLocaleString()}/mo`]);
-          autoTable(doc, {
-            startY: currentY + 5,
-            head: [['Creditor', 'Structure', 'Remaining', 'Service Cost']],
-            body: liabilityRows,
-            theme: 'striped',
-            headStyles: { fillColor: [244, 63, 94] }
-          });
-          
-          // 4. Today's Overview Extended Analysis
-          currentY = (doc as any).lastAutoTable.finalY + 15;
-          if (currentY > 250) { doc.addPage(); currentY = 20; }
-          
-          doc.setFontSize(14);
-          doc.setTextColor(99, 102, 241); // indigo-500
-          doc.text('4. DEEP CONTEXT ANALYSIS (TODAY\'S OVERVIEW EXPANDED)', 14, currentY);
-          
-          currentY += 10;
-          cfoData.quickScanAnalysis.forEach(item => {
-             if (currentY > 270) { doc.addPage(); currentY = 20; }
-             doc.setFontSize(11);
-             doc.setTextColor(15, 23, 42);
-             doc.text(`• ${item.title.toUpperCase()}`, 14, currentY);
-             currentY += 6;
-             doc.setFontSize(9);
-             doc.setTextColor(71, 85, 105);
-             const lines = doc.splitTextToSize(item.content, 180);
-             doc.text(lines, 14, currentY);
-             currentY += lines.length * 5 + 5;
-          });
-
-          // 5. Strategic Recommendations
-          if (currentY > 240) { doc.addPage(); currentY = 20; } else { currentY += 5; }
-
-          doc.setFontSize(14);
-          doc.setTextColor(30, 41, 59);
-          doc.text('5. STRATEGIC OUTLOOK & RECOMMENDATIONS', 14, currentY);
-          
-          currentY += 10;
-          cfoData.strategicRecommendations.forEach(item => {
-             if (currentY > 270) { doc.addPage(); currentY = 20; }
-             doc.setFontSize(11);
-             doc.setTextColor(15, 23, 42);
-             doc.text(`• ${item.title.toUpperCase()}`, 14, currentY);
-             currentY += 6;
-             doc.setFontSize(9);
-             doc.setTextColor(71, 85, 105);
-             const lines = doc.splitTextToSize(item.content, 180);
-             doc.text(lines, 14, currentY);
-             currentY += lines.length * 5 + 5;
-          });
-
-          // 6. Risk Assessment
-          if (currentY > 250) { doc.addPage(); currentY = 20; } else { currentY += 5; }
-
-          doc.setFontSize(14);
-          doc.setTextColor(30, 41, 59);
-          doc.text('6. RISK METRICS', 14, currentY);
-          currentY += 8;
-          doc.setFontSize(10);
-          doc.setTextColor(71, 85, 105);
-          doc.text(doc.splitTextToSize(cfoData.riskAssessment, 180), 14, currentY);
-          
-          const blob = doc.output('blob');
-          
-          // Sending email notification with PDF attachment via FormSubmit
-          const formData = new FormData();
-          formData.append('_subject', "Moneyflow CFO: Your Strategic Audit Report");
-          formData.append('email', email);
-          formData.append('net_worth', formatMoney(netWorth, userProfile?.baseCurrency));
-          formData.append('report_file', blob, 'moneyflow_cfo_audit.pdf');
-          formData.append('_captcha', "false");
-          formData.append('message', `Hello, your strategic CFO report is attached. Net Worth: ${formatMoney(netWorth, userProfile?.baseCurrency)}. Assets: ${formatMoney(totalAssets, userProfile?.baseCurrency)}. Liabilities: ${formatMoney(totalLiabilities, userProfile?.baseCurrency)}.`);
-
-          try {
-            await fetch("https://formsubmit.co/ajax/adrianomelilloXX@gmail.com", {
-              method: "POST",
-              body: formData
-            });
-          } catch (e) {
-            console.error("Email report notification failed", e);
-          }
-
-          const url = URL.createObjectURL(blob);
-          const isDebug = new URLSearchParams(window.location.search).get('debugAuth') === '1';
-          if (isDebug) {
-            console.log(`Professional CFO report generated and sent to ${email}`);
-          }
-          return url;
-        }}
-      />
-
-      <AddGoalModal 
-        isOpen={isAddGoalModalOpen} 
-        onClose={() => setIsAddGoalModalOpen(false)} 
-        userId={user.uid}
-        onDemoAdd={(goal) => handleDemoUpdate('goals', goal)}
-        userProfile={userProfile || undefined}
-      />
-
-      <AddAssetModal 
-        isOpen={isAddAssetModalOpen} 
-        onClose={() => setIsAddAssetModalOpen(false)} 
-        userId={user.uid}
-        onDemoAdd={(asset) => handleDemoUpdate('assets', asset)}
-        userProfile={userProfile || undefined}
-      />
-
-      <AddLiabilityModal 
-        isOpen={isAddLiabilityModalOpen} 
-        onClose={() => setIsAddLiabilityModalOpen(false)} 
-        userId={user.uid}
-        onDemoAdd={(liability) => handleDemoUpdate('liabilities', liability)}
-        userProfile={userProfile || undefined}
-      />
-
-      <ConnectBankModal 
-        isOpen={isConnectBankOpen}
-        onClose={() => setIsConnectBankOpen(false)}
-        userId={user.uid}
-      />
-
-      <AddTransactionModal 
-        isOpen={isAddTransactionModalOpen} 
-        onClose={() => {
-          setIsAddTransactionModalOpen(false);
-          setEditingTransaction(null);
-        }} 
-        userId={user.uid}
-        onDemoAdd={(tx) => handleDemoUpdate('transactions', tx)}
-        initialTransaction={editingTransaction}
-        userProfile={userProfile || undefined}
-      />
-
-      <FeedbackModal 
-        isOpen={isFeedbackOpen} 
-        onClose={() => setIsFeedbackOpen(false)} 
-        userEmail={user.email || undefined} 
-      />
-
-      {/* Welcome Popup - Only for DEMO users */}
-      <AnimatePresence>
-        {showWelcomePopup && user.uid.startsWith('demo-') && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }} 
-              animate={{ opacity: 1 }} 
-              exit={{ opacity: 0 }}
-              onClick={() => {
-                setShowWelcomePopup(false);
-                localStorage.setItem(`hasSeenWelcome_${user.uid}`, 'true');
-              }}
-              className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm" 
-            />
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative w-full max-w-lg glass-card p-10 rounded-[3rem] text-center shadow-premium overflow-hidden"
-            >
-              <div className="absolute top-0 left-0 w-full h-1.5 addictive-gradient" />
-              
-              <div className="w-20 h-20 bg-indigo-600/10 rounded-[2rem] flex items-center justify-center mx-auto mb-8">
-                <LayoutDashboard className="w-10 h-10 text-indigo-500" />
-              </div>
-              
-              <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-4">Sample Experience</h2>
-              <p className="text-slate-500 dark:text-slate-400 mb-10 leading-relaxed font-medium">
-                You are currently exploring a <span className="text-indigo-500 font-bold">Sample Account</span>. This is a sandbox environment with sample data to demonstrate Moneyflow's intelligence capabilities.
-              </p>
-              
-              <button
-                onClick={() => {
-                  setShowWelcomePopup(false);
-                  localStorage.setItem(`hasSeenWelcome_${user.uid}`, 'true');
-                }}
-                className="w-full py-5 addictive-gradient text-white rounded-[2rem] font-black hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl shadow-indigo-600/20 text-lg"
-              >
-                Start Exploring
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {isCreateModalOpen && <CreateGroupModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} user={user} />}
+      {isAddAssetModalOpen && <AddAssetModal isOpen={isAddAssetModalOpen} onClose={() => setIsAddAssetModalOpen(false)} userId={user.uid} />}
+      {isAddLiabilityModalOpen && <AddLiabilityModal isOpen={isAddLiabilityModalOpen} onClose={() => setIsAddLiabilityModalOpen(false)} userId={user.uid} />}
+      {isAddGoalModalOpen && <AddGoalModal isOpen={isAddGoalModalOpen} onClose={() => setIsAddGoalModalOpen(false)} userId={user.uid} />}
+      {isAddTransactionModalOpen && <AddTransactionModal isOpen={isAddTransactionModalOpen} onClose={() => { setIsAddTransactionModalOpen(false); setEditingTransaction(null); }} userId={user.uid} editingTransaction={editingTransaction} />}
+      {isConnectBankOpen && <ConnectBankModal isOpen={isConnectBankOpen} onClose={() => setIsConnectBankOpen(false)} userId={user.uid} />}
+      {isConnectCryptoOpen && <AddCryptoWalletModal isOpen={isConnectCryptoOpen} onClose={() => setIsConnectCryptoOpen(false)} userId={user.uid} />}
+      {isCFOReportOpen && <CFOReportModal isOpen={isCFOReportOpen} onClose={() => setIsCFOReportOpen(false)} />}
+      
+      <NeuralAdvisor isVisible={advisorState.visible} initialMessage={advisorState.message} onClose={() => setAdvisorState(prev => ({ ...prev, visible: false }))} />
+      <BetaFeedbackButton variant="floating" />
     </div>
   );
 }

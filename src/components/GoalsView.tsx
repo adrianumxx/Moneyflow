@@ -12,14 +12,12 @@ import {
   Landmark,
   Wallet
 } from 'lucide-react';
-import { FinancialGoal, UserProfile } from '../types';
 import { formatMoney } from '../utils/format';
 import { assessGoalProgress, suggestGoalTemplates } from '../utils/goalInsights';
+import { useFinancial } from '../context/FinancialContext';
 
 interface GoalsViewProps {
-  goals: FinancialGoal[];
   onAddGoal: () => void;
-  userProfile?: UserProfile;
 }
 
 const TEMPLATE_ICONS: Record<string, any> = {
@@ -29,7 +27,8 @@ const TEMPLATE_ICONS: Record<string, any> = {
   lifestyle: Wallet
 };
 
-export default function GoalsView({ goals, onAddGoal, userProfile }: GoalsViewProps) {
+export default function GoalsView({ onAddGoal }: GoalsViewProps) {
+  const { goals, userProfile } = useFinancial();
   const templates = suggestGoalTemplates();
 
   return (

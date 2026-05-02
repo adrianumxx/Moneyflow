@@ -44,6 +44,7 @@ export interface FinancialData {
   investmentAccounts: InvestmentAccount[];
   income: Income[];
   groups: Group[];
+  groupExpenses: Record<string, Expense[]>;
   loading: boolean;
   error: string | null;
 }
@@ -62,7 +63,8 @@ export const useFinancialData = (user: User | null): FinancialData => {
     cryptoWallets: [],
     investmentAccounts: [],
     income: [],
-    groups: []
+    groups: [],
+    groupExpenses: {}
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -103,20 +105,14 @@ export const useFinancialData = (user: User | null): FinancialData => {
         const profileSnap = await getDoc(profileRef);
         if (!profileSnap.exists()) {
           await setDoc(profileRef, {
-            uid: user.uid,
-            displayName: user.displayName || null,
-            email: user.email || null,
-            photoURL: user.photoURL || null,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-            hasCompletedOnboarding: false,
-            plan: 'free',
-            subscriptionStatus: 'trialing',
-            trialStartDate: new Date().toISOString(),
-            trialDays: 15,
-            palantirTrialDays: 7,
-          });
-        }
+          uid: user.uid,
+          displayName: user.displayName || null,
+          email: user.email || null,
+          photoURL: user.photoURL || null,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          hasCompletedOnboarding: false,
+          });        }
       } catch (err: any) {
         console.error('Error ensuring user profile exists (details masked for privacy)');
         setError(`Profile Error: Service temporarily unavailable`);
@@ -259,6 +255,32 @@ export const useFinancialData = (user: User | null): FinancialData => {
       unsubscribes.forEach(unsub => unsub());
     };
   }, [user]);
+
+  // 14. Nested Group Expenses Listener
+  useEffect(() => {
+    if (!user || !data.groups.length || user.uid.startsWith('demo-')) return;
+
+    const groupUnsubscribes: (() => void)[] = [];
+    
+    data.groups.forEach(group => {
+      const expensesQuery = query(
+        collection(db, 'groups', group.id, 'expenses'),
+        orderBy('date', 'desc')
+      );
+      
+      const unsub = onSnapshot(expensesQuery, (snap) => {
+        const expenses = snap.docs.map(d => ({ id: d.id, ...d.data() } as Expense));
+        setData(prev => ({
+          ...prev,
+          groupExpenses: { ...prev.groupExpenses, [group.id]: expenses }
+        }));
+      }, (err) => handleFirestoreError(err, OperationType.LIST, `groups/${group.id}/expenses`));
+      
+      groupUnsubscribes.push(unsub);
+    });
+    
+    return () => groupUnsubscribes.forEach(unsub => unsub());
+  }, [data.groups, user]);
 
   return { ...data, loading, error };
 };

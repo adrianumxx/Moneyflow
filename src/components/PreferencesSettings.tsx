@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Globe, ShieldCheck, Download, Trash2, AlertTriangle, X, FileText } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
+import { logOut } from '../firebase';
 import { useNotifications } from '../context/NotificationContext';
 import LegalPages from './LegalPages.js';
 import BetaFeedbackButton from './BetaFeedbackButton';
@@ -95,12 +96,14 @@ export default function PreferencesSettings({ exportData }: PreferencesSettingsP
     if (purgeInput !== 'DELETE') return;
     setIsPurging(true);
     try {
-      const result = await purgeUserData(purgeInput);
-      showNotification('Data Erased', `Successfully deleted ${result.deletedDocumentsCount} records. Please refresh or sign in again.`, 'success');
-      closePurgeModal();
+      await purgeUserData(purgeInput);
+      showNotification('Account Deleted', 'Your data has been successfully erased. Redirecting...', 'success');
+      
+      // Atomic cleanup: log out and reload
+      await logOut();
+      window.location.href = '/';
     } catch (e: any) {
       showNotification('Erasure Failed', e.message, 'error');
-    } finally {
       setIsPurging(false);
     }
   };

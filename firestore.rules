@@ -31,7 +31,7 @@ service cloud.firestore {
 
     function isValidUser(data) {
       return data.uid == request.auth.uid &&
-             data.email is string && data.email.size() <= 128 &&
+             (data.get('email', null) == null || (data.email is string && data.email.size() <= 128)) &&
              (data.get('displayName', null) == null || (data.displayName is string && data.displayName.size() <= 100)) &&
              (data.get('createdAt', null) == null || data.createdAt is timestamp) &&
              (data.get('updatedAt', null) == null || data.updatedAt is timestamp) &&
@@ -142,10 +142,9 @@ service cloud.firestore {
       allow get: if isOwner(userId) && isValidId(userId);
       allow create: if isOwner(userId) && 
                     isValidUser(incoming()) &&
+                    (incoming().get('plan', 'free') == 'free') &&
                     !incoming().keys().hasAny([
-                      'stripeCustomerId', 'subscriptionStatus', 'plan', 
-                      'trialStartDate', 'trialDays', 'palantirTrialDays',
-                      'admin', 'isAdmin', 'role', 'permissions', 'isPremium'
+                      'stripeCustomerId', 'admin', 'isAdmin', 'role', 'permissions', 'isPremium'
                     ]);
       allow update: if isOwner(userId) && 
                     incoming().uid == existing().uid &&

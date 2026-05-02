@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import { db } from '../firebase';
 import { collection, query, onSnapshot, orderBy, limit, doc, updateDoc, deleteDoc, Timestamp, where, serverTimestamp } from 'firebase/firestore';
-import { User } from 'firebase/auth';
 import { formatMoney, getCurrencySymbol } from '../utils/format';
 import { handleFirestoreError, OperationType } from '../utils/errorHandling';
 import GuidedSetupChecklist from './GuidedSetupChecklist';
@@ -27,12 +26,10 @@ import FirstInsightMoment from './FirstInsightMoment';
 import { Asset, Transaction, BankAccount, ConnectedAccount, FinancialGoal, UserProfile, Liability, Group, Expense, BudgetType, CATEGORIES } from '../types';
 import DataCompletenessScore from './DataCompletenessScore';
 import WeeklyMoneyBrief from './WeeklyMoneyBrief';
+import { useAuth } from '../context/AuthContext';
+import { useFinancial } from '../context/FinancialContext';
 
 interface DashboardProps {
-  user: User;
-  groups: Group[];
-  transactions: Transaction[];
-  demoGroupExpenses?: Record<string, Expense[]>;
   onSelectGroup: (id: string) => void;
   onNavigateToLedger: () => void;
   onUpdateTransaction?: (tx: any) => void;
@@ -42,13 +39,7 @@ interface DashboardProps {
   onAddTransaction?: () => void;
   onConnectBank?: () => void;
   onNavigateToTab?: (tab: any) => void;
-  userProfile?: UserProfile;
   theme: 'light' | 'dark';
-  assets: Asset[];
-  bankAccounts: BankAccount[];
-  connectedAccounts: ConnectedAccount[];
-  goals: FinancialGoal[];
-  liabilities: Liability[];
 }
 
 interface Alert {
@@ -70,10 +61,6 @@ interface DashboardExpense {
 }
 
 export default function Dashboard({ 
-  user, 
-  groups, 
-  transactions, 
-  demoGroupExpenses, 
   onSelectGroup, 
   onNavigateToLedger, 
   onUpdateTransaction,
@@ -83,14 +70,22 @@ export default function Dashboard({
   onAddTransaction,
   onConnectBank,
   onNavigateToTab,
-  userProfile,
-  theme,
-  assets,
-  bankAccounts,
-  connectedAccounts,
-  goals,
-  liabilities
+  theme 
 }: DashboardProps) {
+  const { user, userProfile } = useAuth();
+  const { 
+    assets, 
+    liabilities, 
+    goals, 
+    transactions, 
+    bankAccounts, 
+    groups, 
+    groupExpenses, 
+    connectedAccounts 
+  } = useFinancial();
+
+  if (!user) return null;
+
   const [recentExpenses, setRecentExpenses] = useState<DashboardExpense[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [isGroupsListOpen, setIsGroupsListOpen] = useState(false);

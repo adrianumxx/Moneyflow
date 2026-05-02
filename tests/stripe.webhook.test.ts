@@ -7,7 +7,8 @@ const mockUpdate = vi.fn().mockResolvedValue({});
 const mockSet = vi.fn().mockResolvedValue({});
 const mockDoc = vi.fn().mockReturnValue({
   set: mockSet,
-  update: mockUpdate
+  update: mockUpdate,
+  get: vi.fn().mockResolvedValue({ exists: false })
 });
 const mockGet = vi.fn().mockResolvedValue({
   empty: false,
@@ -135,7 +136,9 @@ describe('Stripe Webhook Service', () => {
       await handleStripeWebhook(payload, sig, endpointSecret);
 
       expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Missing client_reference_id'));
-      expect(mockDoc).not.toHaveBeenCalled();
+      // Note: mockDoc IS called now for the idempotency check (event.id)
+      // We check it wasn't called for a user document (which would happen if userId existed)
+      expect(mockDoc).not.toHaveBeenCalledWith('user_123');
     });
 
     it('should handle customer.subscription.deleted and revoke premium', async () => {
