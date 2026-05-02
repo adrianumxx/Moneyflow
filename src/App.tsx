@@ -6,7 +6,10 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, Globe, LayoutDashboard } from 'lucide-react';
+import { 
+  Menu, Globe, LayoutDashboard, Target, 
+  Users, History, Settings as SettingsIcon 
+} from 'lucide-react';
 
 // Official Firebase Imports
 import { db, logOut } from './firebase';
@@ -58,7 +61,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<'overview' | 'social' | 'forecast' | 'ledger' | 'settings' | 'palantir' | 'goals'>('overview');
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
-  // Auth UI State (Restored)
+  // Auth UI State
   const [authEmail, setAuthEmail] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [isEmailView, setIsEmailView] = useState(false);
@@ -81,6 +84,16 @@ export default function App() {
     theme === 'dark' ? root.classList.add('dark') : root.classList.remove('dark');
     localStorage.setItem('theme', theme);
   }, [theme]);
+
+  // Derived Navigation Items
+  const navigationItems = [
+    { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
+    { id: 'palantir', icon: Globe, label: 'Intelligence', visible: isFeatureVisible('PALANTIR_LIVE'), beta: true },
+    { id: 'goals', icon: Target, label: 'Goals' },
+    { id: 'social', icon: Users, label: 'Groups', visible: isFeatureVisible('ADVANCED_GROUPS') },
+    { id: 'ledger', icon: History, label: 'Ledger' },
+    { id: 'settings', icon: SettingsIcon, label: 'Settings' }
+  ].filter(item => item.visible !== false);
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -107,6 +120,11 @@ export default function App() {
     }
   };
 
+  const handleEmergencyLogout = async () => {
+    await logOut();
+    window.location.href = '/'; 
+  };
+
   // Main UI Guards
   if (authLoading) {
     return (
@@ -120,11 +138,11 @@ export default function App() {
     return (
       <AnimatePresence mode="wait">
         {!showAuth ? (
-          <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <motion.div key="landing" className="w-full" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <MarketingLanding onStart={() => setShowAuth(true)} onTryDemo={() => window.location.reload()} />
           </motion.div>
         ) : (
-          <motion.div key="auth" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+          <motion.div key="auth" className="w-full" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
             <AuthPage 
               onGoogleSignIn={handleGoogleSignIn} 
               onEmailAuth={handleEmailAuth}
@@ -150,10 +168,10 @@ export default function App() {
       )}
 
       <Sidebar 
-        navigationItems={[]} 
+        navigationItems={navigationItems} 
         activeTab={activeTab} setActiveTab={setActiveTab}
         groups={financialData.groups || []} selectedGroupId={selectedGroupId} setSelectedGroupId={setSelectedGroupId}
-        user={user} onLogout={signOut} theme={theme} toggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
+        user={user} onLogout={handleEmergencyLogout} theme={theme} toggleTheme={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
         isOpen={isSidebarOpen} setIsOpen={setIsSidebarOpen}
         onAddAsset={() => setModal('asset')} onAddLiability={() => setModal('liability')}
         onAddTransaction={() => setModal('transaction')} onCreateGroup={() => setModal('group')}
@@ -161,7 +179,7 @@ export default function App() {
 
       <main className="flex-1 overflow-y-auto relative">
         <header className="lg:hidden flex items-center justify-between p-4 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md sticky top-0 z-30">
-          <span className="font-bold dark:text-white">Moneyflow</span>
+          <span className="font-bold dark:text-white uppercase tracking-tighter">Moneyflow</span>
           <button onClick={() => setIsSidebarOpen(true)} className="p-2 text-zinc-500"><Menu className="w-6 h-6" /></button>
         </header>
 
@@ -204,7 +222,7 @@ export default function App() {
         </AnimatePresence>
       </main>
 
-      <MobileNav navigationItems={[]} activeTab={activeTab} setActiveTab={setActiveTab} selectedGroupId={selectedGroupId} setSelectedGroupId={setSelectedGroupId} setIsSidebarOpen={setIsSidebarOpen} />
+      <MobileNav navigationItems={navigationItems} activeTab={activeTab} setActiveTab={setActiveTab} selectedGroupId={selectedGroupId} setSelectedGroupId={setSelectedGroupId} setIsSidebarOpen={setIsSidebarOpen} />
       
       {/* Modals */}
       {modal === 'group' && <CreateGroupModal isOpen onClose={closeModal} user={user} />}
